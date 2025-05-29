@@ -1,0 +1,64 @@
+﻿@page "/cyropreserveds/details"
+@using Microsoft.EntityFrameworkCore
+@using MxTWeb.Models
+@inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Details</PageTitle>
+
+<h1>Details</h1>
+
+<div>
+    <h2>Cyropreserved</h2>
+    <hr />
+    @if (cyropreserved is null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else {
+        <dl class="row">
+            <dt class="col-sm-2">Name</dt>
+            <dd class="col-sm-10">@cyropreserved.Name</dd>
+            <dt class="col-sm-2">ReceiptDate</dt>
+            <dd class="col-sm-10">@cyropreserved.ReceiptDate</dd>
+            <dt class="col-sm-2">Recipient</dt>
+            <dd class="col-sm-10">@cyropreserved.Recipient</dd>
+            <dt class="col-sm-2">Supplier</dt>
+            <dd class="col-sm-10">@cyropreserved.Supplier</dd>
+            <dt class="col-sm-2">FreezeDate</dt>
+            <dd class="col-sm-10">@cyropreserved.FreezeDate</dd>
+            <dt class="col-sm-2">Quantity</dt>
+            <dd class="col-sm-10">@cyropreserved.Quantity</dd>
+            <dt class="col-sm-2">Lot</dt>
+            <dd class="col-sm-10">@cyropreserved.Lot</dd>
+            <dt class="col-sm-2">Density</dt>
+            <dd class="col-sm-10">@cyropreserved.Density</dd>
+            <dt class="col-sm-2">Location</dt>
+            <dd class="col-sm-10">@cyropreserved.Location</dd>
+            <dt class="col-sm-2">Note</dt>
+            <dd class="col-sm-10">@cyropreserved.Note</dd>
+        </dl>
+        <div>
+            <a href="@($"/cyropreserveds/edit?id={cyropreserved.Id}")">Edit</a> |
+            <a href="@($"/cyropreserveds")">Back to List</a>
+        </div>
+    }
+</div>
+
+@code {
+    private Cyropreserved? cyropreserved;
+
+    [SupplyParameterFromQuery]
+    private int Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        cyropreserved = await context.Cyropreserved.FirstOrDefaultAsync(m => m.Id == Id);
+
+        if (cyropreserved is null)
+        {
+            NavigationManager.NavigateTo("notfound");
+        }
+    }
+}

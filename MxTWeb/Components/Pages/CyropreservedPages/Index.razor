@@ -1,0 +1,74 @@
+﻿@page "/cyropreserveds"
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using MxTWeb.Models
+@using MxTWeb.Data
+@implements IAsyncDisposable
+@inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
+
+<PageTitle>Index</PageTitle>
+
+<h1>Index</h1>
+
+@* <div>
+    <form action="/movies" data-enhance data-permanent>
+        <input type="search" name="NameFilter" />
+        <input type="submit" value="Search" />
+    </form>
+</div> *@
+
+<i class="bi bi-search"></i> Search
+<input type="search" @bind="NameFilter" @bind:event="oninput" />
+
+<p>
+    <a href="cyropreserveds/create">Create New</a>
+</p>
+
+<div>
+    <QuickGrid Class="table" Items="FilteredCyropreserveds" Pagination="pagination" >
+        <PropertyColumn Property="cyropreserved => cyropreserved.Id" Title="번호" Align="Align.Center" Sortable="true"/>
+        <PropertyColumn Property="cyropreserved => cyropreserved.Name" Title="세포" Align="Align.Center" sortable="true"/>
+        <PropertyColumn Property="cyropreserved => cyropreserved.ReceiptDate" Title="반입날짜" Align="Align.Center" Sortable="true"/>
+        <PropertyColumn Property="cyropreserved => cyropreserved.Recipient" Title="반입자" Align="Align.Center" Sortable="true"/>
+        <PropertyColumn Property="cyropreserved => cyropreserved.Supplier" Title="반입처" Align="Align.Center" Sortable="true"/>
+        <PropertyColumn Property="cyropreserved => cyropreserved.FreezeDate" Title="동결날짜" Align="Align.Center" Sortable="true"/>
+        <PropertyColumn Property="cyropreserved => cyropreserved.Quantity" Title="현재수량" Align="Align.Center" Sortable="true"/>
+        <PropertyColumn Property="cyropreserved => cyropreserved.Lot" Title="Lot" Align="Align.Center" />
+        <PropertyColumn Property="cyropreserved => cyropreserved.Density" Title="Cell density" Align="Align.Center" />
+        <PropertyColumn Property="cyropreserved => cyropreserved.Location" Title="보관 위치" Align="Align.Center" />
+        <PropertyColumn Property="cyropreserved => cyropreserved.Note" Title="비고" Align="Align.Center" />
+
+        <TemplateColumn Context="cyropreserved">
+            <a href="@($"cyropreserveds/edit?id={cyropreserved.Id}")">Edit</a> |
+            <a href="@($"cyropreserveds/details?id={cyropreserved.Id}")">Details</a> |
+            <a href="@($"cyropreserveds/delete?id={cyropreserved.Id}")">Delete</a>
+        </TemplateColumn>
+    </QuickGrid>
+</div>
+
+<Paginator State="pagination" />
+
+@code {
+    private MxTWebContext context = default!;
+
+    // [SupplyParameterFromQuery]
+    // private string? NameFilter { get; set; }
+
+    // private IQueryable<Cyropreserved> FilteredCyropreserveds =>
+    //     context.Cyropreserved.Where(m => m.Name!.Contains(NameFilter ?? string.Empty));
+
+    private string NameFilter = string.Empty;
+
+    private IQueryable<Cyropreserved> FilteredCyropreserveds =>
+        context.Cyropreserved.Where(m => m.Name!.Contains(NameFilter));
+
+    private PaginationState pagination = new PaginationState { ItemsPerPage = 15 };
+
+    protected override void OnInitialized()
+    {
+        context = DbFactory.CreateDbContext();
+    }
+
+    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+}

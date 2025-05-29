@@ -1,0 +1,134 @@
+﻿@page "/cyropreserveds/edit"
+@using Microsoft.EntityFrameworkCore
+@using MxTWeb.Models
+@inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Edit</PageTitle>
+
+<h1>Edit</h1>
+
+<h2>Cyropreserved</h2>
+<hr />
+@if (Cyropreserved is null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-4">
+            <EditForm method="post" Model="Cyropreserved" OnValidSubmit="UpdateCyropreserved" FormName="edit" Enhance>
+                <DataAnnotationsValidator />
+                <ValidationSummary role="alert"/>
+                <input type="hidden" name="Cyropreserved.Id" value="@Cyropreserved.Id" />
+                <div class="mb-3">
+                    <label for="name" class="form-label">Name:</label>
+                    <InputText id="name" @bind-Value="Cyropreserved.Name" class="form-control" />
+                    <ValidationMessage For="() => Cyropreserved.Name" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="receiptdate" class="form-label">ReceiptDate:</label>
+                    <InputDate id="receiptdate" @bind-Value="Cyropreserved.ReceiptDate" class="form-control" />
+                    <ValidationMessage For="() => Cyropreserved.ReceiptDate" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="recipient" class="form-label">Recipient:</label>
+                    <InputText id="recipient" @bind-Value="Cyropreserved.Recipient" class="form-control" />
+                    <ValidationMessage For="() => Cyropreserved.Recipient" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="supplier" class="form-label">Supplier:</label>
+                    <InputText id="supplier" @bind-Value="Cyropreserved.Supplier" class="form-control" />
+                    <ValidationMessage For="() => Cyropreserved.Supplier" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="freezedate" class="form-label">FreezeDate:</label>
+                    <InputDate id="freezedate" @bind-Value="Cyropreserved.FreezeDate" class="form-control" />
+                    <ValidationMessage For="() => Cyropreserved.FreezeDate" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="quantity" class="form-label">Quantity:</label>
+                    <InputText id="quantity" @bind-Value="Cyropreserved.Quantity" class="form-control" />
+                    <ValidationMessage For="() => Cyropreserved.Quantity" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="lot" class="form-label">Lot:</label>
+                    <InputText id="lot" @bind-Value="Cyropreserved.Lot" class="form-control" />
+                    <ValidationMessage For="() => Cyropreserved.Lot" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="density" class="form-label">Density:</label>
+                    <InputText id="density" @bind-Value="Cyropreserved.Density" class="form-control" />
+                    <ValidationMessage For="() => Cyropreserved.Density" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="location" class="form-label">Location:</label>
+                    <InputText id="location" @bind-Value="Cyropreserved.Location" class="form-control" />
+                    <ValidationMessage For="() => Cyropreserved.Location" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="note" class="form-label">Note:</label>
+                    <InputText id="note" @bind-Value="Cyropreserved.Note" class="form-control" />
+                    <ValidationMessage For="() => Cyropreserved.Note" class="text-danger" />
+                </div>
+                <button type="submit" class="btn btn-primary">Save</button>
+            </EditForm>
+        </div>
+    </div>
+}
+
+<div>
+    <a href="/cyropreserveds">Back to List</a>
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    private int Id { get; set; }
+
+    [SupplyParameterFromForm]
+    private Cyropreserved? Cyropreserved { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        Cyropreserved ??= await context.Cyropreserved.FirstOrDefaultAsync(m => m.Id == Id);
+
+        if (Cyropreserved is null)
+        {
+            NavigationManager.NavigateTo("notfound");
+        }
+    }
+
+    // To protect from overposting attacks, enable the specific properties you want to bind to.
+    // For more information, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private async Task UpdateCyropreserved()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Attach(Cyropreserved!).State = EntityState.Modified;
+
+        try
+        {
+            await context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!CyropreservedExists(Cyropreserved!.Id))
+            {
+                NavigationManager.NavigateTo("notfound");
+            }
+            else
+            {
+                throw;
+            }
+        }
+
+        NavigationManager.NavigateTo("/cyropreserveds");
+    }
+
+    private bool CyropreservedExists(int id)
+    {
+        using var context = DbFactory.CreateDbContext();
+        return context.Cyropreserved.Any(e => e.Id == id);
+    }
+}
