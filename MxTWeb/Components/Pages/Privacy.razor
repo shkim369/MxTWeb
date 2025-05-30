@@ -1,0 +1,16 @@
+﻿@page "/privacy"
+@using Microsoft.AspNetCore.Authorization
+@inject ILogger<Privacy> Logger
+@attribute [AllowAnonymous]
+
+<PageTitle>Privacy Policy</PageTitle>
+
+<h1>Privacy Policy</h1>
+<p>Use this page to detail your site's privacy policy.</p>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Logger.LogInformation("Privacy page accessed");
+    }
+}

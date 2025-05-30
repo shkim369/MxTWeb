@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.AspNetCore.Components.QuickGrid
+@using Microsoft.AspNetCore.Authorization;
 @using MxTWeb.Models
 @using MxTWeb.Data
 @implements IAsyncDisposable
@@ -19,7 +20,7 @@
 </div> *@
 
 <i class="bi bi-search"></i> Search
-<input type="search" @bind="NameFilter" @bind:event="oninput" />
+<input type="search" @bind="NameFilter" @bind:event="oninput" pattern="[A-Za-z0-9\s]*" />
 
 <p>
     <a href="cyropreserveds/create">Create New</a>
