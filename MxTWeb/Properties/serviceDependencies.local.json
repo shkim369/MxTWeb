@@ -1,8 +1,10 @@
 {
   "dependencies": {
-    "mssql2": {
-      "type": "mssql.local",
-      "connectionId": "ConnectionStrings:MxTWebContext"
+    "mssql1": {
+      "secretStore": "LocalSecretsFile",
+      "type": "mssql.onprem",
+      "connectionId": "ConnectionStrings:DockerConnection",
+      "dynamicId": null
     }
   }
 }

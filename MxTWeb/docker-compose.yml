@@ -1,13 +1,38 @@
-version: "3.9"
+version: '3.9'
+
 services:
-  db:
-    image: mysql:8.0
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: mssql
     environment:
-      MYSQL_ROOT_PASSWORD: your_root_password
-      MYSQL_DATABASE: your_database
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=Nano12#$
+      - MSSQL_PID=Express
     ports:
-      - "3306:3306"
+      - "1433:1433"
     volumes:
-      - db_data:/var/lib/mysql
+      - mssql_data:/var/opt/mssql
+    networks:
+      - mxtweb-network
+
+  mxtweb:
+    image: mxtweb:latest
+    container_name: mxtweb
+    environment:
+      # LocalDB 연결을 Docker SQL Server로 재정의
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=aspnet-MxTWeb;User Id=sa;Password=Nano12#$;TrustServerCertificate=true;MultipleActiveResultSets=true;
+      - ConnectionStrings__MxTWebContext=Server=sqlserver,1433;Database=MxTWebContext;User Id=sa;Password=Nano12#$;TrustServerCertificate=true;MultipleActiveResultSets=true;
+      - ConnectionStrings__DockerConnection=Server=sqlserver,1433;Database=MxTWebContext;User Id=sa;Password=Nano12#$;TrustServerCertificate=true;MultipleActiveResultSets=true;
+    ports:
+      - "8080:8080"
+    depends_on:
+      - sqlserver
+    networks:
+      - mxtweb-network
+
+networks:
+  mxtweb-network:
+    driver: bridge
+
 volumes:
-  db_data:
+  sqlserver_data:

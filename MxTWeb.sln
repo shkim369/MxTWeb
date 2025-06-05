@@ -5,8 +5,6 @@ VisualStudioVersion = 17.14.36109.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MxTWeb", "MxTWeb\MxTWeb.csproj", "{F8A99566-15E2-4C72-9DE8-600F7B881663}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TodoList", "TodoList\TodoList.csproj", "{6CD40A2D-545E-C111-D437-1BE9E9C2C98C}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -17,10 +15,6 @@ Global
 		{F8A99566-15E2-4C72-9DE8-600F7B881663}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F8A99566-15E2-4C72-9DE8-600F7B881663}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F8A99566-15E2-4C72-9DE8-600F7B881663}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6CD40A2D-545E-C111-D437-1BE9E9C2C98C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6CD40A2D-545E-C111-D437-1BE9E9C2C98C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6CD40A2D-545E-C111-D437-1BE9E9C2C98C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6CD40A2D-545E-C111-D437-1BE9E9C2C98C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

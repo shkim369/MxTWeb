@@ -7,23 +7,33 @@ WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
-
-# 이 스테이지는 서비스 프로젝트를 빌드하는 데 사용됩니다.
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["MxTWeb.csproj", "./"]
-RUN dotnet restore "./MxTWeb.csproj"
-COPY . .
-RUN dotnet build "./MxTWeb.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
-# 이 스테이지는 최종 스테이지에 복사할 서비스 프로젝트를 게시하는 데 사용됩니다.
+# 프로젝트 파일이 같은 디렉터리에 있으므로 직접 복사
+COPY ["MxTWeb.csproj", "./"]
+RUN dotnet restore "MxTWeb.csproj"
+
+# 모든 소스 코드 복사
+COPY . .
+RUN dotnet build "MxTWeb.csproj" -c $BUILD_CONFIGURATION -o /app/build
+
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
 RUN dotnet publish "MxTWeb.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
-# 이 스테이지는 프로덕션에서 사용되거나 VS에서 일반 모드로 실행할 때 사용됩니다.
 FROM base AS final
 WORKDIR /app
+
+USER root
+RUN apt-get update && apt-get install -y \
+    libkrb5-3 \
+    libgssapi-krb5-2 \
+ && rm -rf /var/lib/apt/lists/*
+
 COPY --from=publish /app/publish .
+
+USER $APP_UID
+
 ENTRYPOINT ["dotnet", "MxTWeb.dll"]

@@ -28,11 +28,13 @@ builder.Services.AddScoped<IEmailSender<ApplicationUser>, EmailSender>();
 builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration);
 
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+var connectionString = builder.Configuration.GetConnectionString("LoginConnection") ?? throw new InvalidOperationException("Connection string 'DockerConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 builder.Services.AddDbContextFactory<MxTWebContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("MxTWebContext") ?? throw new InvalidOperationException("Connection string 'MxTWebContext' not found.")));
+   options.UseSqlServer(builder.Configuration.GetConnectionString("WebContextConnection") ?? throw new InvalidOperationException("Connection string 'DockerConnection' not found.")));
+
+
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddIdentityCore<ApplicationUser>(options => 
@@ -51,12 +53,13 @@ builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = IdentityConstants.ApplicationScheme;
     options.DefaultChallengeScheme = IdentityConstants.ApplicationScheme;
-    options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+    options.DefaultSignInScheme = IdentityConstants.ApplicationScheme;
 })
 .AddCookie(IdentityConstants.ApplicationScheme, options =>
 {
     options.LoginPath = "/login";
-});
+})
+.AddCookie(IdentityConstants.ExternalScheme); // 이 줄 추가
 
 builder.Services.AddAuthorization(options =>
 {
@@ -73,9 +76,22 @@ using (var scope = app.Services.CreateScope())
     if (!await roleManager.RoleExistsAsync("Admin"))
         await roleManager.CreateAsync(new IdentityRole("Admin"));
 
-    var user = await userManager.FindByEmailAsync("admin@example.com");
-    if (user != null && !await userManager.IsInRoleAsync(user, "Admin"))
-        await userManager.AddToRoleAsync(user, "Admin");
+    var adminUser = await userManager.FindByEmailAsync("admin@mxtbiotech.com");
+    if (adminUser == null)
+    {
+        adminUser = new ApplicationUser // Changed from IdentityUser to ApplicationUser  
+        {
+            UserName = "admin@mxtbiotech.com",
+            Email = "admin@mxtbiotech.com",
+            EmailConfirmed = true
+        };
+
+        var result = await userManager.CreateAsync(adminUser, "Nano12#$");
+        if (result.Succeeded)
+        {
+            await userManager.AddToRoleAsync(adminUser, "Admin");
+        }
+    }
 }
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
