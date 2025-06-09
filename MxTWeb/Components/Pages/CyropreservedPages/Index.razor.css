@@ -2,8 +2,29 @@
 {
     height: 3em;
 }
-
     ::deep tr > td 
     {
         vertical-align: middle;
     }
+
+.quickgrid table {
+    width: 100%;
+    table-layout: auto;
+}
+
+.quickgrid th,
+.quickgrid td {
+    white-space: nowrap;
+    text-align: center;
+    vertical-align: middle;
+    padding: 4px 8px;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+    .quickgrid th,
+    .quickgrid td {
+        padding: 2px 4px;
+        font-size: 0.8rem;
+    }
+}

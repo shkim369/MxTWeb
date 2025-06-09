@@ -27,23 +27,25 @@
 </p>
 
 <div>
-    <QuickGrid Class="table" Items="FilteredCyropreserveds" Pagination="pagination" >
-        <PropertyColumn Property="cyropreserved => cyropreserved.Id" Title="번호" Align="Align.Center" Sortable="true"/>
-        <PropertyColumn Property="cyropreserved => cyropreserved.Name" Title="세포" Align="Align.Center" sortable="true"/>
-        <PropertyColumn Property="cyropreserved => cyropreserved.ReceiptDate" Title="반입날짜" Align="Align.Center" Sortable="true"/>
-        <PropertyColumn Property="cyropreserved => cyropreserved.Recipient" Title="반입자" Align="Align.Center" Sortable="true"/>
-        <PropertyColumn Property="cyropreserved => cyropreserved.Supplier" Title="반입처" Align="Align.Center" Sortable="true"/>
-        <PropertyColumn Property="cyropreserved => cyropreserved.FreezeDate" Title="동결날짜" Align="Align.Center" Sortable="true"/>
-        <PropertyColumn Property="cyropreserved => cyropreserved.Quantity" Title="현재수량" Align="Align.Center" Sortable="true"/>
+    <QuickGrid Class="table" Items="FilteredCyropreserveds" Pagination="pagination">
+        <PropertyColumn Property="cyropreserved => cyropreserved.Id" Title="#" Align="Align.Center"/>
+        <PropertyColumn Property="cyropreserved => cyropreserved.Name" Title="🧪세포" Align="Align.Center"
+                        sortable="true"/>
+        <PropertyColumn Property="cyropreserved => cyropreserved.ReceiptDate" Title="반입 날짜" Align="Align.Center" 
+                        Sortable="true"/>
+        <PropertyColumn Property="cyropreserved => cyropreserved.Recipient" Title="반입자" Align="Align.Center" />
+        <PropertyColumn Property="cyropreserved => cyropreserved.Supplier" Title="반입처" Align="Align.Center" />
+        <PropertyColumn Property="cyropreserved => cyropreserved.FreezeDate" Title="동결 날짜" Align="Align.Center" />
+        <PropertyColumn Property="cyropreserved => cyropreserved.Quantity" Title="수량" Align="Align.Center" />
         <PropertyColumn Property="cyropreserved => cyropreserved.Lot" Title="Lot" Align="Align.Center" />
         <PropertyColumn Property="cyropreserved => cyropreserved.Density" Title="Cell density" Align="Align.Center" />
         <PropertyColumn Property="cyropreserved => cyropreserved.Location" Title="보관 위치" Align="Align.Center" />
         <PropertyColumn Property="cyropreserved => cyropreserved.Note" Title="비고" Align="Align.Center" />
 
         <TemplateColumn Context="cyropreserved">
-            <a href="@($"cyropreserveds/edit?id={cyropreserved.Id}")">Edit</a> |
-            <a href="@($"cyropreserveds/details?id={cyropreserved.Id}")">Details</a> |
-            <a href="@($"cyropreserveds/delete?id={cyropreserved.Id}")">Delete</a>
+            <a href="@($"cyropreserveds/edit?id={cyropreserved.Id}")" class="btn btn-primary px-3">Edit</a>
+            <a href="@($"cyropreserveds/details?id={cyropreserved.Id}")" class="btn btn-info">Details</a>
+            <a href="@($"cyropreserveds/delete?id={cyropreserved.Id}")" class="btn btn-danger">Delete</a>
         </TemplateColumn>
     </QuickGrid>
 </div>

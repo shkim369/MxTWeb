@@ -52,7 +52,8 @@ main {
     }
 
     .sidebar {
-        width: 270px;
+        width: 260px;
+        min-width: 260px;
         height: 100vh;
         position: sticky;
         top: 0;
