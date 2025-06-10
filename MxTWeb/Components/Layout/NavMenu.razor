@@ -2,9 +2,11 @@
 
 @inject NavigationManager NavigationManager
 
-<div class="top-row ps-3 navbar navbar-dark">
+<div class="top-row ps-2 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">MxTBiotech</a>
+        <a class="navbar-brand" href="">
+            <img src="@imageSource" class="img-fluid" alt="MxTBiotech Logo" style="display:block;">
+        </a>
     </div>
 </div>
 
@@ -105,5 +107,7 @@
     {
         NavigationManager.LocationChanged -= OnLocationChanged;
     }
+
+    private string? imageSource => NavigationManager.BaseUri + "images/MxT Biotech_Original_white.png";
 }
 
