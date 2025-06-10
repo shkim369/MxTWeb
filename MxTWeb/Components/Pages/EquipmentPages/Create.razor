@@ -1,0 +1,89 @@
+﻿@page "/equipment/create"
+@using Microsoft.EntityFrameworkCore
+@using MxTWeb.Models
+@inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Create</PageTitle>
+
+<h1>Create</h1>
+
+<h2>Equipment</h2>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <EditForm method="post" Model="Equipment" OnValidSubmit="AddEquipment" FormName="create" Enhance>
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" role="alert"/>
+            <div class="mb-3">
+                <label for="managecode" class="form-label">ManageCode:</label> 
+                <InputNumber id="managecode" @bind-Value="Equipment.ManageCode" class="form-control" aria-required="true"/> 
+                <ValidationMessage For="() => Equipment.ManageCode" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="name" class="form-label">Name:</label> 
+                <InputText id="name" @bind-Value="Equipment.Name" class="form-control" aria-required="true"/> 
+                <ValidationMessage For="() => Equipment.Name" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="model" class="form-label">Model:</label> 
+                <InputText id="model" @bind-Value="Equipment.Model" class="form-control" /> 
+                <ValidationMessage For="() => Equipment.Model" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="manufacturer" class="form-label">Manufacturer:</label> 
+                <InputText id="manufacturer" @bind-Value="Equipment.Manufacturer" class="form-control" /> 
+                <ValidationMessage For="() => Equipment.Manufacturer" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="purchasedate" class="form-label">PurchaseDate:</label> 
+                <InputDate id="purchasedate" @bind-Value="Equipment.PurchaseDate" class="form-control" /> 
+                <ValidationMessage For="() => Equipment.PurchaseDate" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="seller" class="form-label">Seller:</label> 
+                <InputText id="seller" @bind-Value="Equipment.Seller" class="form-control" /> 
+                <ValidationMessage For="() => Equipment.Seller" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="location" class="form-label">Location:</label> 
+                <InputText id="location" @bind-Value="Equipment.Location" class="form-control" /> 
+                <ValidationMessage For="() => Equipment.Location" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="management" class="form-label">Management:</label> 
+                <InputText id="management" @bind-Value="Equipment.Management" class="form-control" /> 
+                <ValidationMessage For="() => Equipment.Management" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="manager" class="form-label">Manager:</label> 
+                <InputText id="manager" @bind-Value="Equipment.Manager" class="form-control" /> 
+                <ValidationMessage For="() => Equipment.Manager" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="note" class="form-label">Note:</label> 
+                <InputText id="note" @bind-Value="Equipment.Note" class="form-control" /> 
+                <ValidationMessage For="() => Equipment.Note" class="text-danger" /> 
+            </div>        
+            <button type="submit" class="btn btn-primary">Create</button>
+        </EditForm>
+    </div>
+</div>
+
+<div>
+    <a href="/equipment">Back to List</a>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    private Equipment Equipment { get; set; } = new();
+
+    // To protect from overposting attacks, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private async Task AddEquipment()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Equipment.Add(Equipment);
+        await context.SaveChangesAsync();
+        NavigationManager.NavigateTo("/equipment");
+    }
+}

@@ -8,9 +8,9 @@
 @implements IAsyncDisposable
 @inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
 
-<PageTitle>Index</PageTitle>
+<PageTitle>동결세포 목록</PageTitle>
 
-<h1>Index</h1>
+<h1>동결세포 목록</h1>
 
 @* <div>
     <form action="/movies" data-enhance data-permanent>
@@ -18,10 +18,25 @@
         <input type="submit" value="Search" />
     </form>
 </div> *@
+<br />
+<div class="dropdown">
+    <button class="btn btn dropdown-toggle" @onclick="ToggleDropdown">
+        @selectedLabel
+    </button>
+    
+    @if (isOpen)
+    {
+        <ul class="dropdown-menu show">
+            <li><a class="dropdown-item" @onclick="@(() => SelectItem("Apple"))">Apple</a></li>
+            <li><a class="dropdown-item" @onclick="@(() => SelectItem("banana"))">banana</a></li>
+        </ul>
+    }
 
-<i class="bi bi-search"></i> Search
-<input type="search" @bind="NameFilter" @bind:event="oninput" pattern="[A-Za-z0-9\s]*" />
-<br><br>
+    <input type="search" @bind="NameFilter" @bind:event="oninput" pattern="[A-Za-z0-9\s]*" />
+
+    <i class="bi bi-search"></i> Search
+</div>
+<br /><br />
 <p>
     <a href="cyropreserveds/create" class="btn btn-outline-secondary">Create New</a>
 </p>
@@ -29,7 +44,7 @@
 <div>
     <QuickGrid Class="table" Items="FilteredCyropreserveds" Pagination="pagination">
         <PropertyColumn Property="cyropreserved => cyropreserved.Id" Title="#" Align="Align.Center"/>
-        <PropertyColumn Property="cyropreserved => cyropreserved.Name" Title="🧪세포" Align="Align.Center"
+        <PropertyColumn Property="cyropreserved => cyropreserved.Name" Title="🧫세포" Align="Align.Center"
                         sortable="true"/>
         <PropertyColumn Property="cyropreserved => cyropreserved.ReceiptDate" Title="반입 날짜" Align="Align.Center" 
                         Sortable="true"/>
@@ -62,11 +77,25 @@
     //     context.Cyropreserved.Where(m => m.Name!.Contains(NameFilter ?? string.Empty));
 
     private string NameFilter = string.Empty;
+    private bool isOpen = false;
 
     private IQueryable<Cyropreserved> FilteredCyropreserveds =>
         context.Cyropreserved.Where(m => m.Name!.Contains(NameFilter));
 
+    private string selectedItem = "";
+    private string selectedLabel => string.IsNullOrEmpty(selectedItem) ? "항목 선택" : selectedItem;
+
     private PaginationState pagination = new PaginationState { ItemsPerPage = 15 };
+
+    private void ToggleDropdown()
+    {
+        isOpen = !isOpen;
+    }
+    private void SelectItem(string item)
+    {
+        selectedItem = item;
+        isOpen = false;
+    }
 
     protected override void OnInitialized()
     {

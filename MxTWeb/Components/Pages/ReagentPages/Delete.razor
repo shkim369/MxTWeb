@@ -1,0 +1,71 @@
+﻿@page "/reagents/delete"
+@using Microsoft.EntityFrameworkCore
+@using MxTWeb.Models
+@inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Delete</PageTitle>
+
+<h1>Delete</h1>
+
+<p>Are you sure you want to delete this?</p>
+<div>
+    <h2>Reagent</h2>
+    <hr />
+    @if (reagent is null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else {
+        <dl class="row">
+            <dt class="col-sm-2">Code</dt>
+            <dd class="col-sm-10">@reagent.Code</dd>
+        </dl>
+        <dl class="row">
+            <dt class="col-sm-2">Name</dt>
+            <dd class="col-sm-10">@reagent.Name</dd>
+        </dl>
+        <dl class="row">
+            <dt class="col-sm-2">Manufacturer</dt>
+            <dd class="col-sm-10">@reagent.Manufacturer</dd>
+        </dl>
+        <dl class="row">
+            <dt class="col-sm-2">Amount</dt>
+            <dd class="col-sm-10">@reagent.Amount</dd>
+        </dl>
+        <dl class="row">
+            <dt class="col-sm-2">Cat</dt>
+            <dd class="col-sm-10">@reagent.Cat</dd>
+        </dl>
+        <EditForm method="post" Model="reagent" OnValidSubmit="DeleteReagent" FormName="delete" Enhance>
+            <button type="submit" class="btn btn-danger" disabled="@(reagent is null)">Delete</button> |
+            <a href="/reagents">Back to List</a>
+        </EditForm>
+    }
+</div>
+
+@code {
+    private Reagent? reagent;
+
+    [SupplyParameterFromQuery]
+    private int Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        reagent = await context.Reagent.FirstOrDefaultAsync(m => m.Id == Id);
+
+        if (reagent is null)
+        {
+            NavigationManager.NavigateTo("notfound");
+        }
+    }
+
+    private async Task DeleteReagent()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Reagent.Remove(reagent!);
+        await context.SaveChangesAsync();
+        NavigationManager.NavigateTo("/reagents");
+    }
+}

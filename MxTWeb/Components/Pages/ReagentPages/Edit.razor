@@ -1,0 +1,109 @@
+﻿@page "/reagents/edit"
+@using Microsoft.EntityFrameworkCore
+@using MxTWeb.Models
+@inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Edit</PageTitle>
+
+<h1>Edit</h1>
+
+<h2>Reagent</h2>
+<hr />
+@if (Reagent is null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-4">
+            <EditForm method="post" Model="Reagent" OnValidSubmit="UpdateReagent" FormName="edit" Enhance>
+                <DataAnnotationsValidator />
+                <ValidationSummary role="alert"/>
+                <input type="hidden" name="Reagent.Id" value="@Reagent.Id" />
+                <div class="mb-3">
+                    <label for="code" class="form-label">Code:</label>
+                    <InputText id="code" @bind-Value="Reagent.Code" class="form-control" aria-required="true"/>
+                    <ValidationMessage For="() => Reagent.Code" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="name" class="form-label">Name:</label>
+                    <InputText id="name" @bind-Value="Reagent.Name" class="form-control" aria-required="true"/>
+                    <ValidationMessage For="() => Reagent.Name" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="manufacturer" class="form-label">Manufacturer:</label>
+                    <InputText id="manufacturer" @bind-Value="Reagent.Manufacturer" class="form-control" aria-required="true"/>
+                    <ValidationMessage For="() => Reagent.Manufacturer" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="amount" class="form-label">Amount:</label>
+                    <InputText id="amount" @bind-Value="Reagent.Amount" class="form-control" />
+                    <ValidationMessage For="() => Reagent.Amount" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="cat" class="form-label">Cat:</label>
+                    <InputText id="cat" @bind-Value="Reagent.Cat" class="form-control" />
+                    <ValidationMessage For="() => Reagent.Cat" class="text-danger" />
+                </div>
+                <button type="submit" class="btn btn-primary">Save</button>
+            </EditForm>
+        </div>
+    </div>
+}
+
+<div>
+    <a href="/reagents">Back to List</a>
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    private int Id { get; set; }
+
+    [SupplyParameterFromForm]
+    private Reagent? Reagent { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        Reagent ??= await context.Reagent.FirstOrDefaultAsync(m => m.Id == Id);
+
+        if (Reagent is null)
+        {
+            NavigationManager.NavigateTo("notfound");
+        }
+    }
+
+    // To protect from overposting attacks, enable the specific properties you want to bind to.
+    // For more information, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private async Task UpdateReagent()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Attach(Reagent!).State = EntityState.Modified;
+
+        try
+        {
+            await context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!ReagentExists(Reagent!.Id))
+            {
+                NavigationManager.NavigateTo("notfound");
+            }
+            else
+            {
+                throw;
+            }
+        }
+
+        NavigationManager.NavigateTo("/reagents");
+    }
+
+    private bool ReagentExists(int id)
+    {
+        using var context = DbFactory.CreateDbContext();
+        return context.Reagent.Any(e => e.Id == id);
+    }
+}

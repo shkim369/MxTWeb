@@ -1,0 +1,60 @@
+﻿@page "/equipments"
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using MxTWeb.Models
+@using MxTWeb.Data
+@implements IAsyncDisposable
+@inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
+
+<PageTitle>연구용 장비·기기 관리대장</PageTitle>
+
+<h1>연구용 장비·기기 관리대장</h1>
+
+<br />
+<i class="bi bi-search"></i> Search
+<input type="search" @bind="NameFilter" @bind:event="oninput" pattern="[A-Za-z0-9\s]*" />
+<br /><br />
+<p>
+    <a href="equipment/create" class="btn btn-outline-secondary">Create New</a>
+</p>
+
+<div>
+    <QuickGrid Class="table" Items="context.Equipment" Pagination="pagination">
+        <PropertyColumn Property="equipment => equipment.ManageCode" Title="관리번호" Align="Align.Center" Sortable="true"/>
+        <PropertyColumn Property="equipment => equipment.Name" Title="품명" Align="Align.Center" Sortable="true"/>
+        <PropertyColumn Property="equipment => equipment.Model" Title="모델명" Align="Align.Center"/>
+        <PropertyColumn Property="equipment => equipment.Manufacturer" Title="제조사" Align="Align.Center"/>
+        <PropertyColumn Property="equipment => equipment.PurchaseDate" Title="구입일" Align="Align.Center" />
+        <PropertyColumn Property="equipment => equipment.Seller" Title="구입처" Align="Align.Center" />
+        <PropertyColumn Property="equipment => equipment.Location" Title="설치 장소" Align="Align.Center" />
+        <PropertyColumn Property="equipment => equipment.Management" Title="유지보수 활동" Align="Align.Center" />
+        <PropertyColumn Property="equipment => equipment.Manager" Title="관리자 (정/부)" Align="Align.Center" />
+        <PropertyColumn Property="equipment => equipment.Note" Title="비고 (용도, 위치)" Align="Align.Center" />
+
+        <TemplateColumn Context="equipment">
+            <a href="@($"equipment/edit?id={equipment.Id}")" class="btn btn-primary px-4">Edit</a>
+            <a href="@($"equipment/delete?id={equipment.Id}")" class="btn btn-danger">Delete</a>
+        </TemplateColumn>
+    </QuickGrid>
+</div>
+
+<Paginator State="pagination" />
+
+@code {
+    private MxTWebContext context = default!;
+
+    private string NameFilter = string.Empty;
+
+    private IQueryable<Equipment> FilteredEquipments =>
+        context.Equipment.Where(m => m.Name!.Contains(NameFilter));
+
+    private PaginationState pagination = new PaginationState { ItemsPerPage = 15 };
+
+    protected override void OnInitialized()
+    {
+        context = DbFactory.CreateDbContext();
+    }
+
+    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+}

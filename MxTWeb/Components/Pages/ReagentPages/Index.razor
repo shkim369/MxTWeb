@@ -1,0 +1,56 @@
+﻿@page "/reagents"
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using MxTWeb.Models
+@using MxTWeb.Data
+@implements IAsyncDisposable
+@inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
+
+<PageTitle>연구용 시약 목록</PageTitle>
+
+<h1>연구용 시약 목록</h1>
+
+<br />
+<i class="bi bi-search"></i> Search
+<input type="search" @bind="NameFilter" @bind:event="oninput" pattern="[A-Za-z0-9\s]*" />
+<br /><br />
+<p>
+    <a href="reagents/create" class="btn btn-outline-secondary">Create New</a>
+</p>
+
+<div>
+    <QuickGrid Class="table" Items="context.Reagent" Pagination="pagination">
+        <PropertyColumn Property="reagent => reagent.Code" Title="제품코드" Align="Align.Center" Sortable="true"/>
+        <PropertyColumn Property="reagent => reagent.Name" Title="🧪시약명" Align="Align.Center" Sortable="true"/>
+        <PropertyColumn Property="reagent => reagent.Manufacturer" Title="제조사" Align="Align.Center" />
+        <PropertyColumn Property="reagent => reagent.Amount" Title="용량" Align="Align.Center" />
+        <PropertyColumn Property="reagent => reagent.Cat" Title="Cat. No." Align="Align.Center" />
+
+        <TemplateColumn Context="reagent">
+            <a href="@($"reagents/edit?id={reagent.Id}")" class="btn btn-primary px-4">Edit</a>
+            <a href="@($"reagents/delete?id={reagent.Id}")" class="btn btn-danger">Delete</a>
+        </TemplateColumn>
+    </QuickGrid>
+</div>
+
+<Paginator State="pagination" />
+
+@code {
+
+    private MxTWebContext context = default!;
+
+    private string NameFilter = string.Empty;
+
+    private IQueryable<Reagent> FilteredReagents =>
+        context.Reagent.Where(m => m.Name!.Contains(NameFilter));
+
+    private PaginationState pagination = new PaginationState { ItemsPerPage = 15 };
+
+    protected override void OnInitialized()
+    {
+        context = DbFactory.CreateDbContext();
+    }
+
+    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+}
