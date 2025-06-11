@@ -7,7 +7,7 @@ namespace MxTWeb.Models
         public int Id { get; set; }
 
         [Required]
-        public int ManageCode { get; set; }
+        public string? ManageCode { get; set; }
 
         [Required]
         [StringLength(60, MinimumLength = 2)]

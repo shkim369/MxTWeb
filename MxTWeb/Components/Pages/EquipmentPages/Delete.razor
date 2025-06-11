@@ -1,4 +1,4 @@
-﻿@page "/equipment/delete"
+﻿@page "/equipments/delete"
 @using Microsoft.EntityFrameworkCore
 @using MxTWeb.Models
 @inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
@@ -59,7 +59,7 @@
         </dl>
         <EditForm method="post" Model="equipment" OnValidSubmit="DeleteEquipment" FormName="delete" Enhance>
             <button type="submit" class="btn btn-danger" disabled="@(equipment is null)">Delete</button> |
-            <a href="/equipment">Back to List</a>
+            <a href="/equipments">Back to List</a>
         </EditForm>
     }
 </div>
@@ -86,6 +86,6 @@
         using var context = DbFactory.CreateDbContext();
         context.Equipment.Remove(equipment!);
         await context.SaveChangesAsync();
-        NavigationManager.NavigateTo("/equipment");
+        NavigationManager.NavigateTo("/equipments");
     }
 }

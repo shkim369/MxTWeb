@@ -12,38 +12,31 @@
 
 <h1>동결세포 목록</h1>
 
-@* <div>
-    <form action="/movies" data-enhance data-permanent>
-        <input type="search" name="NameFilter" />
-        <input type="submit" value="Search" />
-    </form>
-</div> *@
 <br />
 <div class="dropdown">
-    <button class="btn btn dropdown-toggle" @onclick="ToggleDropdown">
-        @selectedLabel
-    </button>
-    
-    @if (isOpen)
-    {
-        <ul class="dropdown-menu show">
-            <li><a class="dropdown-item" @onclick="@(() => SelectItem("Apple"))">Apple</a></li>
-            <li><a class="dropdown-item" @onclick="@(() => SelectItem("banana"))">banana</a></li>
-        </ul>
-    }
+	<button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+		@SearchField
+	</button>
+	<ul class="dropdown-menu">
+		<li><a class="dropdown-item" @onclick="@(() => SelectItem("세포"))">세포</a></li>
+        <li><a class="dropdown-item" @onclick="@(() => SelectItem("반입 날짜"))">반입 날짜</a></li>
+        <li><a class="dropdown-item" @onclick="@(() => SelectItem("반입자"))">반입자</a></li>
+        <li><a class="dropdown-item" @onclick="@(() => SelectItem("반입처"))">반입처</a></li>
+        <li><a class="dropdown-item" @onclick="@(() => SelectItem("보관 위치"))">보관 위치</a></li>
+	</ul>
 
-    <input type="search" @bind="NameFilter" @bind:event="oninput" pattern="[A-Za-z0-9\s]*" />
+    <input type="search" @bind="SearchFilter" @bind:event="onchange" placeholder="검색어 입력" pattern="[A-Za-z0-9\s]*"
+           style="width:300px; margin-top:20px;"/>
 
     <i class="bi bi-search"></i> Search
 </div>
-<br /><br />
+<br />
 <p>
-    <a href="cyropreserveds/create" class="btn btn-outline-secondary">Create New</a>
+	<a href="cyropreserveds/create" class="btn btn-outline-secondary">Create New</a>
 </p>
 
 <div>
     <QuickGrid Class="table" Items="FilteredCyropreserveds" Pagination="pagination">
-        <PropertyColumn Property="cyropreserved => cyropreserved.Id" Title="#" Align="Align.Center"/>
         <PropertyColumn Property="cyropreserved => cyropreserved.Name" Title="🧫세포" Align="Align.Center"
                         sortable="true"/>
         <PropertyColumn Property="cyropreserved => cyropreserved.ReceiptDate" Title="반입 날짜" Align="Align.Center" 
@@ -70,31 +63,29 @@
 @code {
     private MxTWebContext context = default!;
 
-    // [SupplyParameterFromQuery]
-    // private string? NameFilter { get; set; }
-
-    // private IQueryable<Cyropreserved> FilteredCyropreserveds =>
-    //     context.Cyropreserved.Where(m => m.Name!.Contains(NameFilter ?? string.Empty));
-
-    private string NameFilter = string.Empty;
-    private bool isOpen = false;
-
-    private IQueryable<Cyropreserved> FilteredCyropreserveds =>
-        context.Cyropreserved.Where(m => m.Name!.Contains(NameFilter));
-
-    private string selectedItem = "";
-    private string selectedLabel => string.IsNullOrEmpty(selectedItem) ? "항목 선택" : selectedItem;
-
     private PaginationState pagination = new PaginationState { ItemsPerPage = 15 };
 
-    private void ToggleDropdown()
-    {
-        isOpen = !isOpen;
-    }
+    private string SearchFilter = string.Empty;
+    private string SearchField = "세포"; // Default search field
+
     private void SelectItem(string item)
     {
-        selectedItem = item;
-        isOpen = false;
+        SearchField = item;
+    }
+
+    private IQueryable<Cyropreserved> FilteredCyropreserveds => GetFilteredData();
+
+    private IQueryable<Cyropreserved> GetFilteredData()
+    {
+        return SearchField switch
+        {
+            "세포" => context.Cyropreserved.Where(m => m.Name!.Contains(SearchFilter)),
+            "반입 날짜" => context.Cyropreserved.Where(m => m.ReceiptDate.ToString().Contains(SearchFilter)),
+            "반입자" => context.Cyropreserved.Where(m => m.Recipient!.Contains(SearchFilter)),
+            "반입처" => context.Cyropreserved.Where(m => m.Supplier!.Contains(SearchFilter)),
+            "보관 위치" => context.Cyropreserved.Where(m => m.Location!.Contains(SearchFilter)),
+            _ => context.Cyropreserved.Where(m => m.Name!.Contains(SearchFilter))
+        };     
     }
 
     protected override void OnInitialized()

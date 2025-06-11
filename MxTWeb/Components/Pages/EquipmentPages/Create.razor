@@ -1,4 +1,4 @@
-﻿@page "/equipment/create"
+﻿@page "/equipments/create"
 @using Microsoft.EntityFrameworkCore
 @using MxTWeb.Models
 @inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
@@ -17,7 +17,7 @@
             <ValidationSummary class="text-danger" role="alert"/>
             <div class="mb-3">
                 <label for="managecode" class="form-label">ManageCode:</label> 
-                <InputNumber id="managecode" @bind-Value="Equipment.ManageCode" class="form-control" aria-required="true"/> 
+                <InputText id="managecode" @bind-Value="Equipment.ManageCode" class="form-control" aria-required="true"/> 
                 <ValidationMessage For="() => Equipment.ManageCode" class="text-danger" /> 
             </div>        
             <div class="mb-3">
@@ -71,7 +71,7 @@
 </div>
 
 <div>
-    <a href="/equipment">Back to List</a>
+    <a href="/equipments">Back to List</a>
 </div>
 
 @code {
@@ -84,6 +84,15 @@
         using var context = DbFactory.CreateDbContext();
         context.Equipment.Add(Equipment);
         await context.SaveChangesAsync();
-        NavigationManager.NavigateTo("/equipment");
+        NavigationManager.NavigateTo("/equipments");
     }
+ 
+    protected override void OnInitialized()  
+    {  
+        if (Equipment.PurchaseDate == default(DateOnly))  
+        {  
+            Equipment.PurchaseDate = DateOnly.FromDateTime(DateTime.Today);  
+        }  
+    }  
+ 
 }

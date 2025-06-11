@@ -80,8 +80,9 @@ namespace MxTWeb.Migrations.MxTWeb
                     b.Property<string>("Location")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("ManageCode")
-                        .HasColumnType("int");
+                    b.Property<string>("ManageCode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Management")
                         .HasColumnType("nvarchar(max)");

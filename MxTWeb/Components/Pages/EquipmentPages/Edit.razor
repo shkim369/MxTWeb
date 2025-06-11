@@ -1,4 +1,4 @@
-﻿@page "/equipment/edit"
+﻿@page "/equipments/edit"
 @using Microsoft.EntityFrameworkCore
 @using MxTWeb.Models
 @inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
@@ -24,7 +24,7 @@ else
                 <input type="hidden" name="Equipment.Id" value="@Equipment.Id" />
                 <div class="mb-3">
                     <label for="managecode" class="form-label">ManageCode:</label>
-                    <InputNumber id="managecode" @bind-Value="Equipment.ManageCode" class="form-control" aria-required="true"/>
+                    <InputText id="managecode" @bind-Value="Equipment.ManageCode" class="form-control" aria-required="true"/>
                     <ValidationMessage For="() => Equipment.ManageCode" class="text-danger" />
                 </div>
                 <div class="mb-3">
@@ -79,7 +79,7 @@ else
 }
 
 <div>
-    <a href="/equipment">Back to List</a>
+    <a href="/equipments">Back to List</a>
 </div>
 
 @code {
@@ -123,7 +123,7 @@ else
             }
         }
 
-        NavigationManager.NavigateTo("/equipment");
+        NavigationManager.NavigateTo("/equipments");
     }
 
     private bool EquipmentExists(int id)
