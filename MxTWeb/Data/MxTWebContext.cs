@@ -17,5 +17,6 @@ namespace MxTWeb.Data
         public DbSet<MxTWeb.Models.Cyropreserved> Cyropreserved { get; set; } = default!;
         public DbSet<MxTWeb.Models.Reagent> Reagent { get; set; } = default!;
         public DbSet<MxTWeb.Models.Equipment> Equipment { get; set; } = default!;
+        public DbSet<MxTWeb.Models.ChipUsage> ChipUsage { get; set; } = default!;
     }
 }

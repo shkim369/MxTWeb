@@ -1,0 +1,149 @@
+﻿@page "/chipusages/edit"
+@using Microsoft.EntityFrameworkCore
+@using MxTWeb.Models
+@inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Edit</PageTitle>
+
+<h1>Edit</h1>
+
+<h2>ChipUsage</h2>
+<hr />
+@if (ChipUsage is null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-4">
+            <EditForm method="post" Model="ChipUsage" OnValidSubmit="UpdateChipUsage" FormName="edit" Enhance>
+                <DataAnnotationsValidator />
+                <ValidationSummary role="alert"/>
+                <input type="hidden" name="ChipUsage.Id" value="@ChipUsage.Id" />
+                <div class="mb-3">
+                    <label for="chip" class="form-label">Chip:</label>
+                    <InputText id="chip" @bind-Value="ChipUsage.Chip" class="form-control" aria-required="true"/>
+                    <ValidationMessage For="() => ChipUsage.Chip" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="division" class="form-label">Division:</label>
+                    <InputText id="division" @bind-Value="ChipUsage.Division" class="form-control" aria-required="true"/>
+                    <ValidationMessage For="() => ChipUsage.Division" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="usedate" class="form-label">UseDate:</label>
+                    <InputDate id="usedate" @bind-Value="ChipUsage.UseDate" class="form-control" aria-required="true"/>
+                    <ValidationMessage For="() => ChipUsage.UseDate" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="producer" class="form-label">Producer:</label>
+                    <InputText id="producer" @bind-Value="ChipUsage.Producer" class="form-control" />
+                    <ValidationMessage For="() => ChipUsage.Producer" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="wafer" class="form-label">Wafer:</label>
+                    <InputText id="wafer" @bind-Value="ChipUsage.Wafer" class="form-control" />
+                    <ValidationMessage For="() => ChipUsage.Wafer" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="waferinfo" class="form-label">WaferInfo:</label>
+                    <InputText id="waferinfo" @bind-Value="ChipUsage.WaferInfo" class="form-control" />
+                    <ValidationMessage For="() => ChipUsage.WaferInfo" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="receiptdate" class="form-label">ReceiptDate:</label>
+                    <InputDate id="receiptdate" @bind-Value="ChipUsage.ReceiptDate" class="form-control" />
+                    <ValidationMessage For="() => ChipUsage.ReceiptDate" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="operator" class="form-label">Operator:</label>
+                    <InputText id="operator" @bind-Value="ChipUsage.Operator" class="form-control" />
+                    <ValidationMessage For="() => ChipUsage.Operator" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="available" class="form-label">Available:</label>
+                    <InputNumber id="available" @bind-Value="ChipUsage.Available" class="form-control" />
+                    <ValidationMessage For="() => ChipUsage.Available" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="production" class="form-label">Production:</label>
+                    <InputNumber id="production" @bind-Value="ChipUsage.Production" class="form-control" />
+                    <ValidationMessage For="() => ChipUsage.Production" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="left" class="form-label">Left:</label>
+                    <InputNumber id="left" @bind-Value="ChipUsage.Left" class="form-control" />
+                    <ValidationMessage For="() => ChipUsage.Left" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="lot" class="form-label">Lot:</label>
+                    <InputText id="lot" @bind-Value="ChipUsage.Lot" class="form-control" />
+                    <ValidationMessage For="() => ChipUsage.Lot" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="note" class="form-label">Note:</label>
+                    <InputText id="note" @bind-Value="ChipUsage.Note" class="form-control" />
+                    <ValidationMessage For="() => ChipUsage.Note" class="text-danger" />
+                </div>
+                <button type="submit" class="btn btn-primary">Save</button>
+            </EditForm>
+        </div>
+    </div>
+}
+
+<div>
+    <a href="/chipusages">Back to List</a>
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    private int Id { get; set; }
+
+    [SupplyParameterFromForm]
+    private ChipUsage? ChipUsage { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        ChipUsage ??= await context.ChipUsage.FirstOrDefaultAsync(m => m.Id == Id);
+
+        if (ChipUsage is null)
+        {
+            NavigationManager.NavigateTo("notfound");
+        }
+    }
+
+    // To protect from overposting attacks, enable the specific properties you want to bind to.
+    // For more information, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private async Task UpdateChipUsage()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Attach(ChipUsage!).State = EntityState.Modified;
+
+        try
+        {
+            await context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!ChipUsageExists(ChipUsage!.Id))
+            {
+                NavigationManager.NavigateTo("notfound");
+            }
+            else
+            {
+                throw;
+            }
+        }
+
+        NavigationManager.NavigateTo("/chipusages");
+    }
+
+    private bool ChipUsageExists(int id)
+    {
+        using var context = DbFactory.CreateDbContext();
+        return context.ChipUsage.Any(e => e.Id == id);
+    }
+}

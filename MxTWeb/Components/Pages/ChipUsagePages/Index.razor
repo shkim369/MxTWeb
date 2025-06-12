@@ -1,0 +1,48 @@
+﻿@page "/chipusages"
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using MxTWeb.Models
+@using MxTWeb.Data
+@implements IAsyncDisposable
+@inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
+
+<PageTitle>Index</PageTitle>
+
+<h1>Index</h1>
+
+<p>
+    <a href="chipusages/create">Create New</a>
+</p>
+
+<QuickGrid Class="table" Items="context.ChipUsage">
+    <PropertyColumn Property="chipusage => chipusage.Chip" />
+    <PropertyColumn Property="chipusage => chipusage.Division" />
+    <PropertyColumn Property="chipusage => chipusage.UseDate" />
+    <PropertyColumn Property="chipusage => chipusage.Producer" />
+    <PropertyColumn Property="chipusage => chipusage.Wafer" />
+    <PropertyColumn Property="chipusage => chipusage.WaferInfo" />
+    <PropertyColumn Property="chipusage => chipusage.ReceiptDate" />
+    <PropertyColumn Property="chipusage => chipusage.Operator" />
+    <PropertyColumn Property="chipusage => chipusage.Available" />
+    <PropertyColumn Property="chipusage => chipusage.Production" />
+    <PropertyColumn Property="chipusage => chipusage.Left" />
+    <PropertyColumn Property="chipusage => chipusage.Lot" />
+    <PropertyColumn Property="chipusage => chipusage.Note" />
+
+    <TemplateColumn Context="chipusage">
+        <a href="@($"chipusages/edit?id={chipusage.Id}")">Edit</a> |
+        <a href="@($"chipusages/details?id={chipusage.Id}")">Details</a> |
+        <a href="@($"chipusages/delete?id={chipusage.Id}")">Delete</a>
+    </TemplateColumn>
+</QuickGrid>
+
+@code {
+    private MxTWebContext context = default!;
+
+    protected override void OnInitialized()
+    {
+        context = DbFactory.CreateDbContext();
+    }
+
+    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+}
