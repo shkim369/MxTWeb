@@ -89,10 +89,7 @@
 
 	protected override void OnInitialized()
 	{
-		if (Cyropreserved.ReceiptDate == default(DateOnly))
-		{
-			Cyropreserved.ReceiptDate = DateOnly.FromDateTime(DateTime.Today);
-			Cyropreserved.FreezeDate = DateOnly.FromDateTime(new DateTime(2000, 1, 1));
-		}
+		Cyropreserved.ReceiptDate = DateOnly.FromDateTime(DateTime.Today);
+		Cyropreserved.FreezeDate = DateOnly.FromDateTime(new DateTime(2000, 1, 1));		
 	}
 }

@@ -16,52 +16,52 @@
             <DataAnnotationsValidator />
             <ValidationSummary class="text-danger" role="alert"/>
             <div class="mb-3">
-                <label for="managecode" class="form-label">ManageCode:</label> 
+                <label for="managecode" class="form-label">관리번호:</label> 
                 <InputText id="managecode" @bind-Value="Equipment.ManageCode" class="form-control" aria-required="true"/> 
                 <ValidationMessage For="() => Equipment.ManageCode" class="text-danger" /> 
             </div>        
             <div class="mb-3">
-                <label for="name" class="form-label">Name:</label> 
+                <label for="name" class="form-label">품명:</label> 
                 <InputText id="name" @bind-Value="Equipment.Name" class="form-control" aria-required="true"/> 
                 <ValidationMessage For="() => Equipment.Name" class="text-danger" /> 
             </div>        
             <div class="mb-3">
-                <label for="model" class="form-label">Model:</label> 
+                <label for="model" class="form-label">모델명:</label> 
                 <InputText id="model" @bind-Value="Equipment.Model" class="form-control" /> 
                 <ValidationMessage For="() => Equipment.Model" class="text-danger" /> 
             </div>        
             <div class="mb-3">
-                <label for="manufacturer" class="form-label">Manufacturer:</label> 
+                <label for="manufacturer" class="form-label">제조사:</label> 
                 <InputText id="manufacturer" @bind-Value="Equipment.Manufacturer" class="form-control" /> 
                 <ValidationMessage For="() => Equipment.Manufacturer" class="text-danger" /> 
             </div>        
             <div class="mb-3">
-                <label for="purchasedate" class="form-label">PurchaseDate:</label> 
+                <label for="purchasedate" class="form-label">구입일:</label> 
                 <InputDate id="purchasedate" @bind-Value="Equipment.PurchaseDate" class="form-control" /> 
                 <ValidationMessage For="() => Equipment.PurchaseDate" class="text-danger" /> 
             </div>        
             <div class="mb-3">
-                <label for="seller" class="form-label">Seller:</label> 
+                <label for="seller" class="form-label">구입처:</label> 
                 <InputText id="seller" @bind-Value="Equipment.Seller" class="form-control" /> 
                 <ValidationMessage For="() => Equipment.Seller" class="text-danger" /> 
             </div>        
             <div class="mb-3">
-                <label for="location" class="form-label">Location:</label> 
+                <label for="location" class="form-label">설치 장소:</label> 
                 <InputText id="location" @bind-Value="Equipment.Location" class="form-control" /> 
                 <ValidationMessage For="() => Equipment.Location" class="text-danger" /> 
             </div>        
             <div class="mb-3">
-                <label for="management" class="form-label">Management:</label> 
+                <label for="management" class="form-label">유지보수 활동:</label> 
                 <InputText id="management" @bind-Value="Equipment.Management" class="form-control" /> 
                 <ValidationMessage For="() => Equipment.Management" class="text-danger" /> 
             </div>        
             <div class="mb-3">
-                <label for="manager" class="form-label">Manager:</label> 
+                <label for="manager" class="form-label">관리자 (정/부):</label> 
                 <InputText id="manager" @bind-Value="Equipment.Manager" class="form-control" /> 
                 <ValidationMessage For="() => Equipment.Manager" class="text-danger" /> 
             </div>        
             <div class="mb-3">
-                <label for="note" class="form-label">Note:</label> 
+                <label for="note" class="form-label">비고 (용도, 위치):</label> 
                 <InputText id="note" @bind-Value="Equipment.Note" class="form-control" /> 
                 <ValidationMessage For="() => Equipment.Note" class="text-danger" /> 
             </div>        

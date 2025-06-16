@@ -34,12 +34,13 @@
 </div>
 <br />
 <p>
-    <a href="equipment/create" class="btn btn-outline-secondary">Create New</a>
+    <a href="equipments/create" class="btn btn-outline-secondary">Create New</a>
 </p>
 
 <div>
-    <QuickGrid Class="table" Items="FilteredEquipments" Pagination="pagination">
-        <PropertyColumn Property="equipment => equipment.ManageCode" Title="관리번호" Align="Align.Center" Sortable="true"/>
+    <QuickGrid Class="table table-bordered table-sm table-hover text-center pe-1" Items="FilteredEquipments" Pagination="pagination">
+        <PropertyColumn Property="equipment => equipment.ManageCode" Title="관리번호" Align="Align.Center" Sortable="true"
+            Class="text-nowrap pe-1"/>
         <PropertyColumn Property="equipment => equipment.Name" Title="품명" Align="Align.Center" Sortable="true"/>
         <PropertyColumn Property="equipment => equipment.Model" Title="모델명" Align="Align.Center"/>
         <PropertyColumn Property="equipment => equipment.Manufacturer" Title="제조사" Align="Align.Center"/>
@@ -51,8 +52,10 @@
         <PropertyColumn Property="equipment => equipment.Note" Title="비고 (용도, 위치)" Align="Align.Center" />
 
         <TemplateColumn Context="equipment">
-            <a href="@($"equipments/edit?id={equipment.Id}")" class="btn btn-primary px-4">Edit</a>
-            <a href="@($"equipments/delete?id={equipment.Id}")" class="btn btn-danger">Delete</a>
+            <div class="d-flex">
+                <a href="@($"equipments/edit?id={equipment.Id}")" class="btn btn-primary px-4">Edit</a>
+                <a href="@($"equipments/delete?id={equipment.Id}")" class="btn btn-danger">Delete</a>
+            </div>
         </TemplateColumn>
     </QuickGrid>
 </div>

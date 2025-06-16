@@ -33,7 +33,7 @@
 </p>
 
 <div>
-    <QuickGrid Class="table" Items="FilteredReagents" Pagination="pagination">
+    <QuickGrid Class="table table-bordered table-sm" Items="FilteredReagents" Pagination="pagination">
         <PropertyColumn Property="reagent => reagent.Code" Title="제품코드" Align="Align.Center" Sortable="true"/>
         <PropertyColumn Property="reagent => reagent.Name" Title="🧪시약명" Align="Align.Center" Sortable="true"/>
         <PropertyColumn Property="reagent => reagent.Manufacturer" Title="제조사" Align="Align.Center" />
@@ -41,8 +41,10 @@
         <PropertyColumn Property="reagent => reagent.Cat" Title="Cat. No." Align="Align.Center" />
 
         <TemplateColumn Context="reagent">
-            <a href="@($"reagents/edit?id={reagent.Id}")" class="btn btn-primary px-4">Edit</a>
-            <a href="@($"reagents/delete?id={reagent.Id}")" class="btn btn-danger">Delete</a>
+            <div class="d-flex">
+                <a href="@($"reagents/edit?id={reagent.Id}")" class="btn btn-primary px-4">Edit</a>
+                <a href="@($"reagents/delete?id={reagent.Id}")" class="btn btn-danger">Delete</a>
+            </div>
         </TemplateColumn>
     </QuickGrid>
 </div>

@@ -36,7 +36,7 @@
 </p>
 
 <div>
-    <QuickGrid Class="table" Items="FilteredCyropreserveds" Pagination="pagination">
+    <QuickGrid Class="table table-bordered table-sm" Items="FilteredCyropreserveds" Pagination="pagination">
         <PropertyColumn Property="cyropreserved => cyropreserved.Name" Title="🧫세포" Align="Align.Center"
                         sortable="true"/>
         <PropertyColumn Property="cyropreserved => cyropreserved.ReceiptDate" Title="반입 날짜" Align="Align.Center" 
@@ -51,9 +51,10 @@
         <PropertyColumn Property="cyropreserved => cyropreserved.Note" Title="비고" Align="Align.Center" />
 
         <TemplateColumn Context="cyropreserved">
-            <a href="@($"cyropreserveds/edit?id={cyropreserved.Id}")" class="btn btn-primary px-4">Edit</a>
-            @* <a href="@($"cyropreserveds/details?id={cyropreserved.Id}")" class="btn btn-info">Details</a> *@
-            <a href="@($"cyropreserveds/delete?id={cyropreserved.Id}")" class="btn btn-danger">Delete</a>
+            <div class="d-flex">
+                <a href="@($"cyropreserveds/edit?id={cyropreserved.Id}")" class="btn btn-primary px-4">Edit</a>
+                <a href="@($"cyropreserveds/delete?id={cyropreserved.Id}")" class="btn btn-danger">Delete</a>
+            </div>
         </TemplateColumn>
     </QuickGrid>
 </div>

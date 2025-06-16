@@ -16,27 +16,27 @@
             <DataAnnotationsValidator />
             <ValidationSummary class="text-danger" role="alert"/>
             <div class="mb-3">
-                <label for="code" class="form-label">Code:</label> 
+                <label for="code" class="form-label">제품코드:</label> 
                 <InputText id="code" @bind-Value="Reagent.Code" class="form-control" aria-required="true"/> 
                 <ValidationMessage For="() => Reagent.Code" class="text-danger" /> 
             </div>        
             <div class="mb-3">
-                <label for="name" class="form-label">Name:</label> 
+                <label for="name" class="form-label">시약명:</label> 
                 <InputText id="name" @bind-Value="Reagent.Name" class="form-control" aria-required="true"/> 
                 <ValidationMessage For="() => Reagent.Name" class="text-danger" /> 
             </div>        
             <div class="mb-3">
-                <label for="manufacturer" class="form-label">Manufacturer:</label> 
+                <label for="manufacturer" class="form-label">제조사:</label> 
                 <InputText id="manufacturer" @bind-Value="Reagent.Manufacturer" class="form-control" aria-required="true"/> 
                 <ValidationMessage For="() => Reagent.Manufacturer" class="text-danger" /> 
             </div>        
             <div class="mb-3">
-                <label for="amount" class="form-label">Amount:</label> 
+                <label for="amount" class="form-label">용량:</label> 
                 <InputText id="amount" @bind-Value="Reagent.Amount" class="form-control" /> 
                 <ValidationMessage For="() => Reagent.Amount" class="text-danger" /> 
             </div>        
             <div class="mb-3">
-                <label for="cat" class="form-label">Cat:</label> 
+                <label for="cat" class="form-label">Cat. No.</label> 
                 <InputText id="cat" @bind-Value="Reagent.Cat" class="form-control" /> 
                 <ValidationMessage For="() => Reagent.Cat" class="text-danger" /> 
             </div>        

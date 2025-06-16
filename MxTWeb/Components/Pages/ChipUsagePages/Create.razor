@@ -1,4 +1,5 @@
 ﻿@page "/chipusages/create"
+@rendermode InteractiveServer
 @using Microsoft.EntityFrameworkCore
 @using MxTWeb.Models
 @inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
@@ -16,16 +17,29 @@
             <DataAnnotationsValidator />
             <ValidationSummary class="text-danger" role="alert"/>
             <div class="mb-3">
-                <label for="chip" class="form-label">Chip:</label> 
-                <InputText id="chip" @bind-Value="ChipUsage.Chip" class="form-control" aria-required="true"/> 
-                <ValidationMessage For="() => ChipUsage.Chip" class="text-danger" /> 
-            </div>        
-            <div class="mb-3">
-                <label for="division" class="form-label">Division:</label> 
-                <InputText id="division" @bind-Value="ChipUsage.Division" class="form-control" aria-required="true"/> 
-                <ValidationMessage For="() => ChipUsage.Division" class="text-danger" /> 
-            </div>        
-            <div class="mb-3">
+                <label for="chip" class="form-label">Chip:</label>
+                <div class="dropdown">
+                    <button id="chip" class="form-control btn btn-outline-secondary text-start text-dark d-flex justify-content-between" aria-required="true"
+                            type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <span>@ChipUsage.Chip</span>
+                        <div class="d-flex align-items-center">
+                            <div class="vr mx-3"></div>
+                            <i class="bi bi-chevron-down"></i>
+                        </div>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" @onclick="@(() => SelectChip("Large"))">Large</a></li>
+                        <li><a class="dropdown-item" @onclick="@(() => SelectChip("Small"))">Small</a></li>
+                    </ul>
+                </div>
+                <ValidationMessage For="() => ChipUsage.Chip" class="text-danger" />
+            </div>
+			<div class="mb-3">
+				<label for="division" class="form-label">Division:</label>
+				<InputText id="division" @bind-Value="ChipUsage.Division" class="form-control" aria-required="true" />
+				<ValidationMessage For="() => ChipUsage.Division" class="text-danger" />
+			</div>
+			<div class="mb-3">
                 <label for="usedate" class="form-label">UseDate:</label> 
                 <InputDate id="usedate" @bind-Value="ChipUsage.UseDate" class="form-control" aria-required="true"/> 
                 <ValidationMessage For="() => ChipUsage.UseDate" class="text-danger" /> 
@@ -34,12 +48,15 @@
                 <label for="producer" class="form-label">Producer:</label> 
                 <InputText id="producer" @bind-Value="ChipUsage.Producer" class="form-control" /> 
                 <ValidationMessage For="() => ChipUsage.Producer" class="text-danger" /> 
-            </div>        
-            <div class="mb-3">
+            </div>
+            
+            <div class="dropdown mb-3">
                 <label for="wafer" class="form-label">Wafer:</label> 
-                <InputText id="wafer" @bind-Value="ChipUsage.Wafer" class="form-control" /> 
+                <InputText id="wafer" @bind-Value="ChipUsage.Wafer" class="form-control" 
+                           type="button"/> 
                 <ValidationMessage For="() => ChipUsage.Wafer" class="text-danger" /> 
-            </div>        
+            </div>
+            
             <div class="mb-3">
                 <label for="waferinfo" class="form-label">WaferInfo:</label> 
                 <InputText id="waferinfo" @bind-Value="ChipUsage.WaferInfo" class="form-control" /> 
@@ -92,6 +109,19 @@
 @code {
     [SupplyParameterFromForm]
     private ChipUsage ChipUsage { get; set; } = new();
+
+    protected override void OnInitialized()
+    {
+		ChipUsage.Chip = "Large"; // Default value
+
+        ChipUsage.UseDate = DateOnly.FromDateTime(DateTime.Today);
+        ChipUsage.ReceiptDate = DateOnly.FromDateTime(new DateTime(2000, 1, 1));
+    }
+
+    private void SelectChip(string Type)
+    {
+		ChipUsage.Chip = Type;
+    }
 
     // To protect from overposting attacks, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
     private async Task AddChipUsage()

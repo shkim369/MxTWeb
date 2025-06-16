@@ -19,5 +19,13 @@ namespace MxTWeb.Models
         public string? Amount { get; set; }
 
         public string? Cat { get; set; }
+
+        public DateOnly ReceiptDate { get; set; }
+
+        public int Quantity { get; set; }
+
+        public int Lot { get; set; }
+
+        public string? Location { get; set; }
     }
 }

@@ -22,6 +22,60 @@ namespace MxTWeb.Migrations.MxTWeb
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("MxTWeb.Models.ChipUsage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Available")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Chip")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Division")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Left")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Lot")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Operator")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Producer")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Production")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("ReceiptDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("UseDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Wafer")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("WaferInfo")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ChipUsage");
+                });
+
             modelBuilder.Entity("MxTWeb.Models.Cyropreserved", b =>
                 {
                     b.Property<int>("Id")
