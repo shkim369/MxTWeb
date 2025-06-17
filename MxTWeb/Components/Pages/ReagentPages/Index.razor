@@ -22,7 +22,7 @@
         <li><a class="dropdown-item" @onclick="@(() => SelectItem("제조사"))">제조사</a></li>
     </ul>
 
-    <input type="search" @bind="SearchFilter" @bind:event="onchange" placeholder="검색어 입력" pattern="[A-Za-z0-9\s]*"
+    <input type="search" @bind="SearchFilter" @bind:event="oninput" placeholder="검색어 입력" pattern="[A-Za-z0-9\s]*"
            style="width:300px; margin-top:20px;" />
 
     <i class="bi bi-search"></i> Search
@@ -34,7 +34,7 @@
 </p>
 
 <div>
-     <QuickGrid Class="table table-bordered table-sm" Items="FilteredReagents" Pagination="pagination">
+     <QuickGrid Class="table table-bordered table-sm" Items="FilteredData.AsQueryable()" Pagination="pagination">
         <PropertyColumn Property="reagent => reagent.Code" Title="관리번호" Sortable="true"/>
         <PropertyColumn Property="reagent => reagent.Name" Title="🧪시약명" Sortable="true"/>
         <PropertyColumn Property="reagent => reagent.Manufacturer" Title="제조사" Sortable="true"/>
@@ -59,31 +59,62 @@
 
     private PaginationState pagination = new PaginationState { ItemsPerPage = 15 };
 
-    private string SearchFilter = string.Empty;
-    private string SearchField = "시약명"; // Default search field
+    private readonly SemaphoreSlim _searchSemaphore = new(1, 1);
+    private CancellationTokenSource? _searchCts;
+    private List<Reagent> _filteredResults = new();
+
+    private string SearchField = "시약명"; // 기본 검색 항목
+    private string _searchFilter = "";
+    private string SearchFilter
+    {
+        get => _searchFilter;
+        set
+        {
+            _searchFilter = value;
+            _ = PerformSearchAsync();
+        }
+    }
+    private IEnumerable<Reagent> FilteredData => _filteredResults;
+
+    private async Task PerformSearchAsync()
+    {
+        // 동시 실행 방지 // available semaphore가 없으면 바로 return
+        if (!await _searchSemaphore.WaitAsync(0)) return;
+
+        try
+        {
+            _searchCts?.Cancel();
+            _searchCts = new CancellationTokenSource();
+
+            using var context = DbFactory.CreateDbContext();
+
+            var query = SearchField switch
+            {
+                "제품코드" => context.Reagent.Where(m => m.Code!.Contains(SearchFilter)),
+                "시약명" => context.Reagent.Where(m => m.Name!.ToString().Contains(SearchFilter)),
+                "제조사" => context.Reagent.Where(m => m.Manufacturer!.Contains(SearchFilter)),
+                _ => context.Reagent.Where(m => m.Name!.ToString().Contains(SearchFilter))
+            };
+
+            _filteredResults = await query.ToListAsync(_searchCts.Token);
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (OperationCanceledException) { }
+        finally
+        {
+            _searchSemaphore.Release();
+        }
+    }
 
     private void SelectItem(string item)
     {
         SearchField = item;
     }
 
-    private IQueryable<Reagent> FilteredReagents => GetFilteredData();
-
-    private IQueryable<Reagent> GetFilteredData()
-    {
-        return SearchField switch
-        {
-            "제품코드" => context.Reagent.Where(m => m.Code!.Contains(SearchFilter)),
-            "시약명" => context.Reagent.Where(m => m.Name!.ToString().Contains(SearchFilter)),
-            "제조사" => context.Reagent.Where(m => m.Manufacturer!.Contains(SearchFilter)),
-            _ => context.Reagent.Where(m => m.Name!.Contains(SearchFilter))
-        };
-    }
-
-
     protected override void OnInitialized()
     {
         context = DbFactory.CreateDbContext();
+        _filteredResults = context.Reagent.ToList();
     }
 
     public async ValueTask DisposeAsync() => await context.DisposeAsync();
