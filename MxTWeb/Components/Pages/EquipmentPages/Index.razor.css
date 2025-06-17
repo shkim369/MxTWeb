@@ -1,24 +1,12 @@
-﻿::deep tr 
-{
+﻿::deep tr {
     height: 2.5em;
+    vertical-align: middle;
+    width:300px;
 }
-    ::deep tr > td 
-    {
+    ::deep tr > td {
         vertical-align: middle;
     }
 
-table {
-    border-collapse: collapse;
-}
-
-td, th {
-    padding: 0;
-}
-
-@media (max-width: 768px) {
-    .quickgrid th,
-    .quickgrid td {
-        padding: 2px 4px;
-        font-size: 0.7rem !important;
-    }
+.managecode-col {
+    width: 300px !important;
 }

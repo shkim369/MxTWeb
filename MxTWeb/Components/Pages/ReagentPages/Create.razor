@@ -16,7 +16,7 @@
             <DataAnnotationsValidator />
             <ValidationSummary class="text-danger" role="alert"/>
             <div class="mb-3">
-                <label for="code" class="form-label">제품코드:</label> 
+                <label for="code" class="form-label">관리번호:</label> 
                 <InputText id="code" @bind-Value="Reagent.Code" class="form-control" aria-required="true"/> 
                 <ValidationMessage For="() => Reagent.Code" class="text-danger" /> 
             </div>        
@@ -36,9 +36,29 @@
                 <ValidationMessage For="() => Reagent.Amount" class="text-danger" /> 
             </div>        
             <div class="mb-3">
-                <label for="cat" class="form-label">Cat. No.</label> 
+                <label for="cat" class="form-label">Cat.No:</label> 
                 <InputText id="cat" @bind-Value="Reagent.Cat" class="form-control" /> 
                 <ValidationMessage For="() => Reagent.Cat" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="receiptdate" class="form-label">입고일:</label> 
+                <InputDate id="receiptdate" @bind-Value="Reagent.ReceiptDate" class="form-control" /> 
+                <ValidationMessage For="() => Reagent.ReceiptDate" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="quantity" class="form-label">수량:</label> 
+                <InputNumber id="quantity" @bind-Value="Reagent.Quantity" class="form-control" /> 
+                <ValidationMessage For="() => Reagent.Quantity" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="lot" class="form-label">Lot.number:</label> 
+                <InputNumber id="lot" @bind-Value="Reagent.Lot" class="form-control" /> 
+                <ValidationMessage For="() => Reagent.Lot" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="location" class="form-label">보관위치:</label> 
+                <InputText id="location" @bind-Value="Reagent.Location" class="form-control" /> 
+                <ValidationMessage For="() => Reagent.Location" class="text-danger" /> 
             </div>        
             <button type="submit" class="btn btn-primary">Create</button>
         </EditForm>
@@ -61,5 +81,4 @@
         await context.SaveChangesAsync();
         NavigationManager.NavigateTo("/reagents");
     }
-
 }

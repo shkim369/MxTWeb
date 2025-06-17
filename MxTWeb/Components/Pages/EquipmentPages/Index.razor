@@ -27,7 +27,7 @@
         <li><a class="dropdown-item" @onclick="@(() => SelectItem("관리자"))">관리자</a></li>
     </ul>
 
-    <input type="search" @bind="SearchFilter" @bind:event="onchange" placeholder="검색어 입력" pattern="[A-Za-z0-9\s]*"
+    <input type="search" @bind="SearchFilter" @bind:event="oninput" placeholder="검색어 입력" 
            style="width:300px; margin-top:20px;" />
 
     <i class="bi bi-search"></i> Search
@@ -38,18 +38,27 @@
 </p>
 
 <div>
-    <QuickGrid Class="table table-bordered table-sm table-hover text-center pe-1" Items="FilteredEquipments" Pagination="pagination">
-        <PropertyColumn Property="equipment => equipment.ManageCode" Title="관리번호" Align="Align.Center" Sortable="true"
-            Class="text-nowrap pe-1"/>
-        <PropertyColumn Property="equipment => equipment.Name" Title="품명" Align="Align.Center" Sortable="true"/>
-        <PropertyColumn Property="equipment => equipment.Model" Title="모델명" Align="Align.Center"/>
-        <PropertyColumn Property="equipment => equipment.Manufacturer" Title="제조사" Align="Align.Center"/>
-        <PropertyColumn Property="equipment => equipment.PurchaseDate" Title="구입일" Align="Align.Center" />
-        <PropertyColumn Property="equipment => equipment.Seller" Title="구입처" Align="Align.Center" />
-        <PropertyColumn Property="equipment => equipment.Location" Title="설치 장소" Align="Align.Center" />
-        <PropertyColumn Property="equipment => equipment.Management" Title="유지보수 활동" Align="Align.Center" />
-        <PropertyColumn Property="equipment => equipment.Manager" Title="관리자 (정/부)" Align="Align.Center" />
-        <PropertyColumn Property="equipment => equipment.Note" Title="비고 (용도, 위치)" Align="Align.Center" />
+	<QuickGrid Class="table table-bordered table-sm" Items="FilteredEquipments" Pagination="pagination">
+        <PropertyColumn Property="equipment => equipment.ManageCode" Title="관리번호" Sortable="true"
+                        Class="text pe-0" />
+		<PropertyColumn Property="equipment => equipment.Name" Title="품명" Sortable="true" 
+                        Class="text pe-0" />
+        <PropertyColumn Property="equipment => equipment.Model" Title="모델명" Sortable="true"
+                        Class="text pe-0"/>
+		<PropertyColumn Property="equipment => equipment.Manufacturer" Title="제조사" Sortable="true"
+                        Class="text pe-0" />
+		<PropertyColumn Property="equipment => equipment.PurchaseDate" Title="구입일" Sortable="true"
+                        Class="text pe-0" />
+		<PropertyColumn Property="equipment => equipment.Seller" Title="구입처" Sortable="true"
+                        Class="text pe-0" />
+		<PropertyColumn Property="equipment => equipment.Location" Title="설치장소" Sortable="true"
+                        Class="text pe-0" />
+        <PropertyColumn Property="equipment => equipment.Management" Title="유지보수 활동" 
+                        Class="text pe-0" />
+        <PropertyColumn Property="equipment => equipment.Manager" Title="관리자 (정/부)" 
+                        Class="text pe-0" />
+        <PropertyColumn Property="equipment => equipment.Note" Title="비고 (용도, 위치)" 
+                        Class="text pe-0" />
 
         <TemplateColumn Context="equipment">
             <div class="d-flex">

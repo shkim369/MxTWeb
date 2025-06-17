@@ -18,11 +18,14 @@
     </button>
     <ul class="dropdown-menu">
         <li><a class="dropdown-item" @onclick="@(() => SelectItem("구분"))">구분</a></li>
-        <li><a class="dropdown-item" @onclick="@(() => SelectItem("사용 날짜"))">사용 날짜</a></li>
+        <li><a class="dropdown-item" @onclick="@(() => SelectItem("사용 일자"))">사용 일자</a></li>
+        <li><a class="dropdown-item" @onclick="@(() => SelectItem("작업자"))">작업자</a></li>
         <li><a class="dropdown-item" @onclick="@(() => SelectItem("웨이퍼"))">웨이퍼</a></li>
+        <li><a class="dropdown-item" @onclick="@(() => SelectItem("수령일"))">수령일</a></li>
+        <li><a class="dropdown-item" @onclick="@(() => SelectItem("사용자"))">사용자</a></li>
     </ul>
 
-    <input type="search" @bind="SearchFilter" @bind:event="onchange" placeholder="검색어 입력" pattern="[A-Za-z0-9\s]*"
+    <input type="search" @bind="SearchFilter" @bind:event="onchange" placeholder="검색어 입력"
            style="width:300px; margin-top:20px;" />
 
     <i class="bi bi-search"></i> Search
@@ -33,7 +36,7 @@
 </p>
 
 <div>
-    <QuickGrid Class="table" Items="FilteredChipUsages" Pagination="pagination">
+    <QuickGrid Class="table table-bordered table-sm" Items="FilteredChipUsages" Pagination="pagination">
         <PropertyColumn Property="chipusage => chipusage.Chip" Title="Chip 종류" Align="Align.Center"
                         sortable="true" />
         <PropertyColumn Property="chipusage => chipusage.Division" Title="구분" Align="Align.Center"
@@ -72,7 +75,7 @@
     private PaginationState pagination = new PaginationState { ItemsPerPage = 15 };
 
     private string SearchFilter = string.Empty;
-    private string SearchField = "세포"; // Default search field
+    private string SearchField = "구분"; // Default search field
 
     private void SelectItem(string item)
     {
@@ -86,8 +89,11 @@
         return SearchField switch
         {
             "구분" => context.ChipUsage.Where(m => m.Division!.Contains(SearchFilter)),
-            "사용 날짜" => context.ChipUsage.Where(m => m.UseDate.ToString().Contains(SearchFilter)),
+            "사용 일자" => context.ChipUsage.Where(m => m.UseDate.ToString().Contains(SearchFilter)),
+            "작업자" => context.ChipUsage.Where(m => m.Producer!.Contains(SearchFilter)),
             "웨이퍼" => context.ChipUsage.Where(m => m.Wafer!.Contains(SearchFilter)),
+            "수령일" => context.ChipUsage.Where(m => m.ReceiptDate.ToString()!.Contains(SearchFilter)),
+            "사용자" => context.ChipUsage.Where(m => m.Operator!.Contains(SearchFilter)),
             _ => context.ChipUsage.Where(m => m.Division!.Contains(SearchFilter))
         };
     }

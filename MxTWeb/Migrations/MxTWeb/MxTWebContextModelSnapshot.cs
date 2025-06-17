@@ -187,6 +187,12 @@ namespace MxTWeb.Migrations.MxTWeb
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Location")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Lot")
+                        .HasColumnType("int");
+
                     b.Property<string>("Manufacturer")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -195,6 +201,12 @@ namespace MxTWeb.Migrations.MxTWeb
                         .IsRequired()
                         .HasMaxLength(60)
                         .HasColumnType("nvarchar(60)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("ReceiptDate")
+                        .HasColumnType("date");
 
                     b.HasKey("Id");
 

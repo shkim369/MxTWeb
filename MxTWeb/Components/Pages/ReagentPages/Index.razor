@@ -28,23 +28,26 @@
     <i class="bi bi-search"></i> Search
 </div>
 <br />
+
 <p>
     <a href="reagents/create" class="btn btn-outline-secondary">Create New</a>
 </p>
 
 <div>
-    <QuickGrid Class="table table-bordered table-sm" Items="FilteredReagents" Pagination="pagination">
-        <PropertyColumn Property="reagent => reagent.Code" Title="제품코드" Align="Align.Center" Sortable="true"/>
-        <PropertyColumn Property="reagent => reagent.Name" Title="🧪시약명" Align="Align.Center" Sortable="true"/>
-        <PropertyColumn Property="reagent => reagent.Manufacturer" Title="제조사" Align="Align.Center" />
-        <PropertyColumn Property="reagent => reagent.Amount" Title="용량" Align="Align.Center" />
-        <PropertyColumn Property="reagent => reagent.Cat" Title="Cat. No." Align="Align.Center" />
+     <QuickGrid Class="table table-bordered table-sm" Items="FilteredReagents" Pagination="pagination">
+        <PropertyColumn Property="reagent => reagent.Code" Title="관리번호" Sortable="true"/>
+        <PropertyColumn Property="reagent => reagent.Name" Title="🧪시약명" Sortable="true"/>
+        <PropertyColumn Property="reagent => reagent.Manufacturer" Title="제조사" Sortable="true"/>
+        <PropertyColumn Property="reagent => reagent.Amount" Title="용량"/>
+        <PropertyColumn Property="reagent => reagent.Cat" Title="Cat.No."/>
+        <PropertyColumn Property="reagent => reagent.ReceiptDate" Title="입고일" Sortable="true"/>
+        <PropertyColumn Property="reagent => reagent.Quantity" Title="수량"/>
+        <PropertyColumn Property="reagent => reagent.Lot" Title="Lot.number"/>
+        <PropertyColumn Property="reagent => reagent.Location" Title="보관위치" Sortable="true"/>
 
         <TemplateColumn Context="reagent">
-            <div class="d-flex">
-                <a href="@($"reagents/edit?id={reagent.Id}")" class="btn btn-primary px-4">Edit</a>
-                <a href="@($"reagents/delete?id={reagent.Id}")" class="btn btn-danger">Delete</a>
-            </div>
+            <a href="@($"reagents/edit?id={reagent.Id}")" class="btn btn-primary px-4">Edit</a>
+            <a href="@($"reagents/delete?id={reagent.Id}")" class="btn btn-danger">Delete</a>
         </TemplateColumn>
     </QuickGrid>
 </div>
@@ -52,7 +55,6 @@
 <Paginator State="pagination" />
 
 @code {
-
     private MxTWebContext context = default!;
 
     private PaginationState pagination = new PaginationState { ItemsPerPage = 15 };
@@ -77,6 +79,7 @@
             _ => context.Reagent.Where(m => m.Name!.Contains(SearchFilter))
         };
     }
+
 
     protected override void OnInitialized()
     {

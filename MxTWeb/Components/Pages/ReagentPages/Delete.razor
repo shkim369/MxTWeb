@@ -37,6 +37,22 @@
             <dt class="col-sm-2">Cat</dt>
             <dd class="col-sm-10">@reagent.Cat</dd>
         </dl>
+        <dl class="row">
+            <dt class="col-sm-2">ReceiptDate</dt>
+            <dd class="col-sm-10">@reagent.ReceiptDate</dd>
+        </dl>
+        <dl class="row">
+            <dt class="col-sm-2">Quantity</dt>
+            <dd class="col-sm-10">@reagent.Quantity</dd>
+        </dl>
+        <dl class="row">
+            <dt class="col-sm-2">Lot</dt>
+            <dd class="col-sm-10">@reagent.Lot</dd>
+        </dl>
+        <dl class="row">
+            <dt class="col-sm-2">Location</dt>
+            <dd class="col-sm-10">@reagent.Location</dd>
+        </dl>
         <EditForm method="post" Model="reagent" OnValidSubmit="DeleteReagent" FormName="delete" Enhance>
             <button type="submit" class="btn btn-danger" disabled="@(reagent is null)">Delete</button> |
             <a href="/reagents">Back to List</a>
