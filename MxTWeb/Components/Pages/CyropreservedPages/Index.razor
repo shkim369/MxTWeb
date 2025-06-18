@@ -5,6 +5,8 @@
 @using Microsoft.AspNetCore.Authorization;
 @using MxTWeb.Models
 @using MxTWeb.Data
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @implements IAsyncDisposable
 @inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
 

@@ -4,6 +4,8 @@
 @using Microsoft.AspNetCore.Components.QuickGrid
 @using MxTWeb.Models
 @using MxTWeb.Data
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @implements IAsyncDisposable
 @inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
 
@@ -22,7 +24,7 @@
         <li><a class="dropdown-item" @onclick="@(() => SelectItem("제조사"))">제조사</a></li>
     </ul>
 
-    <input type="search" @bind="SearchFilter" @bind:event="oninput" placeholder="검색어 입력" pattern="[A-Za-z0-9\s]*"
+    <input type="search" @bind="SearchFilter" @bind:event="oninput" placeholder="검색어 입력"
            style="width:300px; margin-top:20px;" />
 
     <i class="bi bi-search"></i> Search

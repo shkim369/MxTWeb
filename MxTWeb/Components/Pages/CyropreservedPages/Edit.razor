@@ -1,6 +1,8 @@
 ﻿@page "/cyropreserveds/edit"
 @using Microsoft.EntityFrameworkCore
 @using MxTWeb.Models
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
 @inject NavigationManager NavigationManager
 
