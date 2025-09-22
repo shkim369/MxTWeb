@@ -1,27 +1,78 @@
 ﻿@page "/"  
-
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using MxTWeb.Models
+@using MxTWeb.Data
+@using Microsoft.AspNetCore.Authorization
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager Navigation
+@implements IAsyncDisposable
+@inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
+
 <PageTitle>Home</PageTitle>  
 
-<AuthorizeView>  
-    <Authorized>  
-        <h2>Welcome back!</h2>  
-    </Authorized>  
-    <NotAuthorized>  
-        <h2>Please log in.</h2>  
-    </NotAuthorized>  
-</AuthorizeView>  
+<AuthorizeView>
+    <Authorized>
+        <h2>Welcome back!</h2>
+        <br />
 
-@code{   
-    protected override async Task OnInitializedAsync()  
-    {  
-        var authState = await AuthStateProvider.GetAuthenticationStateAsync();  
-        var user = authState.User;  
-
-        if (!user.Identity.IsAuthenticated)  
-        {  
-            Navigation.NavigateTo("/Account/Login", true);  
+        <div class="container text-center">
+            <div class="row row-cols-2">
+                <div class="col">
+                    <MudDataGrid Class="table table-bordered table-sm" Items="cyropreservedData">
+                        <PropertyColumn Property="cyropreserved => cyropreserved.Name" Title="🧫세포" Align="Align.Center"/>
+                        <PropertyColumn Property="cyropreserved => cyropreserved.ReceiptDate" Title="반입 날짜" Align="Align.Center"/>
+                        <PropertyColumn Property="cyropreserved => cyropreserved.Supplier" Title="반입처" Align="Align.Center" />
+                    </MudDataGrid>
+                </div>
+                <div class="col">
+                    <MudDataGrid Class="table table-bordered table-sm" Items="reagentData">
+                        <PropertyColumn Property="reagent => reagent.Code" Title="관리번호" Sortable="true"/>
+                        <PropertyColumn Property="reagent => reagent.Name" Title="🧪시약명" Sortable="true"/>
+                        <PropertyColumn Property="reagent => reagent.Manufacturer" Title="제조사" Sortable="true"/>
+                    </MudDataGrid>
+                </div>
+                <div class="col">
+                    <MudDataGrid Class="table table-bordered table-sm" Items="equipmentData">
+                        <PropertyColumn Property="equipment => equipment.ManageCode" Title="관리번호" Sortable="true"/>
+		                <PropertyColumn Property="equipment => equipment.Name" Title="품명" Sortable="true" />
+                        <PropertyColumn Property="equipment => equipment.Model" Title="모델명" Sortable="true"/>
+                    </MudDataGrid>
+                </div>
+                <div class="col">
+                    <MudDataGrid Class="table table-bordered table-sm" Items="chipUsageData">
+                        <PropertyColumn Property="chipusage => chipusage.Chip" Title="Chip 종류" Align="Align.Center"/>
+                        <PropertyColumn Property="chipusage => chipusage.Division" Title="구분" Align="Align.Center"/>
+                        <PropertyColumn Property="chipusage => chipusage.UseDate" Title="사용 일자" Align="Align.Center"/>
+					</MudDataGrid>
+                </div>
+            </div>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        @{
+            Navigation.NavigateTo("/Account/Login", true);
         }
+    </NotAuthorized>
+</AuthorizeView>
+
+@code{
+    private MxTWebContext webContext = default!;
+
+    private IQueryable<Cyropreserved>? cyropreservedData;
+    private IQueryable<Reagent>? reagentData;
+    private IQueryable<Equipment>? equipmentData;
+    private IQueryable<ChipUsage>? chipUsageData;
+
+    protected override void OnInitialized()
+    {
+        webContext = DbFactory.CreateDbContext();
+
+        cyropreservedData = webContext.Cyropreserved.ToList().AsQueryable();
+        reagentData = webContext.Reagent.ToList().AsQueryable();
+		equipmentData = webContext.Equipment.ToList().AsQueryable();
+		chipUsageData = webContext.ChipUsage.ToList().AsQueryable();
     }
+
+    public async ValueTask DisposeAsync() => await webContext.DisposeAsync();
 }

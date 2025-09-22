@@ -1,6 +1,16 @@
 ﻿@inherits LayoutComponentBase
 @inject NavigationManager Navigation
 
+@* Required *@
+<MudThemeProvider IsDarkMode = "false"/>
+<MudPopoverProvider @rendermode = "InteractiveServer" />
+
+@* Needed for dialogs *@
+<MudDialogProvider @rendermode="InteractiveServer" />
+
+@* Needed for snackbars *@
+<MudSnackbarProvider @rendermode="InteractiveServer" />
+
 <div class="page">
 
     @if (!HideNavbar())

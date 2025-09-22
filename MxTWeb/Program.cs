@@ -8,6 +8,7 @@ using MxTWeb.Components;
 using MxTWeb.Components.Account;
 using MxTWeb.Data;
 using MxTWeb.Services;
+using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +19,7 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 //builder.Services.AddControllersWithViews();
 //builder.Services.AddRazorPages();
+builder.Services.AddMudServices();
 
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityUserAccessor>();

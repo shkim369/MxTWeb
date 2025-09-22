@@ -5,43 +5,53 @@
 @attribute [Authorize]
 @inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
 @inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
 
 <PageTitle>Create</PageTitle>
 
-<h1>Create</h1>
-
-<h2>Cyropreserved</h2>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <EditForm method="post" Model="Cyropreserved" OnValidSubmit="AddCyropreserved" FormName="create" Enhance>
+<EditForm method="post" Model="Cyropreserved" OnValidSubmit="AddCyropreserved" FormName="create" Enhance>
+    <MudDialog>
+        <DialogContent>
             <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger" role="alert"/>
-            <div class="mb-3">
-                <label for="name" class="form-label">세포:</label> 
-                <InputText id="name" @bind-Value="Cyropreserved.Name" class="form-control" /> 
-                <ValidationMessage For="() => Cyropreserved.Name" class="text-danger" /> 
-            </div>        
-            <div class="mb-3">
-                <label for="receiptdate" class="form-label">반입날짜:</label> 
-                <InputDate id="receiptdate" @bind-Value="Cyropreserved.ReceiptDate" class="form-control" /> 
-                <ValidationMessage For="() => Cyropreserved.ReceiptDate" class="text-danger" /> 
-            </div>        
-            <div class="mb-3">
-                <label for="recipient" class="form-label">반입자:</label> 
-                <InputText id="recipient" @bind-Value="Cyropreserved.Recipient" class="form-control" /> 
-                <ValidationMessage For="() => Cyropreserved.Recipient" class="text-danger" /> 
-            </div>        
-            <div class="mb-3">
-                <label for="supplier" class="form-label">반입처:</label> 
-                <InputText id="supplier" @bind-Value="Cyropreserved.Supplier" class="form-control" /> 
-                <ValidationMessage For="() => Cyropreserved.Supplier" class="text-danger" /> 
-            </div>        
-            <div class="mb-3">
-                <label for="freezedate" class="form-label">동결날짜:</label> 
-                <InputDate id="freezedate" @bind-Value="Cyropreserved.FreezeDate" class="form-control" /> 
-                <ValidationMessage For="() => Cyropreserved.FreezeDate" class="text-danger" /> 
-            </div>        
+
+            <MudTextField Class="mb-5" Variant="Variant.Outlined"
+                          Label="세포"
+                          @bind-Value="Cyropreserved.Name"
+                          For="@(() => Cyropreserved.Name)"
+                          Required="true" Immediate="true" />
+
+            <MudGrid Class="mb-5">
+                <MudItem xs="6">
+                    <MudTextField Variant="Variant.Outlined"
+                                  Label="반입자"
+                                  @bind-Value="Cyropreserved.Recipient"
+                                  For="@(() => Cyropreserved.Recipient)"
+                                  Required="true" Immediate="true" />
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudDatePicker Variant="Variant.Outlined"
+                                   Label="반입날짜"
+                                   @bind-Value="Cyropreserved.ReceiptDate" />
+                </MudItem>
+            </MudGrid>
+
+            <MudGrid Class="mb-5">
+                <MudItem xs="6">
+                    <MudTextField Variant="Variant.Outlined"
+                                  Label="반입처"
+                                  @bind-Value="Cyropreserved.Supplier"
+                                  For="@(() => Cyropreserved.Supplier)"
+                                  Required="true" Immediate="true" />
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudDatePicker Variant="Variant.Outlined"
+                                   Label="동결날짜"
+                                   @bind-Value="Cyropreserved.FreezeDate" />
+                </MudItem>
+            </MudGrid>
+              
             <div class="mb-3">
                 <label for="quantity" class="form-label">수량:</label> 
                 <InputText id="quantity" @bind-Value="Cyropreserved.Quantity" class="form-control" /> 
@@ -66,19 +76,22 @@
                 <label for="note" class="form-label">비고:</label> 
                 <InputText id="note" @bind-Value="Cyropreserved.Note" class="form-control" /> 
                 <ValidationMessage For="() => Cyropreserved.Note" class="text-danger" /> 
-            </div>        
-            <button type="submit" class="btn btn-primary">Create</button>
-        </EditForm>
-    </div>
-</div>
+            </div>
+        </DialogContent>
+        <DialogActions>
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save" Color="Color.Info">Add</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="() => MudDialog.Cancel()">Cancel</MudButton> 
+        </DialogActions>
+    </MudDialog>
+</EditForm>
 
-<div>
-    <a href="/cyropreserveds">Back to List</a>
-</div>
 
 @code {
     [SupplyParameterFromForm]
     private Cyropreserved Cyropreserved { get; set; } = new();
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; }
 
     // To protect from overposting attacks, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
     private async Task AddCyropreserved()
@@ -86,7 +99,9 @@
         using var context = DbFactory.CreateDbContext();
         context.Cyropreserved.Add(Cyropreserved);
         await context.SaveChangesAsync();
-        NavigationManager.NavigateTo("/cyropreserveds");
+
+        Snackbar.Add("성공적으로 추가되었습니다.", Severity.Success);
+        MudDialog.Close();
     }
 
 	protected override void OnInitialized()

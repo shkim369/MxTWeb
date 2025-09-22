@@ -1,21 +1,19 @@
 ﻿@page "/cyropreserveds"
 @rendermode InteractiveServer
 @using Microsoft.EntityFrameworkCore
-@using Microsoft.AspNetCore.Components.QuickGrid
 @using Microsoft.AspNetCore.Authorization;
 @using MxTWeb.Models
 @using MxTWeb.Data
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize]
 @implements IAsyncDisposable
+
 @inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
+@inject IDialogService DialogService
 
 <PageTitle>동결세포 목록</PageTitle>
 
-<h1>동결세포 목록</h1>
-
-<br />
-<div class="dropdown">
+@* <div class="dropdown">
 	<button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
 		@SearchField
 	</button>
@@ -31,42 +29,55 @@
            style="width:300px; margin-top:20px;"/>
 
     <i class="bi bi-search"></i> Search
-</div>
-<br />
+</div> 
+
 <p>
 	<a href="cyropreserveds/create" class="btn btn-outline-secondary">Create New</a>
-</p>
+</p> *@
 
-<div>
-    <QuickGrid Class="table table-bordered table-sm" Items="FilteredData.AsQueryable()" Pagination="pagination">
-        <PropertyColumn Property="cyropreserved => cyropreserved.Name" Title="🧫세포" Align="Align.Center"
-                        sortable="true"/>
-        <PropertyColumn Property="cyropreserved => cyropreserved.ReceiptDate" Title="반입 날짜" Align="Align.Center" 
-                        Sortable="true"/>
-        <PropertyColumn Property="cyropreserved => cyropreserved.Recipient" Title="반입자" Align="Align.Center" />
-        <PropertyColumn Property="cyropreserved => cyropreserved.Supplier" Title="반입처" Align="Align.Center" />
-        <PropertyColumn Property="cyropreserved => cyropreserved.FreezeDate" Title="동결 날짜" Align="Align.Center" />
-        <PropertyColumn Property="cyropreserved => cyropreserved.Quantity" Title="수량" Align="Align.Center" />
-        <PropertyColumn Property="cyropreserved => cyropreserved.Lot" Title="Lot" Align="Align.Center" />
-        <PropertyColumn Property="cyropreserved => cyropreserved.Density" Title="Cell density" Align="Align.Center" />
-        <PropertyColumn Property="cyropreserved => cyropreserved.Location" Title="보관 위치" Align="Align.Center" />
-        <PropertyColumn Property="cyropreserved => cyropreserved.Note" Title="비고" Align="Align.Center" />
+<h2 style="margin-left 10px">동결세포 목록</h2>
+<br />
 
-        <TemplateColumn Context="cyropreserved">
-            <div class="d-flex">
-                <a href="@($"cyropreserveds/edit?id={cyropreserved.Id}")" class="btn btn-primary px-4">Edit</a>
-                <a href="@($"cyropreserveds/delete?id={cyropreserved.Id}")" class="btn btn-danger">Delete</a>
-            </div>
-        </TemplateColumn>
-    </QuickGrid>
-</div>
+<MudDataGrid @ref="dataGrid" T="Cyropreserved" Items="FilteredData.AsQueryable()" SortMode="SortMode.Single">
+    <ToolBarContent>
+        <MudButton Class="me-2" @onclick="CreateNew" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">
+            Add New
+        </MudButton>
+        <MudSpacer />
 
-<Paginator State="pagination" />
+        <MudMenu Label="@SearchField" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Secondary">
+            <MudMenuItem Label="세포" @onclick="@(() => SelectItem("세포"))" />
+            <MudMenuItem Label="반입 날짜" @onclick="@(() => SelectItem("반입 날짜"))" />
+            <MudMenuItem Label="반입자" @onclick="@(() => SelectItem("반입자"))" />
+            <MudMenuItem Label="반입처" @onclick="@(() => SelectItem("반입처"))" />
+            <MudMenuItem Label="보관 위치" @onclick="@(() => SelectItem("보관 위치"))" />
+        </MudMenu>
+        &nbsp&nbsp&nbsp
+        <MudTextField @bind-Value="SearchFilter" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                        AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+
+    </ToolBarContent>
+
+    <Columns>
+        <PropertyColumn Property="x => x.Name" Title="🧫세포"/>
+        <PropertyColumn Property="x => x.ReceiptDate" Title="반입 날짜"/>
+        <PropertyColumn Property="x => x.Recipient" Title="반입자"/>
+        <PropertyColumn Property="x => x.Supplier" Title="반입처"/>
+        <PropertyColumn Property="x => x.FreezeDate" Title="동결 날짜" />
+        <PropertyColumn Property="x => x.Quantity" Title="수량" Sortable="false"/>
+        <PropertyColumn Property="x => x.Lot" Title="Lot" Sortable="false"/>
+        <PropertyColumn Property="x => x.Density" Title="Cell density" Sortable="false"/>
+        <PropertyColumn Property="x => x.Location" Title="보관 위치"/>
+        <PropertyColumn Property="x => x.Note" Title="비고" Sortable="false"/>
+    </Columns>
+    <PagerContent>
+        <MudDataGridPager T="Cyropreserved" />
+    </PagerContent>
+</MudDataGrid>
 
 @code {
     private MxTWebContext context = default!;
-
-    private PaginationState pagination = new PaginationState { ItemsPerPage = 15 };
+    private MudDataGrid<Cyropreserved> dataGrid;
 
     private readonly SemaphoreSlim _searchSemaphore = new(1, 1);
     private CancellationTokenSource? _searchCts;
@@ -87,7 +98,7 @@
 
     private async Task PerformSearchAsync()
     {
-		// 동시 실행 방지 // available semaphore가 없으면 바로 return
+        // 동시 실행 방지 // available semaphore가 없으면 바로 return
         if (!await _searchSemaphore.WaitAsync(0)) return;
 
         try
@@ -140,7 +151,20 @@
     protected override void OnInitialized()
     {
         context = DbFactory.CreateDbContext();
-		_filteredResults = context.Cyropreserved.ToList();
+        _filteredResults = context.Cyropreserved.ToList();
+    }
+
+    private async Task CreateNew()
+    {
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+
+        var dialog = await DialogService.ShowAsync<Create>("Add New Cyropreserved", options);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
+        {            
+            await PerformSearchAsync();
+        }
     }
 
     public async ValueTask DisposeAsync() => await context.DisposeAsync();

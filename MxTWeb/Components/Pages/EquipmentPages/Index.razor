@@ -1,7 +1,6 @@
 ﻿@page "/equipments"
 @rendermode InteractiveServer
 @using Microsoft.EntityFrameworkCore
-@using Microsoft.AspNetCore.Components.QuickGrid
 @using MxTWeb.Models
 @using MxTWeb.Data
 @using Microsoft.AspNetCore.Authorization
@@ -40,7 +39,7 @@
 </p>
 
 <div>
-	<QuickGrid Class="table table-bordered table-sm" Items="FilteredData.AsQueryable()" Pagination="pagination">
+	<MudDataGrid Class="table table-bordered table-sm" Items="FilteredData.AsQueryable()" Pagination="pagination">
         <PropertyColumn Property="equipment => equipment.ManageCode" Title="관리번호" Sortable="true"
                         Class="text pe-0" />
 		<PropertyColumn Property="equipment => equipment.Name" Title="품명" Sortable="true" 
@@ -61,22 +60,11 @@
                         Class="text pe-0" />
         <PropertyColumn Property="equipment => equipment.Note" Title="비고 (용도, 위치)" 
                         Class="text pe-0" />
-
-        <TemplateColumn Context="equipment">
-            <div class="d-flex">
-                <a href="@($"equipments/edit?id={equipment.Id}")" class="btn btn-primary px-4">Edit</a>
-                <a href="@($"equipments/delete?id={equipment.Id}")" class="btn btn-danger">Delete</a>
-            </div>
-        </TemplateColumn>
-    </QuickGrid>
+    </MudDataGrid>
 </div>
-
-<Paginator State="pagination" />
 
 @code {
     private MxTWebContext context = default!;
-
-    private PaginationState pagination = new PaginationState { ItemsPerPage = 15 };
 
     private readonly SemaphoreSlim _searchSemaphore = new(1, 1);
     private CancellationTokenSource? _searchCts;

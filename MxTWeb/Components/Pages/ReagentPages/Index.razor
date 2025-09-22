@@ -1,7 +1,6 @@
 ﻿@page "/reagents"
 @rendermode InteractiveServer
 @using Microsoft.EntityFrameworkCore
-@using Microsoft.AspNetCore.Components.QuickGrid
 @using MxTWeb.Models
 @using MxTWeb.Data
 @using Microsoft.AspNetCore.Authorization
@@ -36,7 +35,7 @@
 </p>
 
 <div>
-     <QuickGrid Class="table table-bordered table-sm" Items="FilteredData.AsQueryable()" Pagination="pagination">
+     <MudDataGrid Class="table table-bordered table-sm" Items="FilteredData.AsQueryable()" Pagination="pagination">
         <PropertyColumn Property="reagent => reagent.Code" Title="관리번호" Sortable="true"/>
         <PropertyColumn Property="reagent => reagent.Name" Title="🧪시약명" Sortable="true"/>
         <PropertyColumn Property="reagent => reagent.Manufacturer" Title="제조사" Sortable="true"/>
@@ -46,20 +45,11 @@
         <PropertyColumn Property="reagent => reagent.Quantity" Title="수량"/>
         <PropertyColumn Property="reagent => reagent.Lot" Title="Lot.number"/>
         <PropertyColumn Property="reagent => reagent.Location" Title="보관위치" Sortable="true"/>
-
-        <TemplateColumn Context="reagent">
-            <a href="@($"reagents/edit?id={reagent.Id}")" class="btn btn-primary px-4">Edit</a>
-            <a href="@($"reagents/delete?id={reagent.Id}")" class="btn btn-danger">Delete</a>
-        </TemplateColumn>
-    </QuickGrid>
+    </MudDataGrid>
 </div>
-
-<Paginator State="pagination" />
 
 @code {
     private MxTWebContext context = default!;
-
-    private PaginationState pagination = new PaginationState { ItemsPerPage = 15 };
 
     private readonly SemaphoreSlim _searchSemaphore = new(1, 1);
     private CancellationTokenSource? _searchCts;
