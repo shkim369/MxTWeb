@@ -7,38 +7,36 @@
 @attribute [Authorize]
 @implements IAsyncDisposable
 @inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
+@inject IDialogService DialogService
 
 <PageTitle>칩 사용 대장</PageTitle>
 
-<h1>칩 사용 대장</h1>
-
+<h2 style="margin-left: 10px">칩 사용 대장</h2>
 <br />
-<div class="dropdown">
-    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-        @SearchField
-    </button>
-    <ul class="dropdown-menu">
-        <li><a class="dropdown-item" @onclick="@(() => SelectItem("구분"))">구분</a></li>
-        <li><a class="dropdown-item" @onclick="@(() => SelectItem("사용 일자"))">사용 일자</a></li>
-        <li><a class="dropdown-item" @onclick="@(() => SelectItem("작업자"))">작업자</a></li>
-        <li><a class="dropdown-item" @onclick="@(() => SelectItem("웨이퍼"))">웨이퍼</a></li>
-        <li><a class="dropdown-item" @onclick="@(() => SelectItem("수령일"))">수령일</a></li>
-        <li><a class="dropdown-item" @onclick="@(() => SelectItem("사용자"))">사용자</a></li>
-    </ul>
 
-    <input type="search" @bind="SearchFilter" @bind:event="onchange" placeholder="검색어 입력"
-           style="width:300px; margin-top:20px;" />
+<MudDataGrid @ref="dataGrid" Items="FilteredData.AsQueryable()" SortMode="SortMode.None">
+    <ToolBarContent>
+        <MudButton Class="me-2" @onclick="CreateNew" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">
+            Add New
+        </MudButton>
+        <MudSpacer />
 
-    <i class="bi bi-search"></i> Search
-</div>
-<br />
-<p>
-    <a href="chipusages/create" class="btn btn-outline-secondary">Create New</a>
-</p>
+        <MudMenu Label="@SearchField" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Secondary">
+            <MudMenuItem Label="구분" @onclick="@(() => SelectItem("1"))" />
+            <MudMenuItem Label="사용 일자" @onclick="@(() => SelectItem("2"))" />
+            <MudMenuItem Label="작업자" @onclick="@(() => SelectItem("3"))" />
+            <MudMenuItem Label="웨이퍼" @onclick="@(() => SelectItem("4"))" />
+            <MudMenuItem Label="수령일" @onclick="@(() => SelectItem("5"))" />
+            <MudMenuItem Label="사용자" @onclick="@(() => SelectItem("6"))" />
+        </MudMenu>
+        &nbsp&nbsp&nbsp
+        <MudTextField @bind-Value="SearchFilter" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                      AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
 
-<div>
-    <MudDataGrid Class="table table-bordered table-sm" Items="FilteredData.AsQueryable()" Pagination="pagination">
-        <PropertyColumn Property="chipusage => chipusage.Chip" Title="Chip 종류" Align="Align.Center"
+    </ToolBarContent>
+
+    <Columns>
+        <PropertyColumn Property="x => x.Chip" Title="Chip 종류" Align="Align.Center"
                         sortable="true" />
         <PropertyColumn Property="chipusage => chipusage.Division" Title="구분" Align="Align.Center"
                         sortable="true" />
@@ -48,23 +46,35 @@
                         sortable="true" />
         <PropertyColumn Property="chipusage => chipusage.Wafer" Title="웨이퍼" Align="Align.Center"
                         sortable="true" />
-        <PropertyColumn Property="chipusage => chipusage.WaferInfo" Title="웨이퍼 정보" Align="Align.Center"/>
+        <PropertyColumn Property="chipusage => chipusage.WaferInfo" Title="웨이퍼 정보" />
         <PropertyColumn Property="chipusage => chipusage.ReceiptDate" Title="수령일" Align="Align.Center"
                         sortable="true" />
         <PropertyColumn Property="chipusage => chipusage.Operator" Title="사용자" Align="Align.Center"
                         sortable="true" />
-        <PropertyColumn Property="chipusage => chipusage.Available" Title="사용 가능 칩" Align="Align.Center"/>
-        <PropertyColumn Property="chipusage => chipusage.Production" Title="생산한 칩" Align="Align.Center"/>
-        <PropertyColumn Property="chipusage => chipusage.Left" Title="재고" Align="Align.Center" />
-        <PropertyColumn Property="chipusage => chipusage.Lot" Title="Lot" Align="Align.Center" />
-        <PropertyColumn Property="chipusage => chipusage.Note" Title="비고" Align="Align.Center" />
-    </MudDataGrid>
-</div>
+        <PropertyColumn Property="chipusage => chipusage.Available" Title="사용 가능 칩" />
+        <PropertyColumn Property="chipusage => chipusage.Production" Title="생산한 칩" />
+        <PropertyColumn Property="chipusage => chipusage.Left" Title="재고" />
+        <PropertyColumn Property="chipusage => chipusage.Lot" Title="Lot" />
+        <PropertyColumn Property="chipusage => chipusage.Note" Title="비고" />
 
-<Paginator State="pagination" />
+        <TemplateColumn CellClass="d-flex justify-end" Context="x">
+            <CellTemplate>
+                <MudButton Class="me-2" Size="@Size.Small" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Edit"
+                            Color="@Color.Warning" @onclick="EditData">
+                    Update
+                </MudButton>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+
+    <PagerContent>
+        <MudDataGridPager/>
+    </PagerContent>
+</MudDataGrid>
 
 @code {
     private MxTWebContext context = default!;
+    private MudDataGrid<ChipUsage> dataGrid;
 
     private readonly SemaphoreSlim _searchSemaphore = new(1, 1);
     private CancellationTokenSource? _searchCts;
@@ -97,12 +107,12 @@
 
             var query = SearchField switch
             {
-                "구분" => context.ChipUsage.Where(m => m.Division!.Contains(SearchFilter)),
-                "사용 일자" => context.ChipUsage.Where(m => m.UseDate.ToString().Contains(SearchFilter)),
-                "작업자" => context.ChipUsage.Where(m => m.Producer!.Contains(SearchFilter)),
-                "웨이퍼" => context.ChipUsage.Where(m => m.Wafer!.Contains(SearchFilter)),
-                "수령일" => context.ChipUsage.Where(m => m.ReceiptDate.ToString()!.Contains(SearchFilter)),
-                "사용자" => context.ChipUsage.Where(m => m.Operator!.Contains(SearchFilter)),
+                "1" => context.ChipUsage.Where(m => m.Division!.Contains(SearchFilter)),
+                "2" => context.ChipUsage.Where(m => m.UseDate.ToString().Contains(SearchFilter)),
+                "3" => context.ChipUsage.Where(m => m.Producer!.Contains(SearchFilter)),
+                "4" => context.ChipUsage.Where(m => m.Wafer!.Contains(SearchFilter)),
+                "5" => context.ChipUsage.Where(m => m.ReceiptDate.ToString()!.Contains(SearchFilter)),
+                "6" => context.ChipUsage.Where(m => m.Operator!.Contains(SearchFilter)),
                 _ => context.ChipUsage.Where(m => m.Division!.Contains(SearchFilter))
             };
 
@@ -113,6 +123,32 @@
         finally
         {
             _searchSemaphore.Release();
+        }
+    }
+
+    private async Task CreateNew()
+    {
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+
+        var dialog = await DialogService.ShowAsync<Create>("Add New Chip", options);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
+        {
+            await PerformSearchAsync();
+        }
+    }
+
+    private async Task EditData()
+    {
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+
+        var dialog = await DialogService.ShowAsync<Edit>("Edit Chip", options);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
+        {
+            await PerformSearchAsync();
         }
     }
 

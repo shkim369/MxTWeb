@@ -5,6 +5,7 @@
 @attribute [Authorize]
 @inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
 @inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
 
 <PageTitle>Edit</PageTitle>
 
@@ -18,17 +19,19 @@
 }
 else
 {
-    <div class="row">
-        <div class="col-md-4">
+
             <EditForm method="post" Model="ChipUsage" OnValidSubmit="UpdateChipUsage" FormName="edit" Enhance>
                 <DataAnnotationsValidator />
                 <ValidationSummary role="alert"/>
                 <input type="hidden" name="ChipUsage.Id" value="@ChipUsage.Id" />
-                <div class="mb-3">
-                    <label for="chip" class="form-label">Chip:</label>
-                    <InputText id="chip" @bind-Value="ChipUsage.Chip" class="form-control" aria-required="true"/>
-                    <ValidationMessage For="() => ChipUsage.Chip" class="text-danger" />
-                </div>
+
+
+                <MudTextField Class="form-control" Variant="Variant.Outlined"
+					          Label="Chip" id="chip"
+                              @bind-Value="ChipUsage.Chip"
+                              Required="true" Immediate="true" />
+
+
                 <div class="mb-3">
                     <label for="division" class="form-label">Division:</label>
                     <InputText id="division" @bind-Value="ChipUsage.Division" class="form-control" aria-required="true"/>
@@ -91,8 +94,6 @@ else
                 </div>
                 <button type="submit" class="btn btn-primary">Save</button>
             </EditForm>
-        </div>
-    </div>
 }
 
 <div>

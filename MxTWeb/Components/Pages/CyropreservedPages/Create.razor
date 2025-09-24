@@ -1,6 +1,7 @@
 ﻿@page "/cyropreserveds/create"
 @using Microsoft.EntityFrameworkCore
 @using MxTWeb.Models
+@using MxTWeb.Enums
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize]
 @inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
@@ -32,7 +33,10 @@
                 <MudItem xs="6">
                     <MudDatePicker Variant="Variant.Outlined"
                                    Label="반입날짜"
-                                   @bind-Value="Cyropreserved.ReceiptDate" />
+                                   @bind-Date="Cyropreserved.ReceiptDate"
+                                   For="@(() => Cyropreserved.ReceiptDate)"
+                                   Required="true" Immediate="true" 
+                                   DateFormat="yyyy-MM-dd" />
                 </MudItem>
             </MudGrid>
 
@@ -48,39 +52,40 @@
                 <MudItem xs="6">
                     <MudDatePicker Variant="Variant.Outlined"
                                    Label="동결날짜"
-                                   @bind-Value="Cyropreserved.FreezeDate" />
+                                   @bind-Date="Cyropreserved.FreezeDate"
+                                   DateFormat="yyyy-MM-dd" />
                 </MudItem>
             </MudGrid>
-              
-            <div class="mb-3">
-                <label for="quantity" class="form-label">수량:</label> 
-                <InputText id="quantity" @bind-Value="Cyropreserved.Quantity" class="form-control" /> 
-                <ValidationMessage For="() => Cyropreserved.Quantity" class="text-danger" /> 
-            </div>        
-            <div class="mb-3">
-                <label for="lot" class="form-label">Lot:</label> 
-                <InputText id="lot" @bind-Value="Cyropreserved.Lot" class="form-control" /> 
-                <ValidationMessage For="() => Cyropreserved.Lot" class="text-danger" /> 
-            </div>        
-            <div class="mb-3">
-                <label for="density" class="form-label">Cell density:</label> 
-                <InputText id="density" @bind-Value="Cyropreserved.Density" class="form-control" /> 
-                <ValidationMessage For="() => Cyropreserved.Density" class="text-danger" /> 
-            </div>        
-            <div class="mb-3">
-                <label for="location" class="form-label">보관 위치:</label> 
-                <InputText id="location" @bind-Value="Cyropreserved.Location" class="form-control" /> 
-                <ValidationMessage For="() => Cyropreserved.Location" class="text-danger" /> 
-            </div>        
-            <div class="mb-3">
-                <label for="note" class="form-label">비고:</label> 
-                <InputText id="note" @bind-Value="Cyropreserved.Note" class="form-control" /> 
-                <ValidationMessage For="() => Cyropreserved.Note" class="text-danger" /> 
-            </div>
+
+            <MudGrid Class="mb-5">
+                <MudItem xs="6">
+                    <MudTextField Variant="Variant.Outlined"
+                                  Label="수량"
+                                  @bind-Value="Cyropreserved.Quantity"/>
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudTextField Variant="Variant.Outlined"
+                                  Label="Lot"
+                                  @bind-Value="Cyropreserved.Lot"/>
+                </MudItem>
+            </MudGrid>
+
+            <MudTextField Class="mb-5"  Variant="Variant.Outlined"
+                            Label="Cell density"
+                            @bind-Value="Cyropreserved.Density"/>
+
+            <MudTextField Class="mb-5" Variant="Variant.Outlined"
+                            Label="보관 위치"
+                            @bind-Value="Cyropreserved.Location"/>
+
+            <MudTextField Class="mb-5" Variant="Variant.Outlined"
+                            Label="비고"
+                            @bind-Value="Cyropreserved.Note"/>
         </DialogContent>
         <DialogActions>
-            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save" Color="Color.Info">Add</MudButton>
-            <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="() => MudDialog.Cancel()">Cancel</MudButton> 
+            <MudButton Class="mb-5 me-5" ButtonType="ButtonType.Submit" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" Color="Color.Info">Add</MudButton>
+            <MudButton Class="mb-5 me-5" Variant="Variant.Filled" Color="Color.Secondary" OnClick="() => MudDialog.Cancel()">Cancel</MudButton> 
         </DialogActions>
     </MudDialog>
 </EditForm>
@@ -93,7 +98,6 @@
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; }
 
-    // To protect from overposting attacks, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
     private async Task AddCyropreserved()
     {
         using var context = DbFactory.CreateDbContext();
@@ -104,9 +108,9 @@
         MudDialog.Close();
     }
 
-	protected override void OnInitialized()
-	{
-		Cyropreserved.ReceiptDate = DateOnly.FromDateTime(DateTime.Today);
-		Cyropreserved.FreezeDate = DateOnly.FromDateTime(new DateTime(2000, 1, 1));		
-	}
+    protected override void OnInitialized()
+    {
+        Cyropreserved.ReceiptDate = DateTime.Today;
+        Cyropreserved.FreezeDate = new DateTime(2000, 1, 1);
+    }
 }

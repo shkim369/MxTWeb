@@ -35,10 +35,16 @@
 	<a href="cyropreserveds/create" class="btn btn-outline-secondary">Create New</a>
 </p> *@
 
-<h2 style="margin-left 10px">동결세포 목록</h2>
+<h2 style="margin-left: 10px">동결세포 목록</h2>
 <br />
 
-<MudDataGrid @ref="dataGrid" T="Cyropreserved" Items="FilteredData.AsQueryable()" SortMode="SortMode.Single">
+<style>    
+    .custom-grid .mud-table-cell .column-header .column-options .mud-menu .mud-icon-button-label {
+        display: none !important;
+    }
+</style>
+
+<MudDataGrid Class="custom-grid" @ref="dataGrid" Items="FilteredData.AsQueryable()" SortMode="SortMode.Single">
     <ToolBarContent>
         <MudButton Class="me-2" @onclick="CreateNew" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">
             Add New
@@ -60,15 +66,28 @@
 
     <Columns>
         <PropertyColumn Property="x => x.Name" Title="🧫세포"/>
-        <PropertyColumn Property="x => x.ReceiptDate" Title="반입 날짜"/>
         <PropertyColumn Property="x => x.Recipient" Title="반입자"/>
+        <PropertyColumn Property="x => x.ReceiptDate" Title="반입 날짜" Format="yyyy-MM-dd" />
         <PropertyColumn Property="x => x.Supplier" Title="반입처"/>
-        <PropertyColumn Property="x => x.FreezeDate" Title="동결 날짜" />
+        <PropertyColumn Property="x => x.FreezeDate" Title="동결 날짜" Format="yyyy-MM-dd"/>
         <PropertyColumn Property="x => x.Quantity" Title="수량" Sortable="false"/>
         <PropertyColumn Property="x => x.Lot" Title="Lot" Sortable="false"/>
         <PropertyColumn Property="x => x.Density" Title="Cell density" Sortable="false"/>
         <PropertyColumn Property="x => x.Location" Title="보관 위치"/>
         <PropertyColumn Property="x => x.Note" Title="비고" Sortable="false"/>
+            
+        <TemplateColumn CellClass="d-flex justify-end" Context="x">
+            <CellTemplate>
+                <MudButton Class="me-2" Size="@Size.Small" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Edit"
+                           Color="@Color.Info" OnClick="@(() => this.UpdateData(x))">
+                    Update
+                </MudButton>
+                <MudButton Class="me-2" Size="@Size.Small" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete"
+                           Color="@Color.Error" OnClick="@(() => this.DeleteData(x))">
+                    Delete
+                </MudButton>
+            </CellTemplate>
+        </TemplateColumn>
     </Columns>
     <PagerContent>
         <MudDataGridPager T="Cyropreserved" />
@@ -133,21 +152,6 @@
         SearchField = item;
     }
 
-    // private IQueryable<Cyropreserved> GetFilteredData()
-    // {
-    //     using var context = DbFactory.CreateDbContext();
-
-    //     return SearchField switch
-    //     {
-    //         "세포" => context.Cyropreserved.Where(m => m.Name!.Contains(SearchFilter)),
-    //         "반입 날짜" => context.Cyropreserved.Where(m => m.ReceiptDate.ToString().Contains(SearchFilter)),
-    //         "반입자" => context.Cyropreserved.Where(m => m.Recipient!.Contains(SearchFilter)),
-    //         "반입처" => context.Cyropreserved.Where(m => m.Supplier!.Contains(SearchFilter)),
-    //         "보관 위치" => context.Cyropreserved.Where(m => m.Location!.Contains(SearchFilter)),
-    //         _ => context.Cyropreserved.Where(m => m.Name!.Contains(SearchFilter))
-    //     };     
-    // }
-
     protected override void OnInitialized()
     {
         context = DbFactory.CreateDbContext();
@@ -157,12 +161,45 @@
     private async Task CreateNew()
     {
         var options = new DialogOptions { MaxWidth = MaxWidth.Large };
-
         var dialog = await DialogService.ShowAsync<Create>("Add New Cyropreserved", options);
         var result = await dialog.Result;
 
         if (result is not null && !result.Canceled)
         {            
+            await PerformSearchAsync();
+        }
+    }
+
+    private async Task UpdateData(CellContext<Cyropreserved> data)
+    {
+        var parameters = new DialogParameters<Edit>
+        {
+            { x => x.Cyropreserved, data.Item } // 선택된 row의 데이터를 직접 전달
+        };
+
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var dialog = await DialogService.ShowAsync<Edit>("Edit Cyropreserved", parameters, options);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
+        {
+            await PerformSearchAsync();
+        }
+    }
+
+    private async Task DeleteData(CellContext<Cyropreserved> data)
+    {
+        var parameters = new DialogParameters<Edit>
+        {
+            { x => x.Cyropreserved, data.Item } // 선택된 row의 데이터를 직접 전달
+        };
+
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var dialog = await DialogService.ShowAsync<Delete>("Delete Data", parameters, options);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
+        {
             await PerformSearchAsync();
         }
     }

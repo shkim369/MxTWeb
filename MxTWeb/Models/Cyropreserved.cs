@@ -12,7 +12,7 @@ namespace MxTWeb.Models
         public string? Name { get; set; }
 
         [Required]
-        public DateOnly ReceiptDate { get; set; }
+        public DateTime? ReceiptDate { get; set; }
 
         [Required]
         public string? Recipient { get; set; }
@@ -20,7 +20,7 @@ namespace MxTWeb.Models
         [Required]
         public string? Supplier { get; set; }
 
-        public DateOnly FreezeDate { get; set; }
+        public DateTime? FreezeDate { get; set; }
 
         [Range(0, 100)]
         public string? Quantity { get; set; }
