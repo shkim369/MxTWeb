@@ -4,69 +4,120 @@
 @using MxTWeb.Models
 @using MxTWeb.Data
 @using Microsoft.AspNetCore.Authorization
+@using ClosedXML.Excel;
+@using System.Globalization;
 @attribute [Authorize]
 @implements IAsyncDisposable
 @inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
 @inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
 
 <PageTitle>칩 사용 대장</PageTitle>
 
-<h2 style="margin-left: 10px">칩 사용 대장</h2>
-<br />
+<style>
+    .custom-grid .mud-table-cell .column-header .column-options .mud-menu .mud-icon-button-label {
+        display: none !important;
+    }
+</style>
 
-<MudDataGrid @ref="dataGrid" Items="FilteredData.AsQueryable()" SortMode="SortMode.None">
-    <ToolBarContent>
+<MudGrid Spacing="5">
+    <MudItem xs="4">
+        <MudText Typo="Typo.h4">RUO 칩 사용 관리대장</MudText>
+    </MudItem>
+
+    <MudSpacer/>
+
+    <MudItem>
         <MudButton Class="me-2" @onclick="CreateNew" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">
             Add New
         </MudButton>
+    </MudItem>
+
+    <MudItem>
+        <MudFileUpload Class="me-2" T="IBrowserFile" @ref="excelUpload" FilesChanged="UploadFile" >
+            <ActivatorContent>
+                <MudButton Disabled="@importing" Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Custom.FileFormats.FileExcel">
+                    @if(importing)
+                    {
+                        <MudProgressCircular Indeterminate="true" Color="Color.Info" Size="Size.Small" Class="me-2" />
+                        <MudText Class="ms-2">Processing...</MudText>
+                    }
+                    else
+                    {
+                        <MudText>Import</MudText>
+                    }
+                </MudButton>
+            </ActivatorContent>
+        </MudFileUpload>
+    </MudItem>
+
+    <MudItem>
+        <MudButton Disabled="@exporting" @onclick="ExportToExcel" Variant="Variant.Filled" Color="Color.Info" StartIcon="@Icons.Custom.FileFormats.FileExcel">
+            @if (exporting)
+            {
+                <MudProgressCircular Indeterminate="true" Color="Color.Info" Size="Size.Small" Class="me-2" />
+                <MudText Class="ms-2">Processing...</MudText>
+            }
+            else
+            {
+                <MudText>Export</MudText>
+            }
+        </MudButton>
+	</MudItem>
+</MudGrid>
+
+<br />
+
+<MudDataGrid Class="custom-grid" @ref="dataGrid" Items="FilteredData.AsQueryable()" SortMode="SortMode.None" Dense="true" 
+             Style="white-space: nowrap" Hover="true" Bordered="true" Striped="true">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Chip 종류</MudText>
+        &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
+        <MudMenu Label="@SelectedChip" Variant="Variant.Outlined" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Default">
+            <MudMenuItem Label="A01_Small chip" @onclick="@(() => SelectChip("A01_Small"))" />
+            <MudMenuItem Label="A01_Large chip" @onclick="@(() => SelectChip("A01_Large"))" />
+            <MudMenuItem Label="B01_Small chip" @onclick="@(() => SelectChip("B01_Small"))" />
+            <MudMenuItem Label="B01_Large chip" @onclick="@(() => SelectChip("B01_Large"))" />
+        </MudMenu>
+
         <MudSpacer />
 
         <MudMenu Label="@SearchField" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Secondary">
-            <MudMenuItem Label="구분" @onclick="@(() => SelectItem("1"))" />
-            <MudMenuItem Label="사용 일자" @onclick="@(() => SelectItem("2"))" />
-            <MudMenuItem Label="작업자" @onclick="@(() => SelectItem("3"))" />
-            <MudMenuItem Label="웨이퍼" @onclick="@(() => SelectItem("4"))" />
-            <MudMenuItem Label="수령일" @onclick="@(() => SelectItem("5"))" />
-            <MudMenuItem Label="사용자" @onclick="@(() => SelectItem("6"))" />
+            <MudMenuItem Label="날짜" @onclick="@(() => SelectSearchField("날짜"))" />
+            <MudMenuItem Label="웨이퍼 정보" @onclick="@(() => SelectSearchField("웨이퍼 정보"))" />
+            <MudMenuItem Label="납품일시" @onclick="@(() => SelectSearchField("납품일시"))" />
+            <MudMenuItem Label="사용부서" @onclick="@(() => SelectSearchField("사용부서"))" />
         </MudMenu>
-        &nbsp&nbsp&nbsp
+        &nbsp&nbsp&nbsp&nbsp
         <MudTextField @bind-Value="SearchFilter" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
-                      AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-
+                        AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
     </ToolBarContent>
 
     <Columns>
-        <PropertyColumn Property="x => x.Chip" Title="Chip 종류" Align="Align.Center"
-                        sortable="true" />
-        <PropertyColumn Property="chipusage => chipusage.Division" Title="구분" Align="Align.Center"
-                        sortable="true" />
-        <PropertyColumn Property="chipusage => chipusage.UseDate" Title="사용 일자" Align="Align.Center"
-                        sortable="true" />
-        <PropertyColumn Property="chipusage => chipusage.Producer" Title="작업자" Align="Align.Center"
-                        sortable="true" />
-        <PropertyColumn Property="chipusage => chipusage.Wafer" Title="웨이퍼" Align="Align.Center"
-                        sortable="true" />
-        <PropertyColumn Property="chipusage => chipusage.WaferInfo" Title="웨이퍼 정보" />
-        <PropertyColumn Property="chipusage => chipusage.ReceiptDate" Title="수령일" Align="Align.Center"
-                        sortable="true" />
-        <PropertyColumn Property="chipusage => chipusage.Operator" Title="사용자" Align="Align.Center"
-                        sortable="true" />
-        <PropertyColumn Property="chipusage => chipusage.Available" Title="사용 가능 칩" />
-        <PropertyColumn Property="chipusage => chipusage.Production" Title="생산한 칩" />
-        <PropertyColumn Property="chipusage => chipusage.Left" Title="재고" />
-        <PropertyColumn Property="chipusage => chipusage.Lot" Title="Lot" />
-        <PropertyColumn Property="chipusage => chipusage.Note" Title="비고" />
+        <PropertyColumn Property="x => x.Division" Title="구분" sortable="true" 
+                        CellStyleFunc="@_cellStyleFunc"/>
+        <PropertyColumn Property="x => x.UseDate" Title="날짜" sortable="true" Format="yyyy-MM-dd" />
+        <PropertyColumn Property="x => x.Producer" Title="작업자" Sortable="true"/>
+        <PropertyColumn Property="x => x.Wafer" Title="웨이퍼" sortable="true" />
+        <PropertyColumn Property="x => x.WaferInfo" Title="웨이퍼 정보" />
+        <PropertyColumn Property="x => x.ReceiptDate" Title="납품일시" sortable="true" Format="yyyy-MM-dd" />
+        <PropertyColumn Property="x => x.Operator" Title="사용부서" sortable="true" />
+        <PropertyColumn Property="x => x.Available" Title="사용가능 칩" />
+        <PropertyColumn Property="x => x.Production" Title="생산한 칩" />
+        <PropertyColumn Property="x => x.Left" Title="잔여 칩" />
+        <PropertyColumn Property="x => x.Lot" Title="Lot" />
+        <PropertyColumn Property="x => x.Note" Title="비고" />
 
-        <TemplateColumn CellClass="d-flex justify-end" Context="x">
+        <TemplateColumn Context="x" StickyRight="true">
             <CellTemplate>
-                <MudButton Class="me-2" Size="@Size.Small" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Edit"
-                            Color="@Color.Warning" @onclick="EditData">
-                    Update
-                </MudButton>
+                <MudIconButton Class="me-2" Size="@Size.Small" Variant="Variant.Filled" Icon="@Icons.Material.Filled.Edit"
+                               Color="@Color.Info" OnClick="@(() => this.UpdateData(x))" />
+                <MudIconButton Size="@Size.Small" Variant="Variant.Filled" Icon="@Icons.Material.Filled.Delete"
+                               Color="@Color.Error" OnClick="@(() => this.DeleteData(x))" />
             </CellTemplate>
         </TemplateColumn>
     </Columns>
-
     <PagerContent>
         <MudDataGridPager/>
     </PagerContent>
@@ -75,14 +126,27 @@
 @code {
     private MxTWebContext context = default!;
     private MudDataGrid<ChipUsage> dataGrid;
+    private MudFileUpload<IBrowserFile> excelUpload;
 
     private readonly SemaphoreSlim _searchSemaphore = new(1, 1);
     private CancellationTokenSource? _searchCts;
     private List<ChipUsage> _filteredResults = new();
 
-    private string SearchField = "구분"; // 기본 검색 항목
+    private string _selectedChip = "";
+    public string SelectedChip
+    {
+        get => _selectedChip;
+        set
+        {
+            _selectedChip = value;
+            _ = PerformSelectChipAsync();
+        }
+    }
+
+    private string SearchField = "";
+
     private string _searchFilter = "";
-    private string SearchFilter
+    public string SearchFilter
     {
         get => _searchFilter;
         set
@@ -91,7 +155,37 @@
             _ = PerformSearchAsync();
         }
     }
+
     private IEnumerable<ChipUsage> FilteredData => _filteredResults;
+
+    bool importing = false;
+    bool exporting = false;
+
+    private async Task SelectChip(string Type)
+    {
+        SelectedChip = Type;
+    }
+
+    private async Task PerformSelectChipAsync()
+    {
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+
+            var query = SelectedChip switch
+            {
+                "A01_Small" => context.ChipUsage.Where(m => m.Chip!.Equals("A01_Small")),
+                "A01_Large" => context.ChipUsage.Where(m => m.Chip!.Equals("A01_Large")),
+                "B01_Small" => context.ChipUsage.Where(m => m.Chip!.Equals("B01_Small")),
+                "B01_Large" => context.ChipUsage.Where(m => m.Chip!.Equals("B01_Large")),
+                _ => context.ChipUsage.Where(m => m.Chip!.Equals("A01_Small chip")),
+            };
+
+            _filteredResults = await query.ToListAsync();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (OperationCanceledException) { }
+    }
 
     private async Task PerformSearchAsync()
     {
@@ -107,13 +201,11 @@
 
             var query = SearchField switch
             {
-                "1" => context.ChipUsage.Where(m => m.Division!.Contains(SearchFilter)),
-                "2" => context.ChipUsage.Where(m => m.UseDate.ToString().Contains(SearchFilter)),
-                "3" => context.ChipUsage.Where(m => m.Producer!.Contains(SearchFilter)),
-                "4" => context.ChipUsage.Where(m => m.Wafer!.Contains(SearchFilter)),
-                "5" => context.ChipUsage.Where(m => m.ReceiptDate.ToString()!.Contains(SearchFilter)),
-                "6" => context.ChipUsage.Where(m => m.Operator!.Contains(SearchFilter)),
-                _ => context.ChipUsage.Where(m => m.Division!.Contains(SearchFilter))
+                "날짜" => context.ChipUsage.Where(m => m.UseDate.ToString()!.Contains(SearchFilter) && m.Chip!.Equals(SelectedChip)),
+                "웨이퍼 정보" => context.ChipUsage.Where(m => m.WaferInfo!.Contains(SearchFilter) && m.Chip!.Equals(SelectedChip)),
+                "납품일시" => context.ChipUsage.Where(m => m.ReceiptDate.ToString()!.Contains(SearchFilter) && m.Chip!.Equals(SelectedChip)),
+                "사용부서" => context.ChipUsage.Where(m => m.Operator!.Contains(SearchFilter) && m.Chip!.Equals(SelectedChip)),
+                _ => context.ChipUsage.Where(m => m.Chip!.Equals(SelectedChip))
             };
 
             _filteredResults = await query.ToListAsync(_searchCts.Token);
@@ -129,7 +221,6 @@
     private async Task CreateNew()
     {
         var options = new DialogOptions { MaxWidth = MaxWidth.Large };
-
         var dialog = await DialogService.ShowAsync<Create>("Add New Chip", options);
         var result = await dialog.Result;
 
@@ -139,11 +230,15 @@
         }
     }
 
-    private async Task EditData()
+    private async Task UpdateData(CellContext<ChipUsage> data)
     {
-        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var parameters = new DialogParameters<Edit>
+        {
+            { x => x.ChipUsage, data.Item } // 선택된 row의 데이터를 직접 전달
+        };
 
-        var dialog = await DialogService.ShowAsync<Edit>("Edit Chip", options);
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var dialog = await DialogService.ShowAsync<Edit>("Edit Chip", parameters, options);
         var result = await dialog.Result;
 
         if (result is not null && !result.Canceled)
@@ -152,7 +247,200 @@
         }
     }
 
-    private void SelectItem(string item)
+    private async Task DeleteData(CellContext<ChipUsage> data)
+    {
+        var parameters = new DialogParameters<Edit>
+        {
+            { x => x.ChipUsage, data.Item } // 선택된 row의 데이터를 직접 전달
+        };
+
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var dialog = await DialogService.ShowAsync<Delete>("Delete Data", parameters, options);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
+        {
+            await PerformSearchAsync();
+        }
+    }
+
+    private async Task UploadFile(IBrowserFile file)
+    {
+        if (file is null) return;
+        importing = true;
+
+        try
+        {
+            using var stream = new MemoryStream();
+            await file.OpenReadStream().CopyToAsync(stream);
+
+            stream.Position = 0;
+
+            using var workbook = new XLWorkbook(stream);
+            var worksheet = workbook.Worksheets.First();
+            Console.WriteLine($"선택된 워크시트: {worksheet.Name}");
+            Console.WriteLine($"사용된 행 개수: {worksheet.RowsUsed().Count()}");
+
+            var rows = worksheet.RowsUsed().Skip(1);
+
+            List<ChipUsage> chipUsages = new();
+            foreach (var row in rows)
+            {
+                try 
+                {
+                    ChipUsage chip = new ChipUsage
+                    {
+                        Chip = row.Cell(1).Value.ToString(),
+                        Division = row.Cell(2).Value.ToString(),
+                        UseDate = ParseDateTime(row.Cell(3)),
+                        Producer = row.Cell(4).Value.ToString(),
+                        Wafer = row.Cell(5).Value.ToString(),
+                        WaferInfo = row.Cell(6).Value.ToString(),
+                        ReceiptDate = ParseDateTime(row.Cell(7)),
+                        Operator = row.Cell(8).Value.ToString(),
+                        Available = int.Parse(row.Cell(9).Value.ToString()),
+                        Production = int.Parse(row.Cell(10).Value.ToString()),
+                        Left = int.Parse(row.Cell(11).Value.ToString()),
+                        Lot = row.Cell(12).Value.ToString(),
+                        Note = row.Cell(13).Value.ToString()
+                    };
+                    chipUsages.Add(chip);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error processing row {row.RowNumber()}: {ex.Message}");
+                    continue;
+                }
+            }
+
+            var parameters = new DialogParameters<Import>
+            {
+                { x => x.chipUsages, chipUsages}
+            };
+
+            var options = new DialogOptions { MaxWidth = MaxWidth.ExtraLarge };
+
+            var dialog = await DialogService.ShowAsync<Import>($"Ready to Import {chipUsages.Count()} Items", parameters, options);
+            var result = await dialog.Result;
+
+            if (result != null && !result.Canceled)
+            {
+                await PerformSearchAsync();
+            }
+
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"파일 업로드 중 오류가 발생했습니다: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            await excelUpload.ClearAsync();
+            importing = false;
+        }
+    }
+
+    static DateTime ParseDateTime(IXLCell cell)
+    {
+        try
+        {
+            if (cell.DataType == XLDataType.DateTime)
+            {
+                return cell.GetDateTime();
+            }
+
+            string dateString = cell.GetString();
+
+            if (dateString.Contains('.'))
+            {
+                dateString = dateString.Replace('.', '-');
+            }
+
+            if (DateTime.TryParse(dateString, out DateTime result))
+            {
+                return result;
+            }
+
+            string originalString = cell.GetString();         
+            throw new FormatException($"Cannot parse date: {originalString}");
+        }
+        catch (Exception ex)
+        {
+            throw new FormatException($"Error parsing date from cell: {ex.Message}");
+        }
+    }
+
+    private async Task ExportToExcel()
+    {
+        var excelBytes = await ExportData();
+
+        await JS.InvokeVoidAsync("downloadFileFromBytes", "ChipUsages.xlsx", excelBytes);
+    }
+
+    private async Task<Byte[]> ExportData()
+    {
+        exporting = true; // Set exporting to true at the beginning of the method
+        try
+        {
+            var datas = _filteredResults;
+
+            using (var workbook = new XLWorkbook())
+            {
+                var worksheet = workbook.Worksheets.Add("ChipUsage");
+
+                worksheet.Cell(1, 1).Value = "ID";
+                worksheet.Cell(1, 2).Value = "Chip";
+                worksheet.Cell(1, 3).Value = "구분";
+                worksheet.Cell(1, 4).Value = "날짜";
+                worksheet.Cell(1, 5).Value = "작업자";
+                worksheet.Cell(1, 6).Value = "Wafer";
+                worksheet.Cell(1, 7).Value = "Wager 구분";
+                worksheet.Cell(1, 8).Value = "납품일시";
+                worksheet.Cell(1, 9).Value = "사용부서";
+                worksheet.Cell(1, 10).Value = "사용가능 칩";
+                worksheet.Cell(1, 11).Value = "생산한 칩";
+                worksheet.Cell(1, 12).Value = "잔여 칩";
+                worksheet.Cell(1, 13).Value = "Lot";
+                worksheet.Cell(1, 14).Value = "비고";
+
+                for (int i = 0; i < datas.Count; i++)
+                {
+                    var data = datas[i];
+                    worksheet.Cell(i + 2, 1).Value = i + 1;
+                    worksheet.Cell(i + 2, 2).Value = data.Chip;
+                    worksheet.Cell(i + 2, 3).Value = data.Division;
+                    worksheet.Cell(i + 2, 4).Value = data.UseDate?.ToString("yyyy-MM-dd");
+                    worksheet.Cell(i + 2, 5).Value = data.Producer;
+                    worksheet.Cell(i + 2, 6).Value = data.Wafer;
+                    worksheet.Cell(i + 2, 7).Value = data.WaferInfo;
+                    worksheet.Cell(i + 2, 8).Value = data.ReceiptDate?.ToString("yyyy-MM-dd");
+                    worksheet.Cell(i + 2, 9).Value = data.Operator;
+                    worksheet.Cell(i + 2, 10).Value = data.Available;
+                    worksheet.Cell(i + 2, 11).Value = data.Production;
+                    worksheet.Cell(i + 2, 12).Value = data.Left;
+                    worksheet.Cell(i + 2, 13).Value = data.Lot;
+                    worksheet.Cell(i + 2, 14).Value = data.Note;
+                }
+
+                using (var stream = new MemoryStream())
+                {
+                    workbook.SaveAs(stream);
+                    return stream.ToArray();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"데이터 내보내기 중 오류가 발생했습니다: {ex.Message}", Severity.Error);
+			return Array.Empty<byte>();
+        }
+        finally
+        {
+            exporting = false;
+        }
+    }
+
+    private void SelectSearchField(string item)
     {
         SearchField = item;
     }
@@ -160,8 +448,23 @@
     protected override void OnInitialized()
     {
         context = DbFactory.CreateDbContext();
-		_filteredResults = context.ChipUsage.ToList();
+        _filteredResults = context.ChipUsage.ToList();
+
+        SearchField = "날짜";
+        SelectedChip = "A01_Small";
     }
+
+    private Func<ChipUsage, string> _cellStyleFunc => x =>
+    {
+        string style = "";
+
+        if (x.Division == "납품")
+            style += "background-color:#F9CB9C";
+        else
+            style += "background-color:#D9EAD3";
+
+        return style;
+    };
 
     public async ValueTask DisposeAsync() => await context.DisposeAsync();
 }

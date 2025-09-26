@@ -1,13 +1,11 @@
 ﻿@page "/cyropreserveds"
 @rendermode InteractiveServer
 @using Microsoft.EntityFrameworkCore
-@using Microsoft.AspNetCore.Authorization;
 @using MxTWeb.Models
 @using MxTWeb.Data
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize]
 @implements IAsyncDisposable
-
 @inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
 @inject IDialogService DialogService
 
@@ -56,9 +54,8 @@
             <MudMenuItem Label="반입 날짜" @onclick="@(() => SelectItem("반입 날짜"))" />
             <MudMenuItem Label="반입자" @onclick="@(() => SelectItem("반입자"))" />
             <MudMenuItem Label="반입처" @onclick="@(() => SelectItem("반입처"))" />
-            <MudMenuItem Label="보관 위치" @onclick="@(() => SelectItem("보관 위치"))" />
         </MudMenu>
-        &nbsp&nbsp&nbsp
+        &nbsp&nbsp&nbsp&nbsp
         <MudTextField @bind-Value="SearchFilter" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
                         AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
 
@@ -76,21 +73,17 @@
         <PropertyColumn Property="x => x.Location" Title="보관 위치"/>
         <PropertyColumn Property="x => x.Note" Title="비고" Sortable="false"/>
             
-        <TemplateColumn CellClass="d-flex justify-end" Context="x">
+        <TemplateColumn Context="x">
             <CellTemplate>
-                <MudButton Class="me-2" Size="@Size.Small" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Edit"
-                           Color="@Color.Info" OnClick="@(() => this.UpdateData(x))">
-                    Update
-                </MudButton>
-                <MudButton Class="me-2" Size="@Size.Small" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete"
-                           Color="@Color.Error" OnClick="@(() => this.DeleteData(x))">
-                    Delete
-                </MudButton>
+                <MudIconButton Class="me-2" Size="@Size.Small" Variant="Variant.Filled" Icon="@Icons.Material.Filled.Edit"
+                           Color="@Color.Info" OnClick="@(() => this.UpdateData(x))"/>
+                <MudIconButton Size="@Size.Small" Variant="Variant.Filled" Icon="@Icons.Material.Filled.Delete"
+                           Color="@Color.Error" OnClick="@(() => this.DeleteData(x))"/>
             </CellTemplate>
         </TemplateColumn>
     </Columns>
     <PagerContent>
-        <MudDataGridPager T="Cyropreserved" />
+        <MudDataGridPager/>
     </PagerContent>
 </MudDataGrid>
 
@@ -133,7 +126,6 @@
                 "반입 날짜" => context.Cyropreserved.Where(m => m.ReceiptDate.ToString().Contains(SearchFilter)),
                 "반입자" => context.Cyropreserved.Where(m => m.Recipient!.Contains(SearchFilter)),
                 "반입처" => context.Cyropreserved.Where(m => m.Supplier!.Contains(SearchFilter)),
-                "보관 위치" => context.Cyropreserved.Where(m => m.Location!.Contains(SearchFilter)),
                 _ => context.Cyropreserved.Where(m => m.Name!.Contains(SearchFilter))
             };
 
@@ -145,17 +137,6 @@
         {
             _searchSemaphore.Release();
         }
-    }
-
-    private void SelectItem(string item)
-    {
-        SearchField = item;
-    }
-
-    protected override void OnInitialized()
-    {
-        context = DbFactory.CreateDbContext();
-        _filteredResults = context.Cyropreserved.ToList();
     }
 
     private async Task CreateNew()
@@ -202,6 +183,17 @@
         {
             await PerformSearchAsync();
         }
+    }
+
+    private void SelectItem(string item)
+    {
+        SearchField = item;
+    }
+
+    protected override void OnInitialized()
+    {
+        context = DbFactory.CreateDbContext();
+        _filteredResults = context.Cyropreserved.ToList();
     }
 
     public async ValueTask DisposeAsync() => await context.DisposeAsync();

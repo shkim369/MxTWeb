@@ -1,0 +1,98 @@
+﻿@page "/chipusages/import"
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using MxTWeb.Models
+@using MxTWeb.Data
+@using Microsoft.AspNetCore.Authorization
+@using ClosedXML.Excel;
+@attribute [Authorize]
+@inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+	<DialogContent>
+        <MudDataGrid Items="@chipUsages" SortMode="SortMode.None">
+		    <Columns>
+                <PropertyColumn Property="x => x.Chip" Title="Chip 종류" Align="Align.Center"/>
+                <PropertyColumn Property="x => x.Division" Title="구분" Align="Align.Center"/>
+                <PropertyColumn Property="x => x.UseDate" Title="날짜" Align="Align.Center" Format="yyyy-MM-dd"/>
+                <PropertyColumn Property="x => x.Producer" Title="작업자" Align="Align.Center"/>
+                <PropertyColumn Property="x => x.Wafer" Title="웨이퍼" Align="Align.Center"/>
+                <PropertyColumn Property="x => x.WaferInfo" Title="웨이퍼 정보" />
+                <PropertyColumn Property="x => x.ReceiptDate" Title="납품일시" Align="Align.Center"Format="yyyy-MM-dd"/>
+                <PropertyColumn Property="x => x.Operator" Title="사용부서" Align="Align.Center"/>
+                <PropertyColumn Property="x => x.Available" Title="사용가능 칩"/>
+                <PropertyColumn Property="x => x.Production" Title="생산한 칩"/>
+                <PropertyColumn Property="x => x.Left" Title="잔여 칩" />
+            </Columns>
+        </MudDataGrid>
+	</DialogContent>
+
+    <DialogActions>
+        <MudButton Class="mb-5 me-5" ButtonType="ButtonType.Submit" Variant="Variant.Filled" 
+                   @onclick="Submit" StartIcon="@Icons.Material.Filled.Save" Color="Color.Info">Import</MudButton>
+        <MudButton Class="mb-5 me-5" Variant="Variant.Filled" Color="Color.Secondary" OnClick="() => MudDialog.Cancel()">Cancel</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter]
+    public List<ChipUsage> chipUsages { get; set; } = new();
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; }
+
+    private async Task Submit()
+    {
+        bool result = await ImportData(chipUsages);
+        if (result)
+        {
+            Snackbar.Add("성공적으로 데이터를 추가했습니다.", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else
+        {
+            Snackbar.Add("데이터 추가에 실패했습니다.", Severity.Error);
+		}
+    }
+
+    private async Task<bool> ImportData(List<ChipUsage> dataList)
+    {
+        try
+        {
+            List<ChipUsage> toDB = new List<ChipUsage>();
+
+            foreach (var data in dataList)
+            {
+                ChipUsage chip = new ChipUsage
+                {
+                    Id = data.Id,
+                    Chip = data.Chip,
+                    Division = data.Division,
+                    UseDate = data.UseDate,
+                    Producer = data.Producer,
+                    Wafer = data.Wafer,
+                    WaferInfo = data.WaferInfo,
+                    ReceiptDate = data.ReceiptDate,
+                    Operator = data.Operator,
+                    Available = data.Available,
+                    Production = data.Production,
+                    Left = data.Left,
+                    Lot = data.Lot,
+                    Note = data.Note
+                };
+                toDB.Add(chip);
+            }
+            using var context = DbFactory.CreateDbContext();
+            context.ChipUsage.AddRange(toDB);
+            await context.SaveChangesAsync();
+
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+}

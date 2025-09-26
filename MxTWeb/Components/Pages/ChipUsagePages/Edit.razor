@@ -9,113 +9,116 @@
 
 <PageTitle>Edit</PageTitle>
 
-<h1>Edit</h1>
+<EditForm method="post" Model="ChipUsage" OnValidSubmit="UpdateChipUsage" FormName="edit" Enhance>
+    <MudDialog>
+        <DialogContent>
+            <DataAnnotationsValidator />
 
-<h2>ChipUsage</h2>
-<hr />
-@if (ChipUsage is null)
-{
-    <p><em>Loading...</em></p>
-}
-else
-{
+            <MudGrid Class="mb-5">
+                <MudItem xs="2">
+                    <MudText Typo="Typo.h6">Chip 종류</MudText>
+                </MudItem>
+                <MudItem xs="6">
+                    <MudMenu Label="@ChipUsage.Chip" Variant="Variant.Outlined" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Default">
+                        <MudMenuItem Label="A01_Small" @onclick="@(() => SelectChip("A01_Small"))" />
+                        <MudMenuItem Label="A01_Large" @onclick="@(() => SelectChip("A01_Large"))" />
+                        <MudMenuItem Label="B01_Small" @onclick="@(() => SelectChip("B01_Small"))" />
+                        <MudMenuItem Label="B01_Large" @onclick="@(() => SelectChip("B01_Large"))" />
+                    </MudMenu>
+                </MudItem>
+            </MudGrid>
 
-            <EditForm method="post" Model="ChipUsage" OnValidSubmit="UpdateChipUsage" FormName="edit" Enhance>
-                <DataAnnotationsValidator />
-                <ValidationSummary role="alert"/>
-                <input type="hidden" name="ChipUsage.Id" value="@ChipUsage.Id" />
+            <MudTextField Class="mb-5" Variant="Variant.Outlined"
+                          Label="구분"
+                          @bind-Value="ChipUsage.Division"
+                          For="@(() => ChipUsage.Division)"
+                          Required="true" Immediate="true" />
+            <MudDatePicker Class="mb-5" Variant="Variant.Outlined"
+                          Label="사용 일자"
+                          @bind-Date="ChipUsage.UseDate" 
+                          DateFormat="yyyy-MM-dd"/>
+            <MudTextField Class="mb-5" Variant="Variant.Outlined"
+                          Label="작업자"
+                          @bind-Value="ChipUsage.Producer" />
+            <MudTextField Class="mb-5" Variant="Variant.Outlined"
+                          Label="웨이퍼"
+                          @bind-Value="ChipUsage.Wafer" />
+            <MudTextField Class="mb-5" Variant="Variant.Outlined"
+                          Label="웨이퍼 정보"
+                          @bind-Value="ChipUsage.WaferInfo" />
+            <MudDatePicker Class="mb-5" Variant="Variant.Outlined"
+                          Label="납품일시"
+                          @bind-Date="ChipUsage.ReceiptDate"
+                          DateFormat="yyyy-MM-dd"/>
+            <MudTextField Class="mb-5" Variant="Variant.Outlined"
+                          Label="사용자"
+                          @bind-Value="ChipUsage.Operator" />
 
+            <MudGrid Class="mb-5">
+                <MudItem xs="4">
+                    <MudTextField Variant="Variant.Outlined"
+                                  Label="사용 가능 칩"
+                                  @bind-Value="ChipUsage.Available" />
+                </MudItem>
 
-                <MudTextField Class="form-control" Variant="Variant.Outlined"
-					          Label="Chip" id="chip"
-                              @bind-Value="ChipUsage.Chip"
-                              Required="true" Immediate="true" />
+                <MudItem xs="4">
+                    <MudTextField Variant="Variant.Outlined"
+                                  Label="생산한 칩"
+                                  @bind-Value="ChipUsage.Production" />
+                </MudItem>
 
+                <MudItem xs="4">
+                    <MudTextField Variant="Variant.Outlined"
+                                  Label="재고"
+                                  @bind-Value="ChipUsage.Left" />
+                </MudItem>
+            </MudGrid>
 
-                <div class="mb-3">
-                    <label for="division" class="form-label">Division:</label>
-                    <InputText id="division" @bind-Value="ChipUsage.Division" class="form-control" aria-required="true"/>
-                    <ValidationMessage For="() => ChipUsage.Division" class="text-danger" />
-                </div>
-                <div class="mb-3">
-                    <label for="usedate" class="form-label">UseDate:</label>
-                    <InputDate id="usedate" @bind-Value="ChipUsage.UseDate" class="form-control" aria-required="true"/>
-                    <ValidationMessage For="() => ChipUsage.UseDate" class="text-danger" />
-                </div>
-                <div class="mb-3">
-                    <label for="producer" class="form-label">Producer:</label>
-                    <InputText id="producer" @bind-Value="ChipUsage.Producer" class="form-control" />
-                    <ValidationMessage For="() => ChipUsage.Producer" class="text-danger" />
-                </div>
-                <div class="mb-3">
-                    <label for="wafer" class="form-label">Wafer:</label>
-                    <InputText id="wafer" @bind-Value="ChipUsage.Wafer" class="form-control" />
-                    <ValidationMessage For="() => ChipUsage.Wafer" class="text-danger" />
-                </div>
-                <div class="mb-3">
-                    <label for="waferinfo" class="form-label">WaferInfo:</label>
-                    <InputText id="waferinfo" @bind-Value="ChipUsage.WaferInfo" class="form-control" />
-                    <ValidationMessage For="() => ChipUsage.WaferInfo" class="text-danger" />
-                </div>
-                <div class="mb-3">
-                    <label for="receiptdate" class="form-label">ReceiptDate:</label>
-                    <InputDate id="receiptdate" @bind-Value="ChipUsage.ReceiptDate" class="form-control" />
-                    <ValidationMessage For="() => ChipUsage.ReceiptDate" class="text-danger" />
-                </div>
-                <div class="mb-3">
-                    <label for="operator" class="form-label">Operator:</label>
-                    <InputText id="operator" @bind-Value="ChipUsage.Operator" class="form-control" />
-                    <ValidationMessage For="() => ChipUsage.Operator" class="text-danger" />
-                </div>
-                <div class="mb-3">
-                    <label for="available" class="form-label">Available:</label>
-                    <InputNumber id="available" @bind-Value="ChipUsage.Available" class="form-control" />
-                    <ValidationMessage For="() => ChipUsage.Available" class="text-danger" />
-                </div>
-                <div class="mb-3">
-                    <label for="production" class="form-label">Production:</label>
-                    <InputNumber id="production" @bind-Value="ChipUsage.Production" class="form-control" />
-                    <ValidationMessage For="() => ChipUsage.Production" class="text-danger" />
-                </div>
-                <div class="mb-3">
-                    <label for="left" class="form-label">Left:</label>
-                    <InputNumber id="left" @bind-Value="ChipUsage.Left" class="form-control" />
-                    <ValidationMessage For="() => ChipUsage.Left" class="text-danger" />
-                </div>
-                <div class="mb-3">
-                    <label for="lot" class="form-label">Lot:</label>
-                    <InputText id="lot" @bind-Value="ChipUsage.Lot" class="form-control" />
-                    <ValidationMessage For="() => ChipUsage.Lot" class="text-danger" />
-                </div>
-                <div class="mb-3">
-                    <label for="note" class="form-label">Note:</label>
-                    <InputText id="note" @bind-Value="ChipUsage.Note" class="form-control" />
-                    <ValidationMessage For="() => ChipUsage.Note" class="text-danger" />
-                </div>
-                <button type="submit" class="btn btn-primary">Save</button>
-            </EditForm>
-}
+            <MudTextField Class="mb-5" Variant="Variant.Outlined"
+                          Label="Lot."
+                          @bind-Value="ChipUsage.Lot" />
 
-<div>
-    <a href="/chipusages">Back to List</a>
-</div>
+            <MudTextField Class="mb-5" Variant="Variant.Outlined"
+                          Label="비고"
+                          @bind-Value="ChipUsage.Note" />
+        </DialogContent>
+        <DialogActions>
+            <MudButton Class="mb-5 me-5" ButtonType="ButtonType.Submit" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save" Color="Color.Info">SAVE</MudButton>
+            <MudButton Class="mb-5 me-5" Variant="Variant.Filled" Color="Color.Secondary" OnClick="() => MudDialog.Cancel()">Cancel</MudButton>
+        </DialogActions>
+    </MudDialog>
+</EditForm>
+
 
 @code {
     [SupplyParameterFromQuery]
     private int Id { get; set; }
 
-    [SupplyParameterFromForm]
-    private ChipUsage? ChipUsage { get; set; }
+    [Parameter]
+    public ChipUsage? ChipUsage { get; set; } = new();
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        using var context = DbFactory.CreateDbContext();
-        ChipUsage ??= await context.ChipUsage.FirstOrDefaultAsync(m => m.Id == Id);
-
-        if (ChipUsage is null)
+        ChipUsage = new ChipUsage
         {
-            NavigationManager.NavigateTo("notfound");
-        }
+            Id = ChipUsage.Id,
+            Chip = ChipUsage.Chip,
+            Division = ChipUsage.Division,
+            UseDate = ChipUsage.UseDate,
+            Producer = ChipUsage.Producer,
+            Wafer = ChipUsage.Wafer,
+            WaferInfo = ChipUsage.WaferInfo,
+            ReceiptDate = ChipUsage.ReceiptDate,
+            Operator = ChipUsage.Operator,
+            Available = ChipUsage.Available,
+            Production = ChipUsage.Production,
+            Left = ChipUsage.Left,
+            Lot = ChipUsage.Lot,
+            Note = ChipUsage.Note
+        };
     }
 
     // To protect from overposting attacks, enable the specific properties you want to bind to.
@@ -141,12 +144,18 @@ else
             }
         }
 
-        NavigationManager.NavigateTo("/chipusages");
+        Snackbar.Add("성공적으로 수정되었습니다.", Severity.Success);
+        MudDialog.Close();
     }
 
     private bool ChipUsageExists(int id)
     {
         using var context = DbFactory.CreateDbContext();
         return context.ChipUsage.Any(e => e.Id == id);
+    }
+
+    private void SelectChip(string Type)
+    {
+        ChipUsage.Chip = Type;
     }
 }

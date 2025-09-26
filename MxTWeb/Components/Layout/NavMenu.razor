@@ -17,49 +17,60 @@
 
         <AuthorizeView>
             <Authorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                        <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-                    </NavLink>
-                </div>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="cyropreserveds" style="white-space:nowrap">
-                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span>
-                        <span class="fw-bolder"> 동결세포 관리 </span>
-                    </NavLink>
-                </div>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="reagents" style="white-space:nowrap">
-                        <span class="bi bi-clipboard-heart fs-5 pb-5" aria-hidden="true"></span>
-                        <span class="fw-bolder"> 연구용 시약 관리 </span>
-                    </NavLink>
-                </div>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="equipments" style="white-space:nowrap">
-                        <span class="bi bi-amd fs-5 pb-5" aria-hidden="true"></span>
-                        <span class="fw-bolder"> 연구용 장비·기기 관리 </span>
-                    </NavLink>
-                </div>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="chipusages" style="white-space:nowrap">
-                        <span class="bi bi-cpu fs-5 pb-5" aria-hidden="true"></span>
-                        <span class="fw-bolder"> 칩 사용 대장 </span>
-                    </NavLink>
-                </div>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="Account/Manage">
-                        <span class="bi bi-person-fill-nav-menu" aria-hidden="true"></span> @context.User.Identity?.Name
-                    </NavLink>
-                </div>
-                <div class="nav-item px-3">
-                    <form action="Account/Logout" method="post">
+                <MudNavMenu Rounded="true" Margin="Margin.Normal" Color="Color.Tertiary" Class="pa-3">
+                    <MudNavLink Match="NavLinkMatch.All" Href="" IconColor="Color.Surface"
+                                Icon="@Icons.Material.Filled.Home" Style="font-size: 16px; font-weight:bolder; color: floralwhite"
+                                Class="fw-bolder">
+                        Home
+                    </MudNavLink>
+					<MudDivider Class="my-1" />
+                    <MudNavLink Match="NavLinkMatch.Prefix" Href="cyropreserveds" IconColor="Color.Surface"
+                                Icon="@Icons.Material.Filled.AcUnit" Style="font-size: 16px; font-weight:bolder; color: floralwhite"
+                                Class="fw-bolder">
+						동결세포 관리
+                    </MudNavLink>
+
+                    <MudNavLink Match="NavLinkMatch.Prefix" Href="reagents" IconColor="Color.Surface"
+                                Icon="@Icons.Custom.Uncategorized.BioHazard" Style="font-size: 16px; font-weight:bolder; color: floralwhite"
+                                Class="fw-bolder">
+                        연구용 시약 관리
+                    </MudNavLink>
+
+                    <MudNavLink Match="NavLinkMatch.Prefix" Href="equipments" IconColor="Color.Surface"
+                                Icon="@Icons.Material.Filled.Devices" Style="font-size: 16px; font-weight:bolder; color: floralwhite"
+                                Class="fw-bolder">
+                        장비·기기 관리
+                    </MudNavLink>
+
+                    <MudNavLink Match="NavLinkMatch.Prefix" Href="chipusages" IconColor="Color.Surface"
+                                Icon="@Icons.Material.Filled.DeveloperBoard" Style="font-size: 16px; font-weight:bolder; color: floralwhite"
+                                Class="fw-bolder">
+                        칩 사용 대장
+                    </MudNavLink>
+                    <MudDivider Class="my-1" />
+                    <MudNavLink Match="NavLinkMatch.Prefix" Href="Account/Manage" IconColor="Color.Surface"
+                                Icon="@Icons.Material.Filled.Person" Style="font-size: 16px; font-weight:bolder; color: floralwhite"
+                                Class="fw-bolder">
+                        마이페이지
+                    </MudNavLink>
+
+                    <form action="Account/Logout" method="post" style="margin:0;">
                         <AntiforgeryToken />
                         <input type="hidden" name="ReturnUrl" value="Account/Login" />
-                        <button type="submit" class="nav-link">
-                            <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> Logout
-                        </button>
+
+                        <MudButton ButtonType="ButtonType.Submit"
+                                   StartIcon="@Icons.Material.Filled.Logout"
+                                   IconClass="ms-1 me-3 mt-1"
+                                   FullWidth="true"
+                                   Color="Color.Inherit"
+                                   Variant="Variant.Text"
+                                   Class="mud-nav-link"
+                                   Style="font-size:16px; font-weight:bolder; color:floralwhite;">
+                            로그아웃
+                        </MudButton>
                     </form>
-                </div>
+
+                </MudNavMenu>
             </Authorized>
             <NotAuthorized>
                 <div class="nav-item px-3">

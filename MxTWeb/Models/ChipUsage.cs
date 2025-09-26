@@ -13,7 +13,7 @@ namespace MxTWeb.Models
         public string? Division { get; set; }
 
         [Required]
-        public DateOnly UseDate { get; set; }
+        public DateTime? UseDate { get; set; }
 
         public string? Producer { get; set; }
 
@@ -21,7 +21,7 @@ namespace MxTWeb.Models
 
         public string? WaferInfo { get; set; }
 
-        public DateOnly ReceiptDate { get; set; }
+        public DateTime? ReceiptDate { get; set; }
 
         public string? Operator { get; set; }
 
