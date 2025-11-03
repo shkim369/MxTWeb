@@ -3,6 +3,8 @@
 @using Microsoft.EntityFrameworkCore
 @using MxTWeb.Models
 @using MxTWeb.Data
+@using MxTWeb.Enums
+@using Microsoft.EntityFrameworkCore
 @using Microsoft.AspNetCore.Authorization
 @using ClosedXML.Excel;
 @using System.Globalization;
@@ -18,110 +20,205 @@
 <style>
     .custom-grid .mud-table-cell .column-header .column-options .mud-menu .mud-icon-button-label {
         display: none !important;
+		visibility: hidden !important;
+    }
+    .custom-grid .mud-table-cell .column-header .column-options .mud-menu {
+        display: none !important;
+        visibility: hidden !important;
+        width: 0px !important;
+    }
+    .custom-grid .mud-table-cell
+    {
+        padding-right: 15px !important;
     }
 </style>
 
-<MudGrid Spacing="5">
-    <MudItem xs="4">
-        <MudText Typo="Typo.h4">RUO 칩 사용 관리대장</MudText>
-    </MudItem>
-
-    <MudSpacer/>
-
-    <MudItem>
-        <MudButton Class="me-2" @onclick="CreateNew" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">
-            Add New
-        </MudButton>
-    </MudItem>
-
-    <MudItem>
-        <MudFileUpload Class="me-2" T="IBrowserFile" @ref="excelUpload" FilesChanged="UploadFile" >
-            <ActivatorContent>
-                <MudButton Disabled="@importing" Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Custom.FileFormats.FileExcel">
-                    @if(importing)
-                    {
-                        <MudProgressCircular Indeterminate="true" Color="Color.Info" Size="Size.Small" Class="me-2" />
-                        <MudText Class="ms-2">Processing...</MudText>
-                    }
-                    else
-                    {
-                        <MudText>Import</MudText>
-                    }
-                </MudButton>
-            </ActivatorContent>
-        </MudFileUpload>
-    </MudItem>
-
-    <MudItem>
-        <MudButton Disabled="@exporting" @onclick="ExportToExcel" Variant="Variant.Filled" Color="Color.Info" StartIcon="@Icons.Custom.FileFormats.FileExcel">
-            @if (exporting)
-            {
-                <MudProgressCircular Indeterminate="true" Color="Color.Info" Size="Size.Small" Class="me-2" />
-                <MudText Class="ms-2">Processing...</MudText>
-            }
-            else
-            {
-                <MudText>Export</MudText>
-            }
-        </MudButton>
-	</MudItem>
-</MudGrid>
-
+<MudText Typo="Typo.h4">RUO 칩 사용 관리대장</MudText>
 <br />
 
-<MudDataGrid Class="custom-grid" @ref="dataGrid" Items="FilteredData.AsQueryable()" SortMode="SortMode.None" Dense="true" 
-             Style="white-space: nowrap" Hover="true" Bordered="true" Striped="true">
-    <ToolBarContent>
-        <MudText Typo="Typo.h6">Chip 종류</MudText>
-        &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
-        <MudMenu Label="@SelectedChip" Variant="Variant.Outlined" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Default">
-            <MudMenuItem Label="A01_Small chip" @onclick="@(() => SelectChip("A01_Small"))" />
-            <MudMenuItem Label="A01_Large chip" @onclick="@(() => SelectChip("A01_Large"))" />
-            <MudMenuItem Label="B01_Small chip" @onclick="@(() => SelectChip("B01_Small"))" />
-            <MudMenuItem Label="B01_Large chip" @onclick="@(() => SelectChip("B01_Large"))" />
-        </MudMenu>
+<MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" ActivePanelIndexChanged="OnTabChanged">
+    <MudTabPanel Text="RUO 칩 사용 관리대장" OnClick="@(StateHasChanged)">
+        <MudGrid Spacing="5" Style="margin-top: 0px; margin-bottom: 10px">
+            <MudSpacer />
+            <MudSpacer />
+            <MudMenu Label="@SearchField" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Secondary">
+                <MudMenuItem Label="날짜" @onclick="@(() => SelectSearchField("날짜"))" />
+                <MudMenuItem Label="웨이퍼 정보" @onclick="@(() => SelectSearchField("웨이퍼 정보"))" />
+                <MudMenuItem Label="납품일시" @onclick="@(() => SelectSearchField("납품일시"))" />
+                <MudMenuItem Label="사용부서" @onclick="@(() => SelectSearchField("사용부서"))" />
+            </MudMenu>
+            &nbsp&nbsp&nbsp&nbsp
+            <MudTextField @bind-Value="SearchFilter" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        </MudGrid>
+        <MudDataGrid T="ChipUsage" Class="custom-grid" @ref="dataGrid" Items="FilteredData.AsQueryable()" SortMode="SortMode.Single"
+                     Dense="true" Style="white-space: nowrap" Hover="true" Bordered="true" Striped="true" SelectOnRowClick="false"
+                     MultiSelection="true" SelectedItems="@selectedItems" SelectedItemsChanged="@(_ => StateHasChanged())">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">Chip 종류</MudText>
+                &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
+                <MudMenu Label="@SelectedChip" Variant="Variant.Outlined" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Default">
+                    <MudMenuItem Label="A01_Small chip" @onclick="@(() => SelectChip("A01_Small"))" />
+                    <MudMenuItem Label="A01_Large chip" @onclick="@(() => SelectChip("A01_Large"))" />
+                    <MudMenuItem Label="B01_Small chip" @onclick="@(() => SelectChip("B01_Small"))" />
+                    <MudMenuItem Label="B01_Large chip" @onclick="@(() => SelectChip("B01_Large"))" />
+                </MudMenu>
 
-        <MudSpacer />
+                <MudSpacer />
 
-        <MudMenu Label="@SearchField" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Secondary">
-            <MudMenuItem Label="날짜" @onclick="@(() => SelectSearchField("날짜"))" />
-            <MudMenuItem Label="웨이퍼 정보" @onclick="@(() => SelectSearchField("웨이퍼 정보"))" />
-            <MudMenuItem Label="납품일시" @onclick="@(() => SelectSearchField("납품일시"))" />
-            <MudMenuItem Label="사용부서" @onclick="@(() => SelectSearchField("사용부서"))" />
-        </MudMenu>
-        &nbsp&nbsp&nbsp&nbsp
-        <MudTextField @bind-Value="SearchFilter" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
-                        AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-    </ToolBarContent>
+                <MudGrid Spacing="5">
+                    <MudSpacer />
 
-    <Columns>
-        <PropertyColumn Property="x => x.Division" Title="구분" sortable="true" 
-                        CellStyleFunc="@_cellStyleFunc"/>
-        <PropertyColumn Property="x => x.UseDate" Title="날짜" sortable="true" Format="yyyy-MM-dd" />
-        <PropertyColumn Property="x => x.Producer" Title="작업자" Sortable="true"/>
-        <PropertyColumn Property="x => x.Wafer" Title="웨이퍼" sortable="true" />
-        <PropertyColumn Property="x => x.WaferInfo" Title="웨이퍼 정보" />
-        <PropertyColumn Property="x => x.ReceiptDate" Title="납품일시" sortable="true" Format="yyyy-MM-dd" />
-        <PropertyColumn Property="x => x.Operator" Title="사용부서" sortable="true" />
-        <PropertyColumn Property="x => x.Available" Title="사용가능 칩" />
-        <PropertyColumn Property="x => x.Production" Title="생산한 칩" />
-        <PropertyColumn Property="x => x.Left" Title="잔여 칩" />
-        <PropertyColumn Property="x => x.Lot" Title="Lot" />
-        <PropertyColumn Property="x => x.Note" Title="비고" />
+                    <MudItem>
+                        <MudButton Class="me-2" @onclick="CreateNew" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">
+                            Add New
+                        </MudButton>
+                    </MudItem>
 
-        <TemplateColumn Context="x" StickyRight="true">
-            <CellTemplate>
-                <MudIconButton Class="me-2" Size="@Size.Small" Variant="Variant.Filled" Icon="@Icons.Material.Filled.Edit"
-                               Color="@Color.Info" OnClick="@(() => this.UpdateData(x))" />
-                <MudIconButton Size="@Size.Small" Variant="Variant.Filled" Icon="@Icons.Material.Filled.Delete"
-                               Color="@Color.Error" OnClick="@(() => this.DeleteData(x))" />
-            </CellTemplate>
-        </TemplateColumn>
-    </Columns>
-    <PagerContent>
-        <MudDataGridPager/>
-    </PagerContent>
-</MudDataGrid>
+                    <MudItem>
+                        <MudButton Class="me-2" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete"
+                                   Color="@Color.Error" Disabled="@IsDeleteDisabled" OnClick="@DeleteData"> Delete </MudButton>
+                    </MudItem>
+
+                    <MudItem>
+                        <MudFileUpload Class="me-2" T="IBrowserFile" Accept=".xlsx, .csv" @ref="excelUpload" FilesChanged="UploadFile">
+                            <ActivatorContent>
+                                <MudButton Disabled="@importing" Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Custom.FileFormats.FileExcel">
+                                    @if (importing)
+                                    {
+                                        <MudProgressCircular Indeterminate="true" Color="Color.Info" Size="Size.Small" Class="me-2" />
+                                        <MudText Class="ms-2">Processing...</MudText>
+                                    }
+                                    else
+                                    {
+                                        <MudText>Import</MudText>
+                                    }
+                                </MudButton>
+                            </ActivatorContent>
+                        </MudFileUpload>
+                    </MudItem>
+
+                    <MudItem>
+                        <MudButton Disabled="@exporting" @onclick="ExportToExcel" Variant="Variant.Filled" Color="Color.Info" StartIcon="@Icons.Custom.FileFormats.FileExcel">
+                            @if (exporting)
+                            {
+                                <MudProgressCircular Indeterminate="true" Color="Color.Info" Size="Size.Small" Class="me-2" />
+                                <MudText Class="ms-2">Processing...</MudText>
+                            }
+                            else
+                            {
+                                <MudText>Export</MudText>
+                            }
+                        </MudButton>
+                    </MudItem>
+                </MudGrid>
+            </ToolBarContent>
+
+            <Columns>
+                <HierarchyColumn T="ChipUsage" ButtonDisabledFunc="@(x => x.Division != "제작")" />
+                <SelectColumn T="ChipUsage" />
+                <PropertyColumn Property="x => x.Division" Title="구분" sortable="true"
+                                CellStyleFunc="@_cellStyleFunc" Editable="true">
+                </PropertyColumn>
+                <PropertyColumn Property="x => x.UseDate" Title="날짜" sortable="true" Format="yyyy-MM-dd"
+                                SortBy="x => x.UseDate" InitialDirection="SortDirection.Descending" />
+                <PropertyColumn Property="x => x.Producer" Title="작업자" Sortable="true" />
+                <PropertyColumn Property="x => x.Wafer" Title="웨이퍼" sortable="true" />
+                <PropertyColumn Property="x => x.WaferInfo" Title="웨이퍼 정보" />
+                <PropertyColumn Property="x => x.ReceiptDate" Title="납품일시" sortable="true" Format="yyyy-MM-dd" />
+                <PropertyColumn Property="x => x.Operator" Title="사용부서" sortable="true" />
+                <PropertyColumn Property="x => x.Available" Title="수량" sortable="false" />
+                <PropertyColumn Property="x => x.Production" Title="생산" sortable="false" />
+                <PropertyColumn Property="x => x.Left" Title="잔여" sortable="false" />
+                <PropertyColumn Property="x => x.Lot" Title="Lot" sortable="false" />
+                <PropertyColumn Property="x => x.Note" Title="비고" sortable="false" />
+
+                <TemplateColumn Context="x" StickyRight="true">
+                    <CellTemplate>
+                        <MudIconButton Size="@Size.Small" Variant="Variant.Filled" Icon="@Icons.Material.Filled.Edit"
+                                       Color="@Color.Info" OnClick="@(() => this.UpdateData(x))" />
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+            <ChildRowContent>
+                <MudDataGrid T="ChipPressure" Class="custom-grid" SortMode="SortMode.Single"
+                             Dense="true" Style="white-space: nowrap" Hover="true" Bordered="true" Striped="true" RowsPerPage="100"
+                             EditMode="DataGridEditMode.Cell" ReadOnly="false"
+                             CommittedItemChanges="@CommittedItemChanges" Items="@GetChipPressureData(context.Item)">
+                    <Columns>
+                        <PropertyColumn Property="x => x.Number" Title="No." />
+                        <PropertyColumn Property="x => x.ProduceDate" Title="제작 날짜" Editable="false" Format="yyyy-MM-dd" />
+                        <TemplateColumn Title="실험 날짜" Context="x" SortBy="@(x => x.TestDate)">
+                            <EditTemplate>
+                                <MudDatePicker @bind-Date="x.Item.TestDate" DateFormat="yyyy-MM-dd" PickerClosed="@(() => CommittedItemChanges(x.Item))" />
+                            </EditTemplate>
+                        </TemplateColumn>
+                        <PropertyColumn Property="x => x.WaferInfo" Title="웨이퍼 패턴" Editable="false"/>
+                        <PropertyColumn Property="x => x.Pressure" Title="Pressure (mbar)"/>
+                        <PropertyColumn Property="x => x.Note" Title="Note" />
+                        <TemplateColumn Context="x" Editable="false">
+                            <CellTemplate>
+                                <MudIconButton Size="@Size.Small" Variant="Variant.Filled" Icon="@Icons.Material.Filled.Delete"
+                                               Color="@Color.Error" OnClick="@(() => this.DeletePressureData(x.Item))" />
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                </MudDataGrid>
+                <div class="d-flex justify-end pa-2 me-2">
+                    <MudButton OnClick="@(() => AddPressureData(context.Item))" Variant="Variant.Filled" Color="@Color.Success" StartIcon="@Icons.Material.Filled.Add" 
+                               Class="add-item-btn">Add Item</MudButton>
+                </div>
+            </ChildRowContent>
+
+            <PagerContent>
+                <MudDataGridPager />
+            </PagerContent>
+        </MudDataGrid>
+    </MudTabPanel>
+
+    <MudTabPanel Text="RUO Chip Pressure">
+        <MudGrid Spacing="5" Style="margin-top: 0px; margin-bottom: 10px">
+            <MudSpacer />
+            <MudSpacer />
+            <MudMenu Label="@PresSearchField" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Secondary">
+                <MudMenuItem Label="테스트 날짜" @onclick="@(() => SelectPresSearchField("테스트 날짜"))" />
+                <MudMenuItem Label="웨이퍼 패턴" @onclick="@(() => SelectPresSearchField("웨이퍼 패턴"))" />
+            </MudMenu>
+            &nbsp&nbsp&nbsp&nbsp
+            <MudTextField @bind-Value="_presSearchFilter" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        </MudGrid>
+
+        <MudDataGrid T="ChipPressure" Class="custom-grid" Items="@FilteredPresData" SortMode="SortMode.Single"
+                     Dense="true" Style="white-space: nowrap" Hover="true" Bordered="true" Striped="true" RowsPerPage="100"
+					 EditMode="DataGridEditMode.Cell" ReadOnly="false"                   
+                     CommittedItemChanges="@CommittedItemChanges"
+                     QuickFilter="@_quickFilter">
+            <Columns>
+                <PropertyColumn Property="x => x.Number" Title="No." />
+                <PropertyColumn Property="x => x.ProduceDate" Title="제작 날짜" Editable="false" Format="yyyy-MM-dd" />
+                <TemplateColumn Title="실험 날짜" Context="x" Sortable="true" InitialDirection="SortDirection.Descending" SortBy="@(x => x.TestDate)">
+                    <EditTemplate>
+                        <MudDatePicker @bind-Date="x.Item.TestDate" DateFormat="yyyy-MM-dd" PickerClosed="@(() => CommittedItemChanges(x.Item))"/>
+                    </EditTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="x => x.WaferInfo" Title="웨이퍼 패턴" Editable="false"/>
+                <PropertyColumn Property="x => x.Pressure" Title="Pressure (mbar)" />
+                <PropertyColumn Property="x => x.Note" Title="Note" />
+                <TemplateColumn Context="x" Editable="false">
+                    <CellTemplate>
+                        <MudIconButton Size="@Size.Small" Variant="Variant.Filled" Icon="@Icons.Material.Filled.Delete"
+                                       Color="@Color.Error" OnClick="@(() => this.DeletePressureData(x.Item))" />
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+        </MudDataGrid>
+        <div class="d-flex justify-end pa-2 me-2">
+            <MudButton OnClick="@(() => AddPressureData())" Variant="Variant.Filled" Color="@Color.Success" StartIcon="@Icons.Material.Filled.Add"
+                       Class="add-item-btn">Add Item</MudButton>
+        </div>
+    </MudTabPanel>
+</MudTabs>
 
 @code {
     private MxTWebContext context = default!;
@@ -129,8 +226,14 @@
     private MudFileUpload<IBrowserFile> excelUpload;
 
     private readonly SemaphoreSlim _searchSemaphore = new(1, 1);
+    private readonly SemaphoreSlim _deleteSemaphore = new(1, 1);
     private CancellationTokenSource? _searchCts;
     private List<ChipUsage> _filteredResults = new();
+    private HashSet<ChipUsage> selectedItems = new();
+    private bool IsDeleteDisabled => selectedItems.Count == 0;
+
+    private IEnumerable<ChipUsage> FilteredData => _filteredResults;
+    private IEnumerable<ChipPressure> FilteredPresData = new List<ChipPressure>();
 
     private string _selectedChip = "";
     public string SelectedChip
@@ -144,6 +247,7 @@
     }
 
     private string SearchField = "";
+    private string PresSearchField = "";
 
     private string _searchFilter = "";
     public string SearchFilter
@@ -155,8 +259,7 @@
             _ = PerformSearchAsync();
         }
     }
-
-    private IEnumerable<ChipUsage> FilteredData => _filteredResults;
+    private string _presSearchFilter;
 
     bool importing = false;
     bool exporting = false;
@@ -178,7 +281,7 @@
                 "A01_Large" => context.ChipUsage.Where(m => m.Chip!.Equals("A01_Large")),
                 "B01_Small" => context.ChipUsage.Where(m => m.Chip!.Equals("B01_Small")),
                 "B01_Large" => context.ChipUsage.Where(m => m.Chip!.Equals("B01_Large")),
-                _ => context.ChipUsage.Where(m => m.Chip!.Equals("A01_Small chip")),
+                _ => context.ChipUsage.Where(m => m.Chip!.Equals("A01_Small")),
             };
 
             _filteredResults = await query.ToListAsync();
@@ -218,10 +321,32 @@
         }
     }
 
+    private Func<ChipPressure, bool> _quickFilter => x =>
+    {
+        if (string.IsNullOrWhiteSpace(_presSearchFilter))
+            return true;
+
+        if (x.TestDate.ToString().Contains(_presSearchFilter, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (x.ProduceDate.ToString().Contains(_presSearchFilter, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (x.WaferInfo.Contains(_presSearchFilter, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return false;
+    };
+
     private async Task CreateNew()
     {
+        var parameters = new DialogParameters<Edit>
+        {
+            { x => x.action, UIActionEnum.Insert }
+        };
+
         var options = new DialogOptions { MaxWidth = MaxWidth.Large };
-        var dialog = await DialogService.ShowAsync<Create>("Add New Chip", options);
+        var dialog = await DialogService.ShowAsync<Edit>("Add New Chip", parameters, options);
         var result = await dialog.Result;
 
         if (result is not null && !result.Canceled)
@@ -234,6 +359,7 @@
     {
         var parameters = new DialogParameters<Edit>
         {
+            { x => x.action, UIActionEnum.Update },
             { x => x.ChipUsage, data.Item } // 선택된 row의 데이터를 직접 전달
         };
 
@@ -247,11 +373,11 @@
         }
     }
 
-    private async Task DeleteData(CellContext<ChipUsage> data)
+    private async Task DeleteData()
     {
-        var parameters = new DialogParameters<Edit>
+        var parameters = new DialogParameters<Delete>
         {
-            { x => x.ChipUsage, data.Item } // 선택된 row의 데이터를 직접 전달
+            { x => x.chipUsage, selectedItems.ToList() } // 선택된 row의 데이터를 직접 전달
         };
 
         var options = new DialogOptions { MaxWidth = MaxWidth.Large };
@@ -261,6 +387,103 @@
         if (result is not null && !result.Canceled)
         {
             await PerformSearchAsync();
+            selectedItems.Clear();
+        }
+    }
+
+    private IEnumerable<ChipPressure> GetChipPressureData(ChipUsage chipUsage)
+    {
+        if (string.IsNullOrEmpty(chipUsage.WaferInfo))
+        {
+            Snackbar.Add("WaferInfo 값이 비어 있습니다. 데이터를 확인하세요.", Severity.Warning);
+            return Enumerable.Empty<ChipPressure>();
+        }
+
+        string[] waferPattern = chipUsage.WaferInfo.Split("_");
+
+        using var context = DbFactory.CreateDbContext();
+        return context.ChipPressure
+            .Where(cp => cp.ProduceDate == chipUsage.UseDate && cp.WaferInfo == waferPattern[0])
+            .ToList();
+    }
+
+    private async Task AddPressureData(ChipUsage chipUsage)
+    {
+        if (string.IsNullOrEmpty(chipUsage.WaferInfo))
+        {
+            Snackbar.Add("WaferInfo 값이 비어 있습니다. 데이터를 확인하세요.", Severity.Warning);
+            return;
+        }
+
+        string[] waferPattern = chipUsage.WaferInfo.Split("_");
+
+        using var context = DbFactory.CreateDbContext();
+
+        ChipPressure temp = context.ChipPressure
+            .Where(cp => cp.ProduceDate == chipUsage.UseDate && cp.WaferInfo == waferPattern[0])
+            .OrderByDescending(cp => cp.Id)
+            .FirstOrDefault()!;
+
+        var newPressure = new ChipPressure();
+        if (temp == null)
+        {
+            newPressure = new ChipPressure
+            {
+                ProduceDate = chipUsage.UseDate,
+                TestDate = chipUsage.UseDate,
+                WaferInfo = waferPattern[0],
+                Number = 1,
+            };
+        }
+        else
+        {
+            newPressure = new ChipPressure
+            {
+                ProduceDate = chipUsage.UseDate,
+                TestDate = temp.TestDate,
+                WaferInfo = temp.WaferInfo,
+                Number = temp.Number + 1,
+            };
+        }
+
+        context.ChipPressure.Add(newPressure);
+        await context.SaveChangesAsync();
+
+        FilteredPresData = context.ChipPressure.ToList();
+    }
+
+    private async Task AddPressureData()
+    {
+        using var context = DbFactory.CreateDbContext();
+        var newPressure = new ChipPressure
+        {
+			ProduceDate = DateTime.Today,
+            TestDate = DateTime.Today,
+            WaferInfo = "-",
+            Number = 1,
+        };
+        context.ChipPressure.Add(newPressure);
+        await context.SaveChangesAsync();
+
+        FilteredPresData = context.ChipPressure.ToList();
+    }
+
+    private async Task DeletePressureData(ChipPressure data)
+    {
+        using var context = DbFactory.CreateDbContext();
+        using var transaction = await context.Database.BeginTransactionAsync();
+        try
+        {
+            context.ChipPressure.Remove(data!);
+            await context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            FilteredPresData = context.ChipPressure.ToList();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
         }
     }
 
@@ -278,8 +501,6 @@
 
             using var workbook = new XLWorkbook(stream);
             var worksheet = workbook.Worksheets.First();
-            Console.WriteLine($"선택된 워크시트: {worksheet.Name}");
-            Console.WriteLine($"사용된 행 개수: {worksheet.RowsUsed().Count()}");
 
             var rows = worksheet.RowsUsed().Skip(1);
 
@@ -290,7 +511,7 @@
                 {
                     ChipUsage chip = new ChipUsage
                     {
-                        Chip = row.Cell(1).Value.ToString(),
+                        Chip = worksheet.Name,
                         Division = row.Cell(2).Value.ToString(),
                         UseDate = ParseDateTime(row.Cell(3)),
                         Producer = row.Cell(4).Value.ToString(),
@@ -308,7 +529,6 @@
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error processing row {row.RowNumber()}: {ex.Message}");
                     continue;
                 }
             }
@@ -432,7 +652,7 @@
         catch (Exception ex)
         {
             Snackbar.Add($"데이터 내보내기 중 오류가 발생했습니다: {ex.Message}", Severity.Error);
-			return Array.Empty<byte>();
+            return Array.Empty<byte>();
         }
         finally
         {
@@ -444,14 +664,41 @@
     {
         SearchField = item;
     }
+    private void SelectPresSearchField(string item)
+    {
+        PresSearchField = item;
+    }
 
     protected override void OnInitialized()
     {
         context = DbFactory.CreateDbContext();
         _filteredResults = context.ChipUsage.ToList();
+        FilteredPresData = context.ChipPressure.ToList();
 
         SearchField = "날짜";
+        PresSearchField = "테스트 날짜";
         SelectedChip = "A01_Small";
+    }
+
+    private void OnTabChanged(int index)
+    {
+        if (index == 0) // 첫 번째 탭이 선택된 경우
+        {
+            _filteredResults = _filteredResults.OrderByDescending(chip => chip.UseDate).ToList();
+            StateHasChanged(); // UI 업데이트
+        }
+        if (index == 1) // 첫 번째 탭이 선택된 경우
+        {
+            context = DbFactory.CreateDbContext();
+            FilteredPresData = context.ChipPressure.OrderByDescending(chip => chip.TestDate).ToList();
+        }
+    }
+
+    private async Task CommittedItemChanges(ChipPressure item)
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Attach(item!).State = EntityState.Modified;
+        await context.SaveChangesAsync();
     }
 
     private Func<ChipUsage, string> _cellStyleFunc => x =>
@@ -460,8 +707,10 @@
 
         if (x.Division == "납품")
             style += "background-color:#F9CB9C";
-        else
+        else if (x.Division == "제작")
             style += "background-color:#D9EAD3";
+        else if (x.Division == "소진")
+            style += "background-color:#F05650";
 
         return style;
     };

@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "Microsoft Learn MCP Server": {
+      "httpUrl": "https://learn.microsoft.com/api/mcp" 
+    }
+  }
+}

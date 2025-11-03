@@ -25,26 +25,25 @@
 
 @code {
     [Parameter]
-    public ChipUsage? chipUsage { get; set; } = new();
-
-    [SupplyParameterFromQuery]
-    private int Id { get; set; }
+    public List<ChipUsage> chipUsage { get; set; } = new();
 
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        chipUsage = new ChipUsage
-        {
-            Id = chipUsage.Id,
-        };
+        
     }
 
     private async Task DeleteChipUsage()
     {
         using var context = DbFactory.CreateDbContext();
-        context.ChipUsage.Remove(chipUsage!);
+
+        foreach (var item in chipUsage)
+        {
+            context.ChipUsage.Remove(item!);
+        }
+
         await context.SaveChangesAsync();
         NavigationManager.NavigateTo("/chipusages");
 

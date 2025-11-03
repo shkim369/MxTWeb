@@ -22,6 +22,41 @@ namespace MxTWeb.Migrations.MxTWeb
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("MxTWeb.Models.ChipPressure", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Note")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Number")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Pressure")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ProduceDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("TestDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("WaferInfo")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("passFail")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ChipPressure");
+                });
+
             modelBuilder.Entity("MxTWeb.Models.ChipUsage", b =>
                 {
                     b.Property<int>("Id")
@@ -59,11 +94,11 @@ namespace MxTWeb.Migrations.MxTWeb
                     b.Property<int>("Production")
                         .HasColumnType("int");
 
-                    b.Property<DateOnly>("ReceiptDate")
-                        .HasColumnType("date");
+                    b.Property<DateTime?>("ReceiptDate")
+                        .HasColumnType("datetime2");
 
-                    b.Property<DateOnly>("UseDate")
-                        .HasColumnType("date");
+                    b.Property<DateTime>("UseDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Wafer")
                         .HasColumnType("nvarchar(max)");
@@ -87,8 +122,8 @@ namespace MxTWeb.Migrations.MxTWeb
                     b.Property<string>("Density")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateOnly>("FreezeDate")
-                        .HasColumnType("date");
+                    b.Property<DateTime?>("FreezeDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Location")
                         .HasColumnType("nvarchar(max)");
@@ -107,8 +142,8 @@ namespace MxTWeb.Migrations.MxTWeb
                     b.Property<string>("Quantity")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateOnly>("ReceiptDate")
-                        .HasColumnType("date");
+                    b.Property<DateTime>("ReceiptDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Recipient")
                         .IsRequired()

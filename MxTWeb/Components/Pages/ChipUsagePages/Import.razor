@@ -12,10 +12,19 @@
 
 <MudDialog>
 	<DialogContent>
-        <MudDataGrid Items="@chipUsages" SortMode="SortMode.None">
+        <MudDataGrid T="ChipUsage" Items="@chipUsages" SortMode="SortMode.None" MultiSelection="true">
 		    <Columns>
+                <SelectColumn T="ChipUsage" />
                 <PropertyColumn Property="x => x.Chip" Title="Chip 종류" Align="Align.Center"/>
-                <PropertyColumn Property="x => x.Division" Title="구분" Align="Align.Center"/>
+                <PropertyColumn Property="x => x.Division" Title="구분" Align="Align.Center">
+                    <EditTemplate>
+                        <MudSelect @bind-Value="context.Item.Division" Required RequiredError="선택해주세요." Margin="@Margin.Dense">
+                            <MudSelectItem Value="0">zero</MudSelectItem>
+                            <MudSelectItem Value="1">one</MudSelectItem>
+                            <MudSelectItem Value="17">seventeen</MudSelectItem>
+                        </MudSelect>
+                    </EditTemplate>
+                </PropertyColumn>
                 <PropertyColumn Property="x => x.UseDate" Title="날짜" Align="Align.Center" Format="yyyy-MM-dd"/>
                 <PropertyColumn Property="x => x.Producer" Title="작업자" Align="Align.Center"/>
                 <PropertyColumn Property="x => x.Wafer" Title="웨이퍼" Align="Align.Center"/>

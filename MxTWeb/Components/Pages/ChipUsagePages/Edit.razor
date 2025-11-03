@@ -1,15 +1,14 @@
 ﻿@page "/chipusages/edit"
 @using Microsoft.EntityFrameworkCore
 @using MxTWeb.Models
+@using MxTWeb.Enums
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize]
 @inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 
-<PageTitle>Edit</PageTitle>
-
-<EditForm method="post" Model="ChipUsage" OnValidSubmit="UpdateChipUsage" FormName="edit" Enhance>
+<EditForm method="post" Model="ChipUsage" OnValidSubmit="OnValidSubmit" FormName="edit" Enhance>
     <MudDialog>
         <DialogContent>
             <DataAnnotationsValidator />
@@ -19,7 +18,7 @@
                     <MudText Typo="Typo.h6">Chip 종류</MudText>
                 </MudItem>
                 <MudItem xs="6">
-                    <MudMenu Label="@ChipUsage.Chip" Variant="Variant.Outlined" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Default">
+                    <MudMenu Class="me-5 ms-1" Label="@ChipUsage.Chip" Variant="Variant.Outlined" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Default">
                         <MudMenuItem Label="A01_Small" @onclick="@(() => SelectChip("A01_Small"))" />
                         <MudMenuItem Label="A01_Large" @onclick="@(() => SelectChip("A01_Large"))" />
                         <MudMenuItem Label="B01_Small" @onclick="@(() => SelectChip("B01_Small"))" />
@@ -28,31 +27,42 @@
                 </MudItem>
             </MudGrid>
 
-            <MudTextField Class="mb-5" Variant="Variant.Outlined"
-                          Label="구분"
-                          @bind-Value="ChipUsage.Division"
-                          For="@(() => ChipUsage.Division)"
-                          Required="true" Immediate="true" />
+            <MudAutocomplete Class="mb-5" Variant="Variant.Outlined"
+                             Label="구분" 
+                             @bind-Value="ChipUsage.Division"
+                             For="@(() => ChipUsage.Division)"                          
+							 Immediate="true" Required="true" Clearable="true"
+                             SearchFunc="@(async(value,token) => await SearchAutoComplete(value, token, "Division"))" />
+
             <MudDatePicker Class="mb-5" Variant="Variant.Outlined"
                           Label="사용 일자"
-                          @bind-Date="ChipUsage.UseDate" 
+                          @bind-Date="ChipUsage.UseDate"
                           DateFormat="yyyy-MM-dd"/>
-            <MudTextField Class="mb-5" Variant="Variant.Outlined"
-                          Label="작업자"
-                          @bind-Value="ChipUsage.Producer" />
-            <MudTextField Class="mb-5" Variant="Variant.Outlined"
-                          Label="웨이퍼"
-                          @bind-Value="ChipUsage.Wafer" />
-            <MudTextField Class="mb-5" Variant="Variant.Outlined"
-                          Label="웨이퍼 정보"
-                          @bind-Value="ChipUsage.WaferInfo" />
+
+            <MudAutocomplete Class="mb-5" Variant="Variant.Outlined"
+                             Label="작업자"
+                             @bind-Value="ChipUsage.Producer" Clearable="true"
+                             SearchFunc="@(async (value, token) => await SearchAutoComplete(value, token, "Producer"))" />
+
+            <MudAutocomplete Class="mb-5" Variant="Variant.Outlined"
+                             Label="웨이퍼"
+                             @bind-Value="ChipUsage.Wafer" Clearable="true"
+                             SearchFunc="@(async (value, token) => await SearchAutoComplete(value, token, "Wafer"))" />
+
+            <MudAutocomplete Class="mb-5" Variant="Variant.Outlined"
+                             Label="웨이퍼 정보"
+                             @bind-Value="ChipUsage.WaferInfo" Clearable="true"
+                             SearchFunc="@(async (value, token) => await SearchAutoComplete(value, token, "WaferInfo"))" />
+
             <MudDatePicker Class="mb-5" Variant="Variant.Outlined"
                           Label="납품일시"
                           @bind-Date="ChipUsage.ReceiptDate"
                           DateFormat="yyyy-MM-dd"/>
-            <MudTextField Class="mb-5" Variant="Variant.Outlined"
-                          Label="사용자"
-                          @bind-Value="ChipUsage.Operator" />
+
+            <MudAutocomplete Class="mb-5" Variant="Variant.Outlined"
+                             Label="사용 부서"
+                             @bind-Value="ChipUsage.Operator" Clearable="true"
+                             SearchFunc="@(async (value, token) => await SearchAutoComplete(value, token, "Operator"))" />
 
             <MudGrid Class="mb-5">
                 <MudItem xs="4">
@@ -83,7 +93,10 @@
                           @bind-Value="ChipUsage.Note" />
         </DialogContent>
         <DialogActions>
-            <MudButton Class="mb-5 me-5" ButtonType="ButtonType.Submit" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save" Color="Color.Info">SAVE</MudButton>
+            <MudButton Class="mb-5 me-5" ButtonType="ButtonType.Submit" Variant="Variant.Filled"
+                       StartIcon="@(action == UIActionEnum.Update ? Icons.Material.Filled.Edit : Icons.Material.Filled.Add)" Color="Color.Info">
+            @(action == UIActionEnum.Update ? "Edit" : "ADD")
+            </MudButton>
             <MudButton Class="mb-5 me-5" Variant="Variant.Filled" Color="Color.Secondary" OnClick="() => MudDialog.Cancel()">Cancel</MudButton>
         </DialogActions>
     </MudDialog>
@@ -91,38 +104,83 @@
 
 
 @code {
+    [Parameter]
+    public UIActionEnum action { get; set; } = UIActionEnum.Insert;
+
     [SupplyParameterFromQuery]
     private int Id { get; set; }
 
     [Parameter]
-    public ChipUsage? ChipUsage { get; set; } = new();
+    public ChipUsage ChipUsage { get; set; } = new();
 
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; }
 
+    private string?[] _divisionStates = Array.Empty<string>();
+    private string?[] _producerStates = Array.Empty<string>();
+    private string?[] _waferStates = Array.Empty<string>();
+    private string?[] _waferInfoStates = Array.Empty<string>();
+    private string?[] _operatorStates = Array.Empty<string>();
+
     protected override async Task OnInitializedAsync()
     {
-        ChipUsage = new ChipUsage
+        if (action == UIActionEnum.Insert)
         {
-            Id = ChipUsage.Id,
-            Chip = ChipUsage.Chip,
-            Division = ChipUsage.Division,
-            UseDate = ChipUsage.UseDate,
-            Producer = ChipUsage.Producer,
-            Wafer = ChipUsage.Wafer,
-            WaferInfo = ChipUsage.WaferInfo,
-            ReceiptDate = ChipUsage.ReceiptDate,
-            Operator = ChipUsage.Operator,
-            Available = ChipUsage.Available,
-            Production = ChipUsage.Production,
-            Left = ChipUsage.Left,
-            Lot = ChipUsage.Lot,
-            Note = ChipUsage.Note
-        };
+            ChipUsage.Chip = "A01_Small"; // Default value
+
+            ChipUsage.UseDate = DateTime.Today;
+            ChipUsage.ReceiptDate = DateTime.Today;
+        }
+        else if (action == UIActionEnum.Update)
+        {
+            ChipUsage = new ChipUsage
+            {
+                Id = ChipUsage.Id,
+                Chip = ChipUsage.Chip,
+                Division = ChipUsage.Division,
+                UseDate = ChipUsage.UseDate,
+                Producer = ChipUsage.Producer,
+                Wafer = ChipUsage.Wafer,
+                WaferInfo = ChipUsage.WaferInfo,
+                ReceiptDate = ChipUsage.ReceiptDate,
+                Operator = ChipUsage.Operator,
+                Available = ChipUsage.Available,
+                Production = ChipUsage.Production,
+                Left = ChipUsage.Left,
+                Lot = ChipUsage.Lot,
+                Note = ChipUsage.Note
+            };
+        }
+
+        await LoadAutoComplete();
     }
 
     // To protect from overposting attacks, enable the specific properties you want to bind to.
     // For more information, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+
+    private async Task OnValidSubmit()
+    {
+        if (action == UIActionEnum.Insert)
+        {
+            await AddChipUsage();
+        }
+        else if (action == UIActionEnum.Update)
+        {
+            await UpdateChipUsage();
+        }
+    }
+
+    private async Task AddChipUsage()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.ChipUsage.Add(ChipUsage);
+        await context.SaveChangesAsync();
+        NavigationManager.NavigateTo("/chipusages");
+
+        Snackbar.Add("성공적으로 추가되었습니다.", Severity.Success);
+        MudDialog.Close();
+    }
+
     private async Task UpdateChipUsage()
     {
         using var context = DbFactory.CreateDbContext();
@@ -157,5 +215,65 @@
     private void SelectChip(string Type)
     {
         ChipUsage.Chip = Type;
+    }
+
+    private async Task<IEnumerable<string?>> SearchAutoComplete(string value, CancellationToken token, string column)
+    {
+        // In real life use an asynchronous function for fetching data from an api.
+        await Task.Delay(5, token);
+
+        string?[] _states = column switch
+        {
+            "Division" => _divisionStates,
+            "Producer" => _producerStates,
+            "Wafer" => _waferStates,
+            "WaferInfo" => _waferInfoStates,
+            "Operator" => _operatorStates,
+            _ => Array.Empty<string>(),
+		};
+
+        // if text is null or empty, show complete list
+        if (string.IsNullOrEmpty(value))
+        {
+            return _states;
+        }
+
+        return _states.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    }
+
+    private async Task LoadAutoComplete()
+    {
+        using var context = DbFactory.CreateDbContext();
+
+        _divisionStates = await context.ChipUsage
+            .Select(x => x.Division)
+            .Distinct()
+            .Where(x => !string.IsNullOrEmpty(x) && x != "-")
+            .OrderBy(x => x)
+            .ToArrayAsync(); 
+        _producerStates = await context.ChipUsage
+            .Select(x => x.Producer)
+            .Distinct()
+            .Where(x => !string.IsNullOrEmpty(x) && x != "-")
+            .OrderBy(x => x)
+            .ToArrayAsync();
+        _waferStates = await context.ChipUsage
+            .Select(x => x.Wafer)
+            .Distinct()
+            .Where(x => !string.IsNullOrEmpty(x) && x != "-")
+            .OrderBy(x => x)
+            .ToArrayAsync();
+        _waferInfoStates = await context.ChipUsage
+            .Select(x => x.WaferInfo)
+            .Distinct()
+            .Where(x => !string.IsNullOrEmpty(x) && x != "-")
+            .OrderBy(x => x)
+            .ToArrayAsync();
+        _operatorStates = await context.ChipUsage
+            .Select(x => x.Operator)
+            .Distinct()
+            .Where(x => !string.IsNullOrEmpty(x) && x != "-")
+            .OrderBy(x => x)
+			.ToArrayAsync();
     }
 }
