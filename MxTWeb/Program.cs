@@ -15,9 +15,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddQuickGridEntityFrameworkAdapter();
 
 // Add services to the container.
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
-//builder.Services.AddControllersWithViews();
+builder.Services.AddRazorComponents().AddInteractiveServerComponents();
+builder.Services.AddControllersWithViews();
 //builder.Services.AddRazorPages();
 builder.Services.AddMudServices();
 
@@ -26,16 +25,13 @@ builder.Services.AddScoped<IdentityUserAccessor>();
 builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 //builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
-builder.Services.AddScoped<IEmailSender<ApplicationUser>, EmailSender>();
-builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration);
+//builder.Services.AddScoped<IEmailSender<ApplicationUser>, EmailSender>();
+//builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration);
 
-
-var connectionString = builder.Configuration.GetConnectionString("LoginConnection") ?? throw new InvalidOperationException("Connection string 'DockerConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("LoginConnection") ?? throw new InvalidOperationException("Connection string 'DockerConnection' not found.")));
 builder.Services.AddDbContextFactory<MxTWebContext>(options =>
-   options.UseSqlServer(builder.Configuration.GetConnectionString("WebContextConnection") ?? throw new InvalidOperationException("Connection string 'DockerConnection' not found.")));
-
+    options.UseSqlServer(builder.Configuration.GetConnectionString("WebContextConnection") ?? throw new InvalidOperationException("Connection string 'DockerConnection' not found.")));
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
@@ -45,7 +41,7 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
         options.Password.RequireNonAlphanumeric = false;
     })
     .AddRoles<IdentityRole>()
-    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddEntityFrameworkStores<ApplicationDbContext>()   
     .AddUserManager<UserManager<ApplicationUser>>()
     .AddRoleManager<RoleManager<IdentityRole>>()  // 역할 쓸 거면 추가
     .AddSignInManager<SignInManager<ApplicationUser>>() // 로그인 기능 쓸 거면 필요
@@ -118,7 +114,7 @@ app.UseAuthorization();
 app.UseAntiforgery();
 
 app.MapStaticAssets();
-
+app.MapControllers();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 //app.MapRazorPages();

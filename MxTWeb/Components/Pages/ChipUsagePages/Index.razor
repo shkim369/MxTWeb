@@ -15,7 +15,7 @@
 @inject ISnackbar Snackbar
 @inject IJSRuntime JS
 
-<PageTitle>칩 사용 대장</PageTitle>
+<PageTitle>칩 사용 관리대장</PageTitle>
 
 <style>
     .custom-grid .mud-table-cell .column-header .column-options .mud-menu .mud-icon-button-label {
@@ -33,7 +33,7 @@
     }
 </style>
 
-<MudText Typo="Typo.h4">RUO 칩 사용 관리대장</MudText>
+<h2>RUO 칩 사용 관리대장</h2>
 <br />
 
 <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" ActivePanelIndexChanged="OnTabChanged">
@@ -141,33 +141,49 @@
                 </TemplateColumn>
             </Columns>
             <ChildRowContent>
-                <MudDataGrid T="ChipPressure" Class="custom-grid" SortMode="SortMode.Single"
-                             Dense="true" Style="white-space: nowrap" Hover="true" Bordered="true" Striped="true" RowsPerPage="100"
-                             EditMode="DataGridEditMode.Cell" ReadOnly="false"
-                             CommittedItemChanges="@CommittedItemChanges" Items="@GetChipPressureData(context.Item)">
-                    <Columns>
-                        <PropertyColumn Property="x => x.Number" Title="No." />
-                        <PropertyColumn Property="x => x.ProduceDate" Title="제작 날짜" Editable="false" Format="yyyy-MM-dd" />
-                        <TemplateColumn Title="실험 날짜" Context="x" SortBy="@(x => x.TestDate)">
-                            <EditTemplate>
-                                <MudDatePicker @bind-Date="x.Item.TestDate" DateFormat="yyyy-MM-dd" PickerClosed="@(() => CommittedItemChanges(x.Item))" />
-                            </EditTemplate>
-                        </TemplateColumn>
-                        <PropertyColumn Property="x => x.WaferInfo" Title="웨이퍼 패턴" Editable="false"/>
-                        <PropertyColumn Property="x => x.Pressure" Title="Pressure (mbar)"/>
-                        <PropertyColumn Property="x => x.Note" Title="Note" />
-                        <TemplateColumn Context="x" Editable="false">
-                            <CellTemplate>
-                                <MudIconButton Size="@Size.Small" Variant="Variant.Filled" Icon="@Icons.Material.Filled.Delete"
-                                               Color="@Color.Error" OnClick="@(() => this.DeletePressureData(x.Item))" />
-                            </CellTemplate>
-                        </TemplateColumn>
-                    </Columns>
-                </MudDataGrid>
-                <div class="d-flex justify-end pa-2 me-2">
-                    <MudButton OnClick="@(() => AddPressureData(context.Item))" Variant="Variant.Filled" Color="@Color.Success" StartIcon="@Icons.Material.Filled.Add" 
-                               Class="add-item-btn">Add Item</MudButton>
-                </div>
+                @if (pressureLoading)
+                {
+                    <MudProgressCircular Indeterminate="true" Color="Color.Info" Size="Size.Large"/>
+                }
+                else
+                {   
+                    <MudDataGrid T="ChipPressure" Class="custom-grid" SortMode="SortMode.Single"
+                                 Dense="true" Style="white-space: nowrap" Hover="true" Bordered="true" Striped="true" RowsPerPage="100"
+                                 EditMode="DataGridEditMode.Cell" ReadOnly="false"
+                                 CommittedItemChanges="@CommittedItemChanges" Items="@GetCachedChipPressureData($"{context.Item.Id}", context.Item)">
+                        <Columns>
+                            <PropertyColumn Property="x => x.Number" Title="No." />
+                            <PropertyColumn Property="x => x.ProduceDate" Title="제작 날짜" Editable="false" Format="yyyy-MM-dd" />
+                            <TemplateColumn Title="테스트 날짜" Context="x" SortBy="@(x => x.TestDate)">
+                                <EditTemplate>
+                                    <MudDatePicker @bind-Date="x.Item.TestDate" DateFormat="yyyy-MM-dd" PickerClosed="@(() => CommittedItemChanges(x.Item))" />
+                                </EditTemplate>
+                            </TemplateColumn>
+                            <PropertyColumn Property="x => x.WaferInfo" Title="웨이퍼 패턴" Editable="false"/>
+                            <PropertyColumn Property="x => x.Pressure" Title="Pressure (mbar)"/>
+                            <PropertyColumn Property="x => x.passFail" Context="x" Title="합/불" CellStyleFunc="@_cellStyleFunc2" >
+                                <EditTemplate>
+                                    <MudSelect T="int" Value="x.Item.passFail" Margin="@Margin.Dense"
+                                               ValueChanged="@(val => { x.Item.passFail = val; CommittedItemChanges(x.Item); })" >
+                                        <MudSelectItem Value="0">PASS</MudSelectItem>
+                                        <MudSelectItem Value="-1">FAIL</MudSelectItem>
+                                    </MudSelect>
+                                </EditTemplate>
+                            </PropertyColumn>
+                            <PropertyColumn Property="x => x.Note" Title="Note" />
+                            <TemplateColumn Context="x" Editable="false">
+                                <CellTemplate>
+                                    <MudIconButton Size="@Size.Small" Variant="Variant.Filled" Icon="@Icons.Material.Filled.Delete"
+                                                   Color="@Color.Error" OnClick="@(() => this.DeletePressureData(x.Item))" />
+                                </CellTemplate>
+                            </TemplateColumn>
+                        </Columns>
+                    </MudDataGrid>
+                    <div class="d-flex justify-end pa-2 me-2">
+                        <MudButton OnClick="@(() => AddPressureData(context.Item))" Variant="Variant.Filled" Color="@Color.Success" StartIcon="@Icons.Material.Filled.Add" 
+                                   Class="add-item-btn">Add Item</MudButton>
+                    </div>
+                }
             </ChildRowContent>
 
             <PagerContent>
@@ -181,6 +197,7 @@
             <MudSpacer />
             <MudSpacer />
             <MudMenu Label="@PresSearchField" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Secondary">
+                <MudMenuItem Label="제작 날짜" @onclick="@(() => SelectPresSearchField("제작 날짜"))" />
                 <MudMenuItem Label="테스트 날짜" @onclick="@(() => SelectPresSearchField("테스트 날짜"))" />
                 <MudMenuItem Label="웨이퍼 패턴" @onclick="@(() => SelectPresSearchField("웨이퍼 패턴"))" />
             </MudMenu>
@@ -189,34 +206,50 @@
                           AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
         </MudGrid>
 
-        <MudDataGrid T="ChipPressure" Class="custom-grid" Items="@FilteredPresData" SortMode="SortMode.Single"
-                     Dense="true" Style="white-space: nowrap" Hover="true" Bordered="true" Striped="true" RowsPerPage="100"
-					 EditMode="DataGridEditMode.Cell" ReadOnly="false"                   
-                     CommittedItemChanges="@CommittedItemChanges"
-                     QuickFilter="@_quickFilter">
-            <Columns>
-                <PropertyColumn Property="x => x.Number" Title="No." />
-                <PropertyColumn Property="x => x.ProduceDate" Title="제작 날짜" Editable="false" Format="yyyy-MM-dd" />
-                <TemplateColumn Title="실험 날짜" Context="x" Sortable="true" InitialDirection="SortDirection.Descending" SortBy="@(x => x.TestDate)">
-                    <EditTemplate>
-                        <MudDatePicker @bind-Date="x.Item.TestDate" DateFormat="yyyy-MM-dd" PickerClosed="@(() => CommittedItemChanges(x.Item))"/>
-                    </EditTemplate>
-                </TemplateColumn>
-                <PropertyColumn Property="x => x.WaferInfo" Title="웨이퍼 패턴" Editable="false"/>
-                <PropertyColumn Property="x => x.Pressure" Title="Pressure (mbar)" />
-                <PropertyColumn Property="x => x.Note" Title="Note" />
-                <TemplateColumn Context="x" Editable="false">
-                    <CellTemplate>
-                        <MudIconButton Size="@Size.Small" Variant="Variant.Filled" Icon="@Icons.Material.Filled.Delete"
-                                       Color="@Color.Error" OnClick="@(() => this.DeletePressureData(x.Item))" />
-                    </CellTemplate>
-                </TemplateColumn>
-            </Columns>
-        </MudDataGrid>
-        <div class="d-flex justify-end pa-2 me-2">
-            <MudButton OnClick="@(() => AddPressureData())" Variant="Variant.Filled" Color="@Color.Success" StartIcon="@Icons.Material.Filled.Add"
-                       Class="add-item-btn">Add Item</MudButton>
-        </div>
+        @if (pressureLoading)
+        {
+            <MudProgressCircular Indeterminate="true" Color="Color.Info" Size="Size.Large"/>
+        }
+        else
+        {           
+            <MudDataGrid T="ChipPressure" Class="custom-grid" Items="@FilteredPresData" SortMode="SortMode.Single"
+                         Dense="true" Style="white-space: nowrap" Hover="true" Bordered="true" Striped="true" RowsPerPage="100"
+					     EditMode="DataGridEditMode.Cell" ReadOnly="false"                   
+                         CommittedItemChanges="@CommittedItemChanges"
+                         QuickFilter="@_quickFilter">
+                <Columns>
+                    <PropertyColumn Property="x => x.Number" Title="No." />
+                    <PropertyColumn Property="x => x.ProduceDate" Title="제작 날짜" Editable="false" Format="yyyy-MM-dd" />
+                    <TemplateColumn Title="테스트 날짜" Context="x" Sortable="true" InitialDirection="SortDirection.Descending" SortBy="@(x => x.TestDate)">
+                        <EditTemplate>
+                            <MudDatePicker @bind-Date="x.Item.TestDate" DateFormat="yyyy-MM-dd" PickerClosed="@(() => CommittedItemChanges(x.Item))"/>
+                        </EditTemplate>
+                    </TemplateColumn>
+                    <PropertyColumn Property="x => x.WaferInfo" Title="웨이퍼 패턴" Editable="false"/>
+                    <PropertyColumn Property="x => x.Pressure" Title="Pressure (mbar)" />
+                    <PropertyColumn Property="x => x.passFail" Context="x" Title="합/불" CellStyleFunc="@_cellStyleFunc2">
+                        <EditTemplate>
+                            <MudSelect T="int" Value="x.Item.passFail" Margin="@Margin.Dense"
+                                       ValueChanged="@(val => { x.Item.passFail = val; CommittedItemChanges(x.Item); })">
+                                <MudSelectItem Value="0">PASS</MudSelectItem>
+                                <MudSelectItem Value="-1">FAIL</MudSelectItem>
+                            </MudSelect>
+                        </EditTemplate>
+                    </PropertyColumn>
+                    <PropertyColumn Property="x => x.Note" Title="Note" />
+                    <TemplateColumn Context="x" Editable="false">
+                        <CellTemplate>
+                            <MudIconButton Size="@Size.Small" Variant="Variant.Filled" Icon="@Icons.Material.Filled.Delete"
+                                           Color="@Color.Error" OnClick="@(() => this.DeletePressureData(x.Item))" />
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
+            <div class="d-flex justify-end pa-2 me-2">
+                <MudButton OnClick="@(() => AddPressureData())" Variant="Variant.Filled" Color="@Color.Success" StartIcon="@Icons.Material.Filled.Add"
+                           Class="add-item-btn">Add Item</MudButton>
+            </div>
+        }
     </MudTabPanel>
 </MudTabs>
 
@@ -234,6 +267,7 @@
 
     private IEnumerable<ChipUsage> FilteredData => _filteredResults;
     private IEnumerable<ChipPressure> FilteredPresData = new List<ChipPressure>();
+    private Dictionary<string, IEnumerable<ChipPressure>> chipPressureCache = new();
 
     private string _selectedChip = "";
     public string SelectedChip
@@ -263,6 +297,7 @@
 
     bool importing = false;
     bool exporting = false;
+    bool pressureLoading = false;
 
     private async Task SelectChip(string Type)
     {
@@ -326,14 +361,29 @@
         if (string.IsNullOrWhiteSpace(_presSearchFilter))
             return true;
 
-        if (x.TestDate.ToString().Contains(_presSearchFilter, StringComparison.OrdinalIgnoreCase))
-            return true;
+        else {
+            switch (PresSearchField)
+            {
+                case "테스트 날짜":
+                    if (x.TestDate.GetValueOrDefault().ToString("yyyy-MM-dd").Contains(_presSearchFilter, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    break;
 
-        if (x.ProduceDate.ToString().Contains(_presSearchFilter, StringComparison.OrdinalIgnoreCase))
-            return true;
+                case "제작 날짜":
+                    if (x.ProduceDate.GetValueOrDefault().ToString("yyyy-MM-dd").Contains(_presSearchFilter, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    break;
 
-        if (x.WaferInfo.Contains(_presSearchFilter, StringComparison.OrdinalIgnoreCase))
-            return true;
+				case "웨이퍼 패턴":
+                    if (x.WaferInfo.Contains(_presSearchFilter, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    break;
+
+                default:
+					break;
+            }
+
+        }
 
         return false;
     };
@@ -389,6 +439,17 @@
             await PerformSearchAsync();
             selectedItems.Clear();
         }
+    }
+
+    private IEnumerable<ChipPressure> GetCachedChipPressureData(string cacheKey, ChipUsage chipUsage)
+    {
+        pressureLoading = true;
+        if (!chipPressureCache.ContainsKey(cacheKey))
+        {
+            chipPressureCache[cacheKey] = GetChipPressureData(chipUsage);
+        }
+        pressureLoading = false;
+        return chipPressureCache[cacheKey];
     }
 
     private IEnumerable<ChipPressure> GetChipPressureData(ChipUsage chipUsage)
@@ -710,8 +771,15 @@
         else if (x.Division == "제작")
             style += "background-color:#D9EAD3";
         else if (x.Division == "소진")
-            style += "background-color:#F05650";
+            style += "background-color:#f8766b";
 
+        return style;
+    };
+    private Func<ChipPressure, string> _cellStyleFunc2 => x =>
+    {
+        string style = "";
+        if (x.passFail == -1)
+            style += "background-color:#f8766b";
         return style;
     };
 
