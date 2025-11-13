@@ -45,12 +45,15 @@ namespace MxTWeb.Migrations.MxTWeb
                     b.Property<DateTime>("TestDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("TestNum")
+                        .HasColumnType("int");
+
                     b.Property<string>("WaferInfo")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("passFail")
-                        .HasColumnType("int");
+                    b.Property<string>("passFail")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 

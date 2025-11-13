@@ -28,8 +28,6 @@ namespace MxTWeb.Services
         [HttpPost] // HTTP POST 요청만 받음
         public async Task<IActionResult> PostLog([FromBody] ChipPressure data)
         {
-            Console.WriteLine($"Received: {data?.Number}, {data?.WaferInfo}");
-
             if (data == null)
                 return BadRequest("Data is null");
 
@@ -37,6 +35,7 @@ namespace MxTWeb.Services
             var pressureData = new ChipPressure
             {
                 Number = data.Number,
+                TestNum = data.TestNum,
                 WaferInfo = data.WaferInfo,
                 ProduceDate = data.ProduceDate,
                 TestDate = data.TestDate,

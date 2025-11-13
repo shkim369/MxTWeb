@@ -11,6 +11,9 @@ namespace MxTWeb.Models
         public int Number { get; set; }
 
         [Required]
+        public int TestNum { get; set; }
+
+        [Required]
         public string? WaferInfo { get; set; }
         // waferPattern to link to ChipUsage
 
@@ -22,7 +25,7 @@ namespace MxTWeb.Models
 
         public int Pressure { get; set; }
 
-        public int passFail { get; set; }
+        public string? passFail { get; set; }
 
         public string? Note { get; set; }
     }

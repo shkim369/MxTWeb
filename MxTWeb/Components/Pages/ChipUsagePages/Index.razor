@@ -152,7 +152,6 @@
                                  EditMode="DataGridEditMode.Cell" ReadOnly="false"
                                  CommittedItemChanges="@CommittedItemChanges" Items="@GetCachedChipPressureData($"{context.Item.Id}", context.Item)">
                         <Columns>
-                            <PropertyColumn Property="x => x.Number" Title="No." />
                             <PropertyColumn Property="x => x.ProduceDate" Title="제작 날짜" Editable="false" Format="yyyy-MM-dd" />
                             <TemplateColumn Title="테스트 날짜" Context="x" SortBy="@(x => x.TestDate)">
                                 <EditTemplate>
@@ -160,27 +159,31 @@
                                 </EditTemplate>
                             </TemplateColumn>
                             <PropertyColumn Property="x => x.WaferInfo" Title="웨이퍼 패턴" Editable="false"/>
+                            <PropertyColumn Property="x => x.Number" Title="Origin No." />
+                            <PropertyColumn Property="x => x.TestNum" Title="Test No." />
                             <PropertyColumn Property="x => x.Pressure" Title="Pressure (mbar)"/>
-                            <PropertyColumn Property="x => x.passFail" Context="x" Title="합/불" CellStyleFunc="@_cellStyleFunc2" >
+                            <PropertyColumn Property="x => x.passFail" Context="x" Title="합/불" CellStyleFunc="@_cellStyleFunc2"
+                                            HeaderStyle="width: 120px; min-width: 120px; max-width: 120px;"
+                                            CellStyle="width: 120px; min-width: 120px; max-width: 120px;">
                                 <EditTemplate>
-                                    <MudSelect T="int" Value="x.Item.passFail" Margin="@Margin.Dense"
+                                    <MudSelect T="string" Value="x.Item.passFail" Margin="@Margin.Dense"
                                                ValueChanged="@(val => { x.Item.passFail = val; CommittedItemChanges(x.Item); })" >
-                                        <MudSelectItem Value="0">PASS</MudSelectItem>
-                                        <MudSelectItem Value="-1">FAIL</MudSelectItem>
+                                        <MudSelectItem Value=@("PASS")>PASS</MudSelectItem>
+                                        <MudSelectItem Value=@("FAIL")>FAIL</MudSelectItem>
                                     </MudSelect>
                                 </EditTemplate>
                             </PropertyColumn>
-                            <PropertyColumn Property="x => x.Note" Title="Note" />
+                            <PropertyColumn Property="x => x.Note" Title="Note" Required="false"/>
                             <TemplateColumn Context="x" Editable="false">
                                 <CellTemplate>
                                     <MudIconButton Size="@Size.Small" Variant="Variant.Filled" Icon="@Icons.Material.Filled.Delete"
-                                                   Color="@Color.Error" OnClick="@(() => this.DeletePressureData(x.Item))" />
+                                                   Color="@Color.Error" OnClick="@(async () => { await DeletePressureData(x.Item); UpdateChipPressureData($"{context.Item.Id}", context.Item); })" />
                                 </CellTemplate>
                             </TemplateColumn>
                         </Columns>
                     </MudDataGrid>
                     <div class="d-flex justify-end pa-2 me-2">
-                        <MudButton OnClick="@(() => AddPressureData(context.Item))" Variant="Variant.Filled" Color="@Color.Success" StartIcon="@Icons.Material.Filled.Add" 
+                        <MudButton OnClick="@(() => AddPressureData(context.Item))" Variant="Variant.Filled" Color="@Color.Success" StartIcon="@Icons.Material.Filled.Add"
                                    Class="add-item-btn">Add Item</MudButton>
                     </div>
                 }
@@ -218,7 +221,6 @@
                          CommittedItemChanges="@CommittedItemChanges"
                          QuickFilter="@_quickFilter">
                 <Columns>
-                    <PropertyColumn Property="x => x.Number" Title="No." />
                     <PropertyColumn Property="x => x.ProduceDate" Title="제작 날짜" Editable="false" Format="yyyy-MM-dd" />
                     <TemplateColumn Title="테스트 날짜" Context="x" Sortable="true" InitialDirection="SortDirection.Descending" SortBy="@(x => x.TestDate)">
                         <EditTemplate>
@@ -226,17 +228,21 @@
                         </EditTemplate>
                     </TemplateColumn>
                     <PropertyColumn Property="x => x.WaferInfo" Title="웨이퍼 패턴" Editable="false"/>
+                    <PropertyColumn Property="x => x.Number" Title="Origin No." />
+                    <PropertyColumn Property="x => x.TestNum" Title="Test No." />
                     <PropertyColumn Property="x => x.Pressure" Title="Pressure (mbar)" />
-                    <PropertyColumn Property="x => x.passFail" Context="x" Title="합/불" CellStyleFunc="@_cellStyleFunc2">
+                    <PropertyColumn Property="x => x.passFail" Context="x" Title="합/불" CellStyleFunc="@_cellStyleFunc2"
+                                    HeaderStyle="width: 120px; min-width: 120px; max-width: 120px;"
+                                    CellStyle="width: 120px; min-width: 120px; max-width: 120px;">
                         <EditTemplate>
-                            <MudSelect T="int" Value="x.Item.passFail" Margin="@Margin.Dense"
+                            <MudSelect T="string" Value="x.Item.passFail" Margin="@Margin.Dense"
                                        ValueChanged="@(val => { x.Item.passFail = val; CommittedItemChanges(x.Item); })">
-                                <MudSelectItem Value="0">PASS</MudSelectItem>
-                                <MudSelectItem Value="-1">FAIL</MudSelectItem>
+                                <MudSelectItem Value=@("PASS")>PASS</MudSelectItem>
+                                <MudSelectItem Value=@("FAIL")>FAIL</MudSelectItem>
                             </MudSelect>
                         </EditTemplate>
                     </PropertyColumn>
-                    <PropertyColumn Property="x => x.Note" Title="Note" />
+                    <PropertyColumn Property="x => x.Note" Title="Note" Required="false"/>
                     <TemplateColumn Context="x" Editable="false">
                         <CellTemplate>
                             <MudIconButton Size="@Size.Small" Variant="Variant.Filled" Icon="@Icons.Material.Filled.Delete"
@@ -452,6 +458,11 @@
         return chipPressureCache[cacheKey];
     }
 
+    private void UpdateChipPressureData(string cacheKey, ChipUsage chipUsage)
+    {
+        chipPressureCache[cacheKey] = GetChipPressureData(chipUsage);
+    }
+
     private IEnumerable<ChipPressure> GetChipPressureData(ChipUsage chipUsage)
     {
         if (string.IsNullOrEmpty(chipUsage.WaferInfo))
@@ -494,6 +505,8 @@
                 TestDate = chipUsage.UseDate,
                 WaferInfo = waferPattern[0],
                 Number = 1,
+				TestNum = 100,
+				passFail = "PASS"
             };
         }
         else
@@ -503,14 +516,16 @@
                 ProduceDate = chipUsage.UseDate,
                 TestDate = temp.TestDate,
                 WaferInfo = temp.WaferInfo,
-                Number = temp.Number + 1,
+                Number = 1,
+                TestNum = temp.TestNum + 1,
+				passFail = "PASS"
             };
         }
 
         context.ChipPressure.Add(newPressure);
         await context.SaveChangesAsync();
 
-        FilteredPresData = context.ChipPressure.ToList();
+        chipPressureCache[chipUsage.Id.ToString()] = GetChipPressureData(chipUsage);
     }
 
     private async Task AddPressureData()
@@ -522,6 +537,8 @@
             TestDate = DateTime.Today,
             WaferInfo = "-",
             Number = 1,
+            TestNum = 100,
+            passFail = "PASS"
         };
         context.ChipPressure.Add(newPressure);
         await context.SaveChangesAsync();
@@ -778,7 +795,7 @@
     private Func<ChipPressure, string> _cellStyleFunc2 => x =>
     {
         string style = "";
-        if (x.passFail == -1)
+        if (x.passFail == "FAIL")
             style += "background-color:#f8766b";
         return style;
     };
