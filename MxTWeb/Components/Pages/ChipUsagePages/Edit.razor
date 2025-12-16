@@ -35,33 +35,33 @@
                              SearchFunc="@(async(value,token) => await SearchAutoComplete(value, token, "Division"))" />
 
             <MudDatePicker Class="mb-5" Variant="Variant.Outlined"
-                          Label="사용 일자"
-                          @bind-Date="ChipUsage.UseDate"
-                          DateFormat="yyyy-MM-dd"/>
+                           Label="사용 일자"
+                           @bind-Date="ChipUsage.UseDate"
+                           DateFormat="yyyy-MM-dd"/>
 
             <MudAutocomplete Class="mb-5" Variant="Variant.Outlined"
                              Label="작업자"
-                             @bind-Value="ChipUsage.Producer" Clearable="true"
+                             @bind-Value="ChipUsage.Producer" Clearable="true" CoerceValue="true"
                              SearchFunc="@(async (value, token) => await SearchAutoComplete(value, token, "Producer"))" />
 
             <MudAutocomplete Class="mb-5" Variant="Variant.Outlined"
                              Label="웨이퍼"
-                             @bind-Value="ChipUsage.Wafer" Clearable="true"
+                             @bind-Value="ChipUsage.Wafer" Clearable="true" CoerceValue="true"
                              SearchFunc="@(async (value, token) => await SearchAutoComplete(value, token, "Wafer"))" />
 
             <MudAutocomplete Class="mb-5" Variant="Variant.Outlined"
                              Label="웨이퍼 정보"
-                             @bind-Value="ChipUsage.WaferInfo" Clearable="true"
+                             @bind-Value="ChipUsage.WaferInfo" Clearable="true" CoerceValue="true"
                              SearchFunc="@(async (value, token) => await SearchAutoComplete(value, token, "WaferInfo"))" />
 
             <MudDatePicker Class="mb-5" Variant="Variant.Outlined"
-                          Label="납품일시"
-                          @bind-Date="ChipUsage.ReceiptDate"
-                          DateFormat="yyyy-MM-dd"/>
+                           Label="납품일시"
+                           @bind-Date="ChipUsage.ReceiptDate"
+                           DateFormat="yyyy-MM-dd"/>
 
             <MudAutocomplete Class="mb-5" Variant="Variant.Outlined"
                              Label="사용 부서"
-                             @bind-Value="ChipUsage.Operator" Clearable="true"
+                             @bind-Value="ChipUsage.Operator" Clearable="true" CoerceValue="true"
                              SearchFunc="@(async (value, token) => await SearchAutoComplete(value, token, "Operator"))" />
 
             <MudGrid Class="mb-5">
@@ -240,7 +240,7 @@
 
         return _states.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
     }
-
+    
     private async Task LoadAutoComplete()
     {
         using var context = DbFactory.CreateDbContext();

@@ -1,0 +1,223 @@
+﻿@page "/components/edit"
+@using Microsoft.EntityFrameworkCore
+@using MxTWeb.Models
+@using MxTWeb.Enums
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<EditForm method="post" Model="Component" OnValidSubmit="OnValidSubmit" FormName="edit" Enhance>
+    <MudDialog>
+        <DialogContent>
+            <DataAnnotationsValidator />            
+
+            <MudAutocomplete Class="mb-5" Variant="Variant.Outlined"
+                             Label="Assembly"
+                             @bind-Value="Component.Assembly"
+                             Immediate="true" Required="true" Clearable="true"
+                             CoerceValue="true"
+                             SearchFunc="@(async (value, token) => await SearchAutoComplete(value, token, "Assembly"))" />
+
+            <MudTextField Class="mb-5" Variant="Variant.Outlined"
+                          Label="Part Number"
+                          @bind-Value="Component.PartNumber" Required="true" />
+
+            <MudTextField Class="mb-5" Variant="Variant.Outlined"
+                          Label="Description"
+                          @bind-Value="Component.Description" />
+
+            <MudTextField Class="mb-5" Variant="Variant.Outlined"
+                          Label="Model"
+                          @bind-Value="Component.Model" />
+
+            <MudGrid Class="mb-5">
+                <MudItem xs="6">
+                    <MudTextField Variant="Variant.Outlined"
+                                  Label="Origin"
+                                  @bind-Value="Component.Origin" />
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudTextField Variant="Variant.Outlined"
+                                  Label="Unit Price"
+                                  @bind-Value="Component.Price" />
+                </MudItem>
+            </MudGrid>
+
+            <MudGrid Class="mb-5">
+                <MudItem xs="4">
+                    <MudTextField Variant="Variant.Outlined"
+                                  Label="Category"
+                                  @bind-Value="Component.Category" />
+                </MudItem>
+
+                <MudItem xs="4">
+                    <MudTextField Variant="Variant.Outlined"
+                                  Label="Maker"
+                                  @bind-Value="Component.Maker" />
+                </MudItem>
+
+                <MudItem xs="4">
+                    <MudTextField Variant="Variant.Outlined"
+                                  Label="Seller"
+                                  @bind-Value="Component.Seller" />
+                </MudItem>
+            </MudGrid>
+
+            <MudGrid Class="mb-5">
+                <MudItem xs="4">
+                    <MudTextField Variant="Variant.Outlined"
+                                  Label="Lead Time"
+                                  @bind-Value="Component.LeadTime" />
+                </MudItem>
+                <MudItem xs="4">
+                    <MudTextField Variant="Variant.Outlined"
+                                  Label="Q'ty"
+                                  @bind-Value="Component.Required" />
+                </MudItem>
+                <MudItem xs="4">
+                    <MudTextField Variant="Variant.Outlined"
+                                  Label="Stock"
+                                  @bind-Value="Component.Stock" />
+                </MudItem>
+            </MudGrid>
+
+            <MudTextField Class="mb-5" Variant="Variant.Outlined"
+                          Label="Note"
+                          @bind-Value="Component.Note" />
+        </DialogContent>
+        <DialogActions>
+            <MudButton Class="mb-5 me-5" ButtonType="ButtonType.Submit" Variant="Variant.Filled"
+                       StartIcon="@(action == UIActionEnum.Update ? Icons.Material.Filled.Edit : Icons.Material.Filled.Add)" Color="Color.Info">
+                @(action == UIActionEnum.Update ? "Edit" : "ADD")
+            </MudButton>
+            <MudButton Class="mb-5 me-5" Variant="Variant.Filled" Color="Color.Secondary" OnClick="() => MudDialog.Cancel()">Cancel</MudButton>
+        </DialogActions>
+    </MudDialog>
+</EditForm>
+
+@code {
+    [Parameter]
+    public UIActionEnum action { get; set; } = UIActionEnum.Insert;
+
+    [SupplyParameterFromQuery]
+    private int Id { get; set; }
+
+    [Parameter]
+    public Component Component { get; set; } = new();
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; }
+
+    private string?[] _assemblyStates = Array.Empty<string>();
+
+    private async Task OnValidSubmit()
+    {
+        if (action == UIActionEnum.Insert)
+        {
+            await AddComponent();
+        }
+        else if (action == UIActionEnum.Update)
+        {
+            await UpdateComponent();
+        }
+    }
+
+    private async Task AddComponent()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Component.Add(Component);
+        await context.SaveChangesAsync();
+        NavigationManager.NavigateTo("/components");
+
+        Snackbar.Add("성공적으로 추가되었습니다.", Severity.Success);
+        MudDialog.Close();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (action == UIActionEnum.Insert)
+        {
+
+        }
+        else if (action == UIActionEnum.Update)
+        {
+            using var context = DbFactory.CreateDbContext();
+            Component ??= await context.Component.FirstOrDefaultAsync(m => m.Id == Id);
+
+            if (Component is null)
+            {
+                NavigationManager.NavigateTo("notfound");
+            }
+        }
+
+        await LoadAutoComplete();
+    }
+
+    // To protect from overposting attacks, enable the specific properties you want to bind to.
+    // For more information, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private async Task UpdateComponent()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Attach(Component!).State = EntityState.Modified;
+
+        try
+        {
+            await context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!ComponentExists(Component!.Id))
+            {
+                NavigationManager.NavigateTo("notfound");
+            }
+            else
+            {
+                throw;
+            }
+        }
+
+        Snackbar.Add("성공적으로 수정되었습니다.", Severity.Success);
+        MudDialog.Close();
+    }
+
+    private bool ComponentExists(int id)
+    {
+        using var context = DbFactory.CreateDbContext();
+        return context.Component.Any(e => e.Id == id);
+    }
+
+    private async Task<IEnumerable<string?>> SearchAutoComplete(string value, CancellationToken token, string column)
+    {
+        // In real life use an asynchronous function for fetching data from an api.
+        await Task.Delay(5, token);
+
+        string?[] _states = column switch
+        {
+            "Assembly" => _assemblyStates,
+            _ => Array.Empty<string>(),
+        };
+
+        // if text is null or empty, show complete list
+        if (string.IsNullOrEmpty(value))
+        {
+            return _states;
+        }
+
+        return _states.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    }
+
+    private async Task LoadAutoComplete()
+    {
+        using var context = DbFactory.CreateDbContext();
+
+        _assemblyStates = await context.Component
+            .Select(x => x.Assembly)
+            .Distinct()
+            .Where(x => !string.IsNullOrEmpty(x) && x != "-")
+            .OrderBy(x => x)
+            .ToArrayAsync();
+    }
+}

@@ -57,7 +57,7 @@ namespace MxTWeb.Migrations.MxTWeb
 
                     b.HasKey("Id");
 
-                    b.ToTable("ChipPressure");
+                    b.ToTable("ChipPressure", (string)null);
                 });
 
             modelBuilder.Entity("MxTWeb.Models.ChipUsage", b =>
@@ -111,7 +111,111 @@ namespace MxTWeb.Migrations.MxTWeb
 
                     b.HasKey("Id");
 
-                    b.ToTable("ChipUsage");
+                    b.ToTable("ChipUsage", (string)null);
+                });
+
+            modelBuilder.Entity("MxTWeb.Models.CompHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Account")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("ComponentId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("EntryDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PartNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("state")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ComponentId");
+
+                    b.ToTable("CompHistory", (string)null);
+                });
+
+            modelBuilder.Entity("MxTWeb.Models.Component", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Assembly")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Category")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Color_Etch")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LeadTime")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Maker")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Material")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Model")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Origin")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PartNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Price")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Required")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Seller")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Stock")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TotalPrice")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Component", (string)null);
                 });
 
             modelBuilder.Entity("MxTWeb.Models.Cyropreserved", b =>
@@ -158,7 +262,7 @@ namespace MxTWeb.Migrations.MxTWeb
 
                     b.HasKey("Id");
 
-                    b.ToTable("Cyropreserved");
+                    b.ToTable("Cyropreserved", (string)null);
                 });
 
             modelBuilder.Entity("MxTWeb.Models.Equipment", b =>
@@ -204,7 +308,7 @@ namespace MxTWeb.Migrations.MxTWeb
 
                     b.HasKey("Id");
 
-                    b.ToTable("Equipment");
+                    b.ToTable("Equipment", (string)null);
                 });
 
             modelBuilder.Entity("MxTWeb.Models.Reagent", b =>
@@ -248,7 +352,16 @@ namespace MxTWeb.Migrations.MxTWeb
 
                     b.HasKey("Id");
 
-                    b.ToTable("Reagent");
+                    b.ToTable("Reagent", (string)null);
+                });
+
+            modelBuilder.Entity("MxTWeb.Models.CompHistory", b =>
+                {
+                    b.HasOne("MxTWeb.Models.Component", "Component")
+                        .WithMany()
+                        .HasForeignKey("ComponentId");
+
+                    b.Navigation("Component");
                 });
 #pragma warning restore 612, 618
         }

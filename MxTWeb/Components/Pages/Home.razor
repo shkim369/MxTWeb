@@ -16,62 +16,78 @@
         <MudText Typo="Typo.h4">Welcome back!</MudText>
         <br />
 
-        <MudGrid>
-            <MudItem xs="6">
-                <MudDataGrid Items="cyropreservedData" SortMode="SortMode.None">
+        <MudGrid >
+            <MudItem xs="4">
+                <MudDataGrid Items="cyropreservedData" SortMode="SortMode.None" Bordered="true">
                     <ToolBarContent>
                         <MudText Typo="Typo.h6">동결세포 관리</MudText>
                         <MudSpacer />
                         <MudLink Href="cyropreserveds" Typo="Typo.h6">더 보기</MudLink>
                     </ToolBarContent>
                     <Columns>
-                        <PropertyColumn Property="cyropreserved => cyropreserved.Name" Title="🧫세포" Align="Align.Center"/>
-                        <PropertyColumn Property="cyropreserved => cyropreserved.ReceiptDate" Title="반입 날짜" Align="Align.Center"/>
-                        <PropertyColumn Property="cyropreserved => cyropreserved.Supplier" Title="반입처" Align="Align.Center" />
+                        <PropertyColumn Property="cyropreserved => cyropreserved.Name" Title="🧫세포"/>
+                        <PropertyColumn Property="cyropreserved => cyropreserved.ReceiptDate" Title="반입 날짜"/>
+                        <PropertyColumn Property="cyropreserved => cyropreserved.Supplier" Title="반입처" />
                     </Columns>
                 </MudDataGrid>
             </MudItem>
-            <MudItem xs="6">
-                <MudDataGrid Items="reagentData" SortMode="SortMode.None">
+            <MudItem xs="4">
+                <MudDataGrid Items="reagentData" SortMode="SortMode.None" Bordered="true">
                     <ToolBarContent>
-                        <MudText Typo="Typo.h6">연구용 시약 관리 관리</MudText>
+                        <MudText Typo="Typo.h6">연구용 시약 관리</MudText>
                         <MudSpacer />
                         <MudLink Href="reagents" Typo="Typo.h6">더 보기</MudLink>
                     </ToolBarContent>
                     <Columns>
-                        <PropertyColumn Property="reagent => reagent.Code" Title="관리번호" Sortable="true"/>
-                        <PropertyColumn Property="reagent => reagent.Name" Title="🧪시약명" Sortable="true"/>
-                        <PropertyColumn Property="reagent => reagent.Manufacturer" Title="제조사" Sortable="true"/>
+                        <PropertyColumn Property="reagent => reagent.Code" Title="관리번호"/>
+                        <PropertyColumn Property="reagent => reagent.Name" Title="🧪시약명"/>
+                        <PropertyColumn Property="reagent => reagent.Manufacturer" Title="제조사"/>
                     </Columns>
                 </MudDataGrid>
             </MudItem>
-            <MudItem xs="6">
-                <MudDataGrid Items="equipmentData" SortMode="SortMode.None">
+            <MudItem xs="4">
+                <MudDataGrid Items="equipmentData" SortMode="SortMode.None" Bordered="true">
                     <ToolBarContent>
                         <MudText Typo="Typo.h6">장비·기기 관리</MudText>
                         <MudSpacer />
                         <MudLink Href="equipments" Typo="Typo.h6">더 보기</MudLink>
                     </ToolBarContent>
                     <Columns>
-                        <PropertyColumn Property="equipment => equipment.ManageCode" Title="관리번호" Sortable="true"/>
-		                <PropertyColumn Property="equipment => equipment.Name" Title="품명" Sortable="true" />
-                        <PropertyColumn Property="equipment => equipment.Model" Title="모델명" Sortable="true"/>
+                        <PropertyColumn Property="equipment => equipment.ManageCode" Title="관리번호" />
+		                <PropertyColumn Property="equipment => equipment.Name" Title="품명"  />
+                        <PropertyColumn Property="equipment => equipment.Model" Title="모델명" />
                     </Columns>
                 </MudDataGrid>
             </MudItem>
-            <MudItem xs="6">
-                <MudDataGrid Items="chipUsageData" SortMode="SortMode.None">
+            <MudItem xs="4">
+                <MudDataGrid Items="chipUsageData" SortMode="SortMode.None" Bordered="true">
                     <ToolBarContent>
                         <MudText Typo="Typo.h6">칩 사용 대장</MudText>
                         <MudSpacer />
                         <MudLink Href="chipusages" Typo="Typo.h6">더 보기</MudLink>
                     </ToolBarContent>
                     <Columns>
-                        <PropertyColumn Property="chipusage => chipusage.Chip" Title="Chip 종류" Align="Align.Center"/>
-                        <PropertyColumn Property="chipusage => chipusage.Division" Title="구분" Align="Align.Center"/>
-                        <PropertyColumn Property="chipusage => chipusage.UseDate" Title="사용 일자" Align="Align.Center"/>
+                        <PropertyColumn Property="chipusage => chipusage.Chip" Title="Chip 종류"/>
+                        <PropertyColumn Property="chipusage => chipusage.Division" Title="구분"/>
+                        <PropertyColumn Property="chipusage => chipusage.UseDate" Title="날짜" Format="yyyy-MM-dd"/>
                     </Columns>
 				</MudDataGrid>
+            </MudItem>
+
+            <MudItem xs="4">
+                <MudDataGrid Items="compHistoryData" SortMode="SortMode.None" Bordered="true">
+                    <ToolBarContent>
+                        <MudText Typo="Typo.h6">부품 재고 관리</MudText>
+                        <MudSpacer />
+                        <MudLink Href="components" Typo="Typo.h6">더 보기</MudLink>
+                    </ToolBarContent>
+                    <Columns>
+                        <PropertyColumn Property="x => x.Date" Title="날짜" Format="yyyy-MM-dd"/>
+                        <PropertyColumn Property="x => x.PartNumber" Title="Part Number"/>
+                        <PropertyColumn Property="x => x.state" Title="구분"/>
+                        <PropertyColumn Property="x => x.Quantity" Title="수량" />
+                    </Columns>
+                </MudDataGrid>
             </MudItem>
 
         </MudGrid>
@@ -90,15 +106,17 @@
     private IQueryable<Reagent>? reagentData;
     private IQueryable<Equipment>? equipmentData;
     private IQueryable<ChipUsage>? chipUsageData;
+    private IQueryable<CompHistory>? compHistoryData;
 
     protected override void OnInitialized()
     {
         webContext = DbFactory.CreateDbContext();
 
-        cyropreservedData = webContext.Cyropreserved.Take(10).ToList().AsQueryable();
-        reagentData = webContext.Reagent.Take(10).ToList().AsQueryable();
-        equipmentData = webContext.Equipment.Take(10).ToList().AsQueryable();
-        chipUsageData = webContext.ChipUsage.Take(10).ToList().AsQueryable();
+        cyropreservedData = webContext.Cyropreserved.Take(6).ToList().AsQueryable();
+        reagentData = webContext.Reagent.Take(6).ToList().AsQueryable();
+        equipmentData = webContext.Equipment.Take(6).ToList().AsQueryable();
+        chipUsageData = webContext.ChipUsage.OrderByDescending(x => x.UseDate).Take(6).ToList().AsQueryable();
+        compHistoryData = webContext.CompHistory.OrderByDescending(x => x.EntryDate).Take(6).ToList().AsQueryable();
     }
 
     public async ValueTask DisposeAsync() => await webContext.DisposeAsync();

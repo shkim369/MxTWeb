@@ -1,0 +1,62 @@
+﻿@page "/components/comsume"
+@using Microsoft.EntityFrameworkCore
+@using MxTWeb.Models
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>comsume</PageTitle>
+
+<EditForm method="post" Model="component" OnValidSubmit="ConsumeComponent" FormName="comsume" Enhance>
+    <MudDialog>
+        <DialogContent>
+            <MudText>Are you sure you want to execute?</MudText>
+        </DialogContent>
+
+        <DialogActions>
+            <MudButton Class="mb-3 me-5" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Info"
+                       StartIcon="@Icons.Material.Filled.Build">Execute</MudButton>
+            <MudButton Class="mb-3 me-5" Variant="Variant.Filled" Color="Color.Secondary" OnClick="() => MudDialog.Cancel()">Cancel</MudButton>
+        </DialogActions>
+    </MudDialog>
+</EditForm>
+
+@code {
+    [Parameter]
+    public Component component { get; set; } = new();
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; }
+
+    [SupplyParameterFromQuery]
+    private int id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+
+    }
+
+    private async Task ConsumeComponent()
+    {
+        using var context = DbFactory.CreateDbContext();
+
+        try
+        {
+            await context.Component
+                .ExecuteUpdateAsync(s => s
+                .SetProperty(b => b.Stock, b => b.Stock - b.Required));
+
+            await context.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"✗ 오류 발생: {ex.Message}", Severity.Warning);
+            MudDialog.Close();
+        }
+       
+        Snackbar.Add("실행이 완료되었습니다.", Severity.Success);
+        MudDialog.Close();
+    }
+}

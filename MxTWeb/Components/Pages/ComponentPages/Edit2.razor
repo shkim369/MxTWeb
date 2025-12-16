@@ -1,0 +1,277 @@
+﻿@page "/components/edit2"
+@using Microsoft.EntityFrameworkCore
+@using MxTWeb.Models
+@using MxTWeb.Enums
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<EditForm method="post" Model="CompHistory" OnValidSubmit="OnValidSubmit" FormName="edit" Enhance>
+    <MudDialog Style="min-width: 600px">
+        <DialogContent>
+            <DataAnnotationsValidator />
+
+            <MudDatePicker Class="mb-5"
+                           Variant="Variant.Outlined"
+                           Label="날짜"
+                           @bind-Date="CompHistory.Date"
+                           DateFormat="yyyy-MM-dd" />
+
+            <MudGrid Class="mb-5">
+                <MudItem md="6">
+                <MudTextField Variant="Variant.Outlined"
+                              Label="Assembly"
+                              @bind-Value="Component.Assembly" />
+                </MudItem>
+                <MudItem md="6">
+                <MudTextField Variant="Variant.Outlined"
+                              Label="Description"
+                              @bind-Value="Component.Description" />
+                </MudItem>
+            </MudGrid>
+
+            <MudAutocomplete Class="mb-5" Variant="Variant.Outlined"
+                             Label="Part Number"
+                             @bind-Value="CompHistory.PartNumber"
+                             Required="true" Clearable="true"
+                             SearchFunc="@(async (value, token) => await SearchAutoComplete(value, token, "PartNumber"))" 
+                             TextChanged="OnInputPartNumber"/>
+
+            <MudGrid Class="mb-5">
+                @if (action == UIActionEnum.Update)
+                {
+                    <MudItem md="4">
+                        <MudSelect Variant="Variant.Outlined"
+                                   Label="구분"
+                                   @bind-Value="CompHistory.state"
+                                   Immediate="true" Required="true">
+                            <MudSelectItem Value=@("입고")>입고</MudSelectItem>
+                            <MudSelectItem Value=@("출고")>출고</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudItem md="4">
+                        <MudTextField Variant="Variant.Outlined"
+                                      Label="수량"
+                                      @bind-Value="CompHistory.Quantity" />
+                    </MudItem>
+
+                    <MudItem md="4">
+                        <MudTextField Variant="Variant.Outlined"
+                                      Label="재고"
+                                      @bind-Value="Component.Stock" />
+                    </MudItem>
+                }
+                else
+                {
+                    <MudItem md="6">
+                        <MudSelect Variant="Variant.Outlined"
+                                   Label="구분"
+                                   @bind-Value="CompHistory.state"
+                                   Immediate="true" Required="true">
+                            <MudSelectItem Value=@("입고")>입고</MudSelectItem>
+                            <MudSelectItem Value=@("출고")>출고</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudItem md="6">
+                        <MudTextField Variant="Variant.Outlined"
+                                      Label="수량"
+                                      @bind-Value="CompHistory.Quantity" />
+                    </MudItem>
+                }
+            </MudGrid>
+        </DialogContent>
+        <DialogActions>
+            <MudButton Class="mb-5 me-5" ButtonType="ButtonType.Submit" Variant="Variant.Filled"
+                       StartIcon="@(action == UIActionEnum.Update ? Icons.Material.Filled.Edit : Icons.Material.Filled.Add)" Color="Color.Info">
+                @(action == UIActionEnum.Update ? "Edit" : "ADD")
+            </MudButton>
+            <MudButton Class="mb-5 me-5" Variant="Variant.Filled" Color="Color.Secondary" OnClick="() => MudDialog.Cancel()">Cancel</MudButton>
+        </DialogActions>
+    </MudDialog>
+</EditForm>
+
+@code {
+    [Parameter]
+    public UIActionEnum action { get; set; } = UIActionEnum.Insert;
+
+    [SupplyParameterFromQuery]
+    private int Id { get; set; }
+
+    [Parameter]
+    public CompHistory CompHistory { get; set; } = new();
+    [Parameter]
+    public Component Component { get; set; } = new();
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; }
+
+    private string?[] _partNumberStates = Array.Empty<string>();
+
+    private async Task OnValidSubmit()
+    {
+        // 현재 로그인한 사용자 정보 가져오기
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            CompHistory.Account = user.Identity.Name ?? "Unknown";
+            // user.FindFirst(ClaimTypes.Email)?.Value;
+            // user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        }
+
+        CompHistory.EntryDate = DateTime.Now;
+
+
+        if (action == UIActionEnum.Insert)
+        {
+            await AddCompHistory();
+        }
+        else if (action == UIActionEnum.Update)
+        {
+            await UpdateCompHistory();
+        }
+    }
+
+    private async Task AddCompHistory()
+    {
+        using var context = DbFactory.CreateDbContext();
+        var component = await context.Component
+                              .FirstOrDefaultAsync(c => c.PartNumber == CompHistory.PartNumber);
+
+
+        if (CompHistory.state == "입고")
+        {
+            component.Stock += CompHistory.Quantity;     
+        }
+        else if (CompHistory.state == "출고")
+        {
+            component.Stock -= CompHistory.Quantity;
+        }
+
+        context.CompHistory.Add(CompHistory);
+
+        await context.SaveChangesAsync();
+
+        Snackbar.Add("성공적으로 추가되었습니다.", Severity.Success);
+        MudDialog.Close();
+    }
+
+    // To protect from overposting attacks, enable the specific properties you want to bind to.
+    // For more information, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private async Task UpdateCompHistory()
+    {
+        using var context = DbFactory.CreateDbContext();
+        CompHistory.Component = null;
+
+        context.Update(Component);  // 밑줄과 같음
+        context.Attach(CompHistory!).State = EntityState.Modified;
+
+        try
+        {
+            await context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!CompHistoryExists(CompHistory!.Id))
+            {
+                NavigationManager.NavigateTo("notfound");
+            }
+            else
+            {
+                throw;
+            }
+        }
+
+        Snackbar.Add("성공적으로 수정되었습니다.", Severity.Success);
+        MudDialog.Close();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (action == UIActionEnum.Insert)
+        {
+            CompHistory.state = "입고";
+            CompHistory.Date = DateTime.Today;
+
+            if (Component is not null)
+            {
+                CompHistory.PartNumber = Component.PartNumber;
+            }
+        }
+        else if (action == UIActionEnum.Update)
+        {
+            using var context = DbFactory.CreateDbContext();
+            CompHistory ??= await context.CompHistory.FirstOrDefaultAsync(m => m.Id == Id);
+
+            if (CompHistory is null)
+            {
+                NavigationManager.NavigateTo("notfound");
+            }
+        }
+
+        await LoadAutoComplete();
+    }
+
+    private bool CompHistoryExists(int id)
+    {
+        using var context = DbFactory.CreateDbContext();
+        return context.CompHistory.Any(e => e.Id == id);
+    }
+
+    private async Task OnInputPartNumber()
+    {
+        var partNumber = CompHistory.PartNumber?.Trim();
+
+        if (string.IsNullOrEmpty(partNumber))
+        {
+            Component = new Component();
+            return;
+        }
+
+        using var context = DbFactory.CreateDbContext();
+
+        var temp = await context.Component
+            .Where(x => x.PartNumber == partNumber)
+            .FirstOrDefaultAsync();
+
+        Component = temp ?? new Component();
+    }
+
+    private async Task<IEnumerable<string?>> SearchAutoComplete(string value, CancellationToken token, string column)
+    {
+        // In real life use an asynchronous function for fetching data from an api.
+        await Task.Delay(5, token);
+
+        string?[] _states = column switch
+        {
+            "PartNumber" => _partNumberStates,
+            _ => Array.Empty<string>(),
+        };
+
+        // if text is null or empty, show complete list
+        if (string.IsNullOrEmpty(value))
+        {
+            return _states;
+        }
+
+        return _states.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    }
+
+    private async Task LoadAutoComplete()
+    {
+        using var context = DbFactory.CreateDbContext();
+
+        _partNumberStates = await context.Component
+            .Select(x => x.PartNumber)
+            .Distinct()
+            .Where(x => !string.IsNullOrEmpty(x) && x != "-")
+            .OrderBy(x => x)
+            .ToArrayAsync();
+    }
+}
