@@ -29,6 +29,10 @@ services:
       - sqlserver
     networks:
       - mxtweb-network
+    volumes:
+      # NAS의 실제 경로와 컨테이너 경로 매핑
+      - /volume1/docker/blazor-uploads:/app/uploads
+    restart: unless-stopped
 
 networks:
   mxtweb-network:
