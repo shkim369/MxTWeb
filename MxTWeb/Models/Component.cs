@@ -42,4 +42,21 @@ namespace MxTWeb.Models
 
         public string? Note { get; set; }
     }
+
+    public class BOM
+    {
+        public int BomId { get; set; }  // PK
+        public string ProductName { get; set; }
+        public string BomVersion { get; set; }
+        public List<BOMDetail> Details { get; set; }
+    }
+
+    public class BOMDetail
+    {
+        public int BomDetailId { get; set; }
+        public int BomId { get; set; }  // FK 
+        public int PartId { get; set; }  // FK 
+        public decimal Quantity { get; set; }
+        public Component component { get; set; } // Navigation property
+    }
 }

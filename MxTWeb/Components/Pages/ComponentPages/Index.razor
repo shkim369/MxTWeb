@@ -72,7 +72,7 @@
                      SortMode="SortMode.Single" Dense="true" Style="white-space: nowrap" Hover="true" Bordered="true" Striped="true"
                      EditMode="DataGridEditMode.Cell" ReadOnly="false" Groupable="true" GroupClass="pa-3"
                      CommittedItemChanges="@CommittedItemChanges" ColumnResizeMode="ResizeMode.Column"
-                     RowsPerPage="1000" SelectOnRowClick="false" 
+                     RowsPerPage="1000" SelectOnRowClick="false"
                      MultiSelection="false" @bind-SelectedItem="selectedItem"
                      QuickFilter="@_quickFilter"
                      Loading="@isLoading">
@@ -142,13 +142,13 @@
             </MudItem>
 
             <MudSpacer />
-            <MudMenu Class="mt-3" Label="@searchField2" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Secondary">
-                <MudMenuItem Label="Part Number" @onclick="@(() => SelectSearchField2("Part Number"))" />
-                <MudMenuItem Label="날짜" @onclick="@(() => SelectSearchField2("날짜"))" />
-            </MudMenu>
+ 
+            <MudDateRangePicker DateRange="_dateRange" Margin="Margin.Normal" Clearable="true" DateRangeChanged="@OnDateRangeChanged"
+                Variant="Variant.Text" Label="Date Range" Class="mt-2 pe-2" PlaceholderStart="Start Date" PlaceholderEnd="End Date" />
             &nbsp&nbsp&nbsp&nbsp
-            <MudTextField Class="mt-5 pe-5" @bind-Value="searchFilter2" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
-                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" />
+            <MudTextField Class="mt-4 pe-5" @bind-Value="searchFilter2" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                Variant="Variant.Text" Label="Part Number" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" />
+            
         </MudGrid>
 
         <MudDataGrid T="CompHistory" Class="custom-grid" SortMode="SortMode.Single" Items="@FilteredData2"
@@ -159,7 +159,8 @@
                 <PropertyColumn Property="x => x.Component.Assembly" Title="Assembly" Sortable="true" />
                 <PropertyColumn Property="x => x.PartNumber" Title="Part Number" Sortable="true" />
                 <PropertyColumn Property="x => x.Component.Description" Title="Description" Sortable="false" />
-                <PropertyColumn Property="x => x.state" Title="구분" Sortable="true" CellStyleFunc="@_cellStyleFunc2"/>
+                <PropertyColumn Property="x => x.Component.Price" Title="단가" Sortable="false" Format="N0"/>
+                <PropertyColumn Property="x => x.state" Title="구분" Sortable="true" CellStyleFunc="@_cellStyleFunc2"/>              
                 <PropertyColumn Property="x => x.Quantity" Title="수량" Sortable="false" />
                 <PropertyColumn Property="x => x.Component.Stock" Title="재고" Sortable="false" />
                 <PropertyColumn Property="x => x.Account" Title="입력 계정" Sortable="true" />
@@ -175,10 +176,22 @@
                     </CellTemplate>
                 </TemplateColumn>
             </Columns>
+
             <PagerContent>
                 <MudDataGridPager />
             </PagerContent>
         </MudDataGrid>
+
+        <MudCardContent Style="display:flex; justify-content:flex-end; align-items:flex-end;">
+            <MudText Typo="Typo.h5">Total Price : </MudText> &nbsp&nbsp
+            @if (_dateRange is null) {
+                <MudText Typo="Typo.h5">날짜를 선택해주세요.</MudText>
+            }
+            else {
+                <MudText Typo="Typo.h5">@totalPrice.ToString("N0")</MudText>
+            }            
+        </MudCardContent>       
+
     </MudTabPanel>
 
     <MudTabPanel Text="E-BOM" Visible="false">
@@ -197,10 +210,7 @@
                            Color="@Color.Error" OnClick="@DeleteData"> Delete </MudButton>
             </MudItem>
             <MudSpacer />
-            <MudMenu Class="mt-3" Label="@searchField" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Secondary">              
-                <MudMenuItem Label="Part Number" @onclick="@(() => SelectSearchField2("Part Number"))" />
-                <MudMenuItem Label="날짜" @onclick="@(() => SelectSearchField2("날짜"))" />
-            </MudMenu>
+
             &nbsp&nbsp&nbsp&nbsp
             <MudTextField Class="mt-5 pe-5" @bind-Value="searchFilter" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
                           AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" />
@@ -254,8 +264,12 @@
 
     private bool isProcessing = false;
     private bool isLoading = true;
+    private int totalPrice = 0;
+    private string[] totalPartList = Array.Empty<string>();
 
     private MudDataGrid<Component> _dataGrid = null!;
+
+    private DateRange _dateRange { get; set; }
 
     private async Task CreateNew()
     {
@@ -453,11 +467,10 @@
                     if (x.PartNumber.Contains(searchFilter2, StringComparison.OrdinalIgnoreCase))
                         return true;
                     break;
-
-                case "날짜":
-                    if (x.Date.GetValueOrDefault().ToString("yyyy-MM-dd").Contains(searchFilter2, StringComparison.OrdinalIgnoreCase))
-                        return true;
-                    break;
+                // case "날짜":            
+                //     if (x.Date.GetValueOrDefault().ToString("yyyy-MM-dd").Contains(searchFilter2, StringComparison.OrdinalIgnoreCase))
+                //         return true;
+                //     break;
                 default:
                     break;
             }
@@ -465,6 +478,32 @@
 
         return false;
     };
+
+    private void OnDateRangeChanged(DateRange? range)
+    {
+        _dateRange = range;
+
+        using var context = DbFactory.CreateDbContext();
+
+        if (range?.Start == null || range?.End == null)
+        {
+            FilteredData2 = context.CompHistory.Include(c => c.Component)
+                .OrderByDescending(x => x.Date)
+                .ToList();
+            totalPrice = 0;
+            return;
+        }
+
+        var start = range.Start.Value.Date;
+        var end = range.End.Value.Date.AddDays(1).AddTicks(-1);
+
+        FilteredData2 = context.CompHistory.Include(c => c.Component)
+            .Where(x => x.Date >= start && x.Date <= end)
+            .OrderByDescending(x => x.Date)
+            .ToList();
+
+        totalPrice = FilteredData2.Where(x => x.state == "출고").Sum(x => x.Component.Price * x.Quantity);
+    }
 
     private async Task CommittedItemChanges(Component item)
     {
@@ -484,7 +523,7 @@
         {
             searchField2 = "Part Number";
             searchFilter2 = string.Empty;
-            FilteredData2 = context.CompHistory.OrderByDescending(c => c.EntryDate).ToList();
+            FilteredData2 = context.CompHistory.OrderByDescending(c => c.Date).ToList();
             //StateHasChanged();
         }
     }
@@ -503,10 +542,6 @@
     private void SelectSearchField(string item)
     {
         searchField = item;
-    }
-    private void SelectSearchField2(string item)
-    {
-        searchField2 = item;
     }
 
     private Func<Component, string> _cellStyleFunc => x =>

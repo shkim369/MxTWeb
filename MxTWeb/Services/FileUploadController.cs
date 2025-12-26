@@ -11,7 +11,8 @@ namespace MxTWeb.Services
         private readonly IWebHostEnvironment _environment;
         private readonly string _uploadPath;
 
-        public FileUploadController(IWebHostEnvironment environment)
+        //public FileUploadController(IWebHostEnvironment environment)
+        public FileUploadController(IConfiguration configuration)
         {
             //_environment = environment;
             //_uploadPath = Path.Combine(_environment.WebRootPath, "uploads");
