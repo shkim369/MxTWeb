@@ -1,9 +1,10 @@
-﻿using System;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+using Microsoft.EntityFrameworkCore;
+using MxTWeb.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
-using MxTWeb.Models;
 
 namespace MxTWeb.Data
 {
@@ -21,21 +22,14 @@ namespace MxTWeb.Data
         public DbSet<ChipPressure> ChipPressure { get; set; } = default!;
         public DbSet<Component> Component { get; set; } = default!;
         public DbSet<CompHistory> CompHistory { get; set; } = default!;
+        public DbSet<Bom> Bom { get; set; } = default!;
+        public DbSet<BomDetail> BomDetail { get; set; } = default!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Component의 PartNumber를 Unique로 설정
-            modelBuilder.Entity<Component>()
-                .HasIndex(c => c.PartNumber)
-                .IsUnique();
-
-            // CompHistory와 Component의 관계 설정
-            modelBuilder.Entity<CompHistory>()
-                .HasOne(h => h.Component)
-                .WithMany()
-                .HasForeignKey(h => h.PartNumber)
-                .HasPrincipalKey(c => c.PartNumber)
-                .OnDelete(DeleteBehavior.Restrict); // 또는 Cascade
+            //modelBuilder.Entity<Component>()
+            //    .HasIndex(x => x.PartNumber)
+            //    .IsUnique();
         }
     }
 }

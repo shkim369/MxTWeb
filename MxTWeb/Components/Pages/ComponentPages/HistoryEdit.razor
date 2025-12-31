@@ -35,7 +35,7 @@
 
             <MudAutocomplete Class="mb-5" Variant="Variant.Outlined"
                              Label="Part Number"
-                             @bind-Value="CompHistory.PartNumber"
+                             @bind-Value="Component.PartNumber"
                              Required="true" Clearable="true"
                              SearchFunc="@(async (value, token) => await SearchAutoComplete(value, token, "PartNumber"))" 
                              TextChanged="OnInputPartNumber"/>
@@ -126,7 +126,7 @@
         }
 
         CompHistory.EntryDate = DateTime.Now;
-
+        CompHistory.ComponentId = Component.ComponentId;
 
         if (action == UIActionEnum.Insert)
         {
@@ -141,9 +141,7 @@
     private async Task AddCompHistory()
     {
         using var context = DbFactory.CreateDbContext();
-        var component = await context.Component
-                              .FirstOrDefaultAsync(c => c.PartNumber == CompHistory.PartNumber);
-
+        var component = await context.Component.FirstOrDefaultAsync(c => c.ComponentId == Component.ComponentId);
 
         if (CompHistory.state == "입고")
         {
@@ -178,7 +176,7 @@
         }
         catch (DbUpdateConcurrencyException)
         {
-            if (!CompHistoryExists(CompHistory!.Id))
+            if (!CompHistoryExists(CompHistory!.CompHistoryId))
             {
                 NavigationManager.NavigateTo("notfound");
             }
@@ -198,21 +196,18 @@
         {
             CompHistory.state = "입고";
             CompHistory.Date = DateTime.Today;
-
-            if (Component is not null)
-            {
-                CompHistory.PartNumber = Component.PartNumber;
-            }
         }
         else if (action == UIActionEnum.Update)
         {
             using var context = DbFactory.CreateDbContext();
-            CompHistory ??= await context.CompHistory.FirstOrDefaultAsync(m => m.Id == Id);
+            CompHistory ??= await context.CompHistory.FirstOrDefaultAsync(m => m.CompHistoryId == Id);
 
             if (CompHistory is null)
             {
                 NavigationManager.NavigateTo("notfound");
             }
+
+            StateHasChanged();
         }
 
         await LoadAutoComplete();
@@ -221,12 +216,12 @@
     private bool CompHistoryExists(int id)
     {
         using var context = DbFactory.CreateDbContext();
-        return context.CompHistory.Any(e => e.Id == id);
+        return context.CompHistory.Any(e => e.CompHistoryId == id);
     }
 
     private async Task OnInputPartNumber()
     {
-        var partNumber = CompHistory.PartNumber?.Trim();
+        var partNumber = Component.PartNumber?.Trim();
 
         if (string.IsNullOrEmpty(partNumber))
         {

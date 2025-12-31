@@ -26,10 +26,8 @@
 @code {
     [Parameter]
     public Component component { get; set; } = new();
-
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; }
-
     [SupplyParameterFromQuery]
     private int id { get; set; }
 

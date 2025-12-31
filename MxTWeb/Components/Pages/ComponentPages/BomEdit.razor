@@ -1,0 +1,178 @@
+﻿@page "/components/edit3"
+@using Microsoft.EntityFrameworkCore
+@using MxTWeb.Models
+@using MxTWeb.Enums
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<EditForm method="post" Model="Bom" OnValidSubmit="OnValidSubmit" FormName="edit" Enhance>
+    <MudDialog>
+        <DialogContent>
+            <DataAnnotationsValidator />            
+            <MudAutocomplete Class="mb-5" Variant="Variant.Outlined"
+                             Label="Product Name"
+                             @bind-Value="Bom.ProductName" TextChanged="@OnSelectProduct"
+                             Immediate="true" Required="true" Clearable="true"
+                             CoerceValue="true"
+                             SearchFunc="@(async (value, token) => await SearchAutoComplete(value, token, "Product"))" />
+
+            <MudAutocomplete Class="mb-5" Variant="Variant.Outlined"
+                             Label="Bom Version"
+                             @bind-Value="Bom.BomVersion"
+                             Immediate="true" Required="true" Clearable="true"
+                             CoerceValue="true"
+                             SearchFunc="@(async (value, token) => await SearchAutoComplete(value, token, "Version"))" />
+        </DialogContent>
+        <DialogActions>
+            <MudButton Class="mb-5 me-5" ButtonType="ButtonType.Submit" Variant="Variant.Filled"
+                       StartIcon="@(action == UIActionEnum.Update ? Icons.Material.Filled.Edit : Icons.Material.Filled.Add)" Color="Color.Info">
+                @(action == UIActionEnum.Update ? "Edit" : "ADD")
+            </MudButton>
+            <MudButton Class="mb-5 me-5" Variant="Variant.Filled" Color="Color.Secondary" OnClick="() => MudDialog.Cancel()">Cancel</MudButton>
+        </DialogActions>
+    </MudDialog>
+</EditForm>
+
+@code {
+    [Parameter]
+    public UIActionEnum action { get; set; } = UIActionEnum.Insert;
+
+    [SupplyParameterFromQuery]
+    private int Id { get; set; }
+
+    [Parameter]
+    public Bom Bom { get; set; } = new();
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; }
+
+    private string?[] _productStates = Array.Empty<string>();
+    private string?[] _versionStates = Array.Empty<string>();
+
+    private async Task OnValidSubmit()
+    {
+        if (action == UIActionEnum.Insert)
+        {
+            await AddComponent();
+        }
+        else if (action == UIActionEnum.Update)
+        {
+            await UpdateComponent();
+        }
+    }
+
+    private async Task AddComponent()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Bom.Add(Bom);
+        await context.SaveChangesAsync();
+        NavigationManager.NavigateTo("/components");
+
+        Snackbar.Add("성공적으로 추가되었습니다.", Severity.Success);
+        MudDialog.Close();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (action == UIActionEnum.Insert)
+        {
+
+        }
+        else if (action == UIActionEnum.Update)
+        {
+            using var context = DbFactory.CreateDbContext();
+            Bom ??= await context.Bom.FirstOrDefaultAsync(m => m.BomId == Id);
+
+            if (Bom is null)
+            {
+                NavigationManager.NavigateTo("notfound");
+            }
+        }
+
+        await LoadAutoComplete();
+    }
+
+    // To protect from overposting attacks, enable the specific properties you want to bind to.
+    // For more information, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private async Task UpdateComponent()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Attach(Bom!).State = EntityState.Modified;
+
+        try
+        {
+            await context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!ComponentExists(Bom!.BomId))
+            {
+                NavigationManager.NavigateTo("notfound");
+            }
+            else
+            {
+                throw;
+            }
+        }
+
+        Snackbar.Add("성공적으로 수정되었습니다.", Severity.Success);
+        MudDialog.Close();
+    }
+
+    private bool ComponentExists(int id)
+    {
+        using var context = DbFactory.CreateDbContext();
+        return context.Component.Any(e => e.ComponentId == id);
+    }
+
+    private async Task<IEnumerable<string?>> SearchAutoComplete(string value, CancellationToken token, string column)
+    {
+        // In real life use an asynchronous function for fetching data from an api.
+        await Task.Delay(5, token);
+
+        string?[] _states = column switch
+        {
+            "Product" => _productStates,
+            "Version" => _versionStates,
+            _ => Array.Empty<string>(),
+        };
+
+        // if text is null or empty, show complete list
+        if (string.IsNullOrEmpty(value))
+        {
+            return _states;
+        }
+
+        return _states.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    }
+
+    private async Task OnSelectProduct(string value)
+    {
+        Bom.BomVersion = string.Empty;
+        await LoadAutoComplete();
+    }
+
+    private async Task LoadAutoComplete()
+    {
+        using var context = DbFactory.CreateDbContext();
+
+        _productStates = await context.Bom
+            .Select(x => x.ProductName)
+            .Distinct()
+            .Where(x => !string.IsNullOrEmpty(x) && x != "-")
+            .OrderBy(x => x)
+            .ToArrayAsync();
+
+        _versionStates = await context.Bom
+            .Select(x => x.BomVersion)
+            .Distinct()
+            .Where(x => x == Bom.ProductName)
+            .OrderBy(x => x)
+            .ToArrayAsync();
+
+        StateHasChanged();
+    }
+}

@@ -33,13 +33,17 @@
                           @bind-Value="Component.Model" />
 
             <MudGrid Class="mb-5">
-                <MudItem xs="6">
+                <MudItem xs="4">
                     <MudTextField Variant="Variant.Outlined"
                                   Label="Origin"
                                   @bind-Value="Component.Origin" />
                 </MudItem>
-
-                <MudItem xs="6">
+                <MudItem xs="4">
+                    <MudTextField Variant="Variant.Outlined"
+                                  Label="Q'ty"
+                                  @bind-Value="Component.Required" />
+                </MudItem>
+                <MudItem xs="4">
                     <MudTextField Variant="Variant.Outlined"
                                   Label="Unit Price"
                                   @bind-Value="Component.Price" Format="N0"/>
@@ -74,19 +78,15 @@
                 </MudItem>
                 <MudItem xs="4">
                     <MudTextField Variant="Variant.Outlined"
-                                  Label="Q'ty"
-                                  @bind-Value="Component.Required" />
-                </MudItem>
-                <MudItem xs="4">
-                    <MudTextField Variant="Variant.Outlined"
                                   Label="Stock"
                                   @bind-Value="Component.Stock" />
                 </MudItem>
+                <MudItem xs="4">
+                    <MudTextField Class="mb-5" Variant="Variant.Outlined"
+                                  Label="Comment"
+                                  @bind-Value="Component.Note" />
+                </MudItem>
             </MudGrid>
-
-            <MudTextField Class="mb-5" Variant="Variant.Outlined"
-                          Label="Note"
-                          @bind-Value="Component.Note" />
         </DialogContent>
         <DialogActions>
             <MudButton Class="mb-5 me-5" ButtonType="ButtonType.Submit" Variant="Variant.Filled"
@@ -145,7 +145,7 @@
         else if (action == UIActionEnum.Update)
         {
             using var context = DbFactory.CreateDbContext();
-            Component ??= await context.Component.FirstOrDefaultAsync(m => m.Id == Id);
+            Component ??= await context.Component.FirstOrDefaultAsync(m => m.ComponentId == Id);
 
             if (Component is null)
             {
@@ -169,7 +169,7 @@
         }
         catch (DbUpdateConcurrencyException)
         {
-            if (!ComponentExists(Component!.Id))
+            if (!ComponentExists(Component!.ComponentId))
             {
                 NavigationManager.NavigateTo("notfound");
             }
@@ -186,7 +186,7 @@
     private bool ComponentExists(int id)
     {
         using var context = DbFactory.CreateDbContext();
-        return context.Component.Any(e => e.Id == id);
+        return context.Component.Any(e => e.ComponentId == id);
     }
 
     private async Task<IEnumerable<string?>> SearchAutoComplete(string value, CancellationToken token, string column)

@@ -1,0 +1,281 @@
+﻿@page "/histories"
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using MxTWeb.Models
+@using MxTWeb.Data
+@using MxTWeb.Enums
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@implements IAsyncDisposable
+@inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>부품 입·출고 이력</PageTitle>
+
+<style>
+    .custom-grid .mud-table-cell .column-header .column-options .mud-menu .mud-icon-button-label {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
+    .custom-grid .mud-table-cell .column-header .column-options .mud-menu {
+        display: none !important;
+        visibility: hidden !important;
+        width: 0px !important;
+    }
+
+    .custom-grid .mud-table-cell {
+        padding-right: 15px !important;
+    }
+</style>
+
+<h2>부품 입·출고 이력</h2>
+
+<MudGrid Spacing="5" Style="margin-top: 0px; margin-bottom: 10px">
+    <MudItem>
+        <MudButton Class="ms-5 me-2" OnClick="CreateNew2" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">
+            Add New
+        </MudButton>
+    </MudItem>
+    <MudItem>
+        <MudButton Class="me-2" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Build"
+                   Color="@Color.Tertiary" OnClick="@StockComsumption">
+            @if (isProcessing)
+            {
+                <MudProgressCircular Indeterminate="true" Color="Color.Info" Size="Size.Small" Class="me-2" />
+                <MudText Class="ms-2">Processing...</MudText>
+            }
+            else
+            {
+                <MudText>일괄 소진</MudText>
+            }
+        </MudButton>
+    </MudItem>
+
+    <MudSpacer />
+
+    <MudDateRangePicker DateRange="_dateRange" Margin="Margin.Normal" Clearable="true" DateRangeChanged="@OnDateRangeChanged"
+                        Variant="Variant.Text" Label="Date Range" Class="mt-2 pe-2" PlaceholderStart="Start Date" PlaceholderEnd="End Date" />
+    &nbsp&nbsp&nbsp&nbsp
+    <MudTextField Class="mt-4 pe-5" @bind-Value="searchFilter2" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                  Variant="Variant.Text" Label="Part Number" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" />
+
+</MudGrid>
+
+<MudDataGrid T="CompHistory" Class="custom-grid" SortMode="SortMode.Single" Items="@FilteredData2"
+             Dense="true" Style="white-space: nowrap" Hover="true" Bordered="true" Striped="true"
+             RowsPerPage="100" SelectOnRowClick="false" QuickFilter="_quickFilter2">
+    <Columns>
+        <PropertyColumn Property="x => x.Date" Title="날짜" Sortable="true" Format="yyyy-MM-dd" />
+        <PropertyColumn Property="x => x.Component.Assembly" Title="Assembly" Sortable="true" />
+        <PropertyColumn Property="x => x.Component.PartNumber" Title="Part Number" Sortable="true" />
+        <PropertyColumn Property="x => x.Component.Description" Title="Description" Sortable="false" />
+        <PropertyColumn Property="x => x.Component.Price" Title="단가" Sortable="false" Format="N0" />
+        <PropertyColumn Property="x => x.state" Title="구분" Sortable="true" CellStyleFunc="@_cellStyleFunc2" />
+        <PropertyColumn Property="x => x.Quantity" Title="수량" Sortable="false" />
+        <PropertyColumn Property="x => x.Component.Stock" Title="재고" Sortable="false" />
+        <PropertyColumn Property="x => x.Account" Title="입력 계정" Sortable="true" />
+        <PropertyColumn Property="x => x.EntryDate" Title="입력 일시" Sortable="true" SortBy="@(x => x.EntryDate)"
+                        InitialDirection="SortDirection.Descending" Format="yyyy-MM-dd HH:mm" />
+
+        <TemplateColumn Context="x">
+            <CellTemplate>
+                <MudIconButton Class="ms-0 me-3" Size="@Size.Small" Variant="Variant.Filled" Icon="@Icons.Material.Filled.Edit"
+                               Color="@Color.Info" OnClick="@(() => this.UpdateData2(x))" />
+                <MudIconButton Class="ms-0 me-0" Size="@Size.Small" Variant="Variant.Filled" Icon="@Icons.Material.Filled.Delete"
+                               Color="@Color.Error" OnClick="@(() => this.DeleteData2(x.Item))" />
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+
+    <PagerContent>
+        <MudDataGridPager />
+    </PagerContent>
+</MudDataGrid>
+
+<MudCardContent Style="display:flex; justify-content:flex-end; align-items:flex-end;">
+    <MudText Typo="Typo.h5">Total Price : </MudText> &nbsp&nbsp
+    @if (_dateRange is null)
+    {
+        <MudText Typo="Typo.h5">날짜를 선택해주세요.</MudText>
+    }
+    else
+    {
+        <MudText Typo="Typo.h5">@totalPrice.ToString("N0")</MudText>
+    }
+</MudCardContent>
+@code {
+    private MxTWebContext context = default!;
+
+    private string searchField2 = "Part Number";
+    private string searchFilter2;
+
+    private IEnumerable<CompHistory> FilteredData2 = new List<CompHistory>();
+
+    private bool isProcessing = false;
+    private bool isLoading = true;
+    private int totalPrice = 0;
+
+    private DateRange _dateRange { get; set; }
+
+
+    private async Task CreateNew2()
+    {
+        var parameters = new DialogParameters<HistoryEdit>
+        {
+            { x => x.action, UIActionEnum.Insert }
+        };
+
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var dialog = await DialogService.ShowAsync<HistoryEdit>("Add New History", parameters, options);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
+        {
+            context = DbFactory.CreateDbContext();
+            FilteredData2 = await context.CompHistory.Include(c => c.Component).ToListAsync();
+            StateHasChanged();
+        }
+    }
+
+    private async Task UpdateData2(CellContext<CompHistory> data)
+    {
+        var parameters = new DialogParameters<HistoryEdit>
+        {
+            { x => x.action, UIActionEnum.Update },
+            { x => x.CompHistory, data.Item }
+        };
+
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var dialog = await DialogService.ShowAsync<HistoryEdit>("Edit History", parameters, options);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
+        {
+            context = DbFactory.CreateDbContext();
+            FilteredData2 = await context.CompHistory.Include(c => c.Component).ToListAsync();
+            StateHasChanged();
+        }
+    }
+
+    private async Task DeleteData2(CompHistory data)
+    {
+        using var context = DbFactory.CreateDbContext();
+        using var transaction = await context.Database.BeginTransactionAsync();
+        try
+        {
+            context.CompHistory.Remove(data!);
+            await context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            FilteredData2 = await context.CompHistory.Include(c => c.Component).ToListAsync();
+            StateHasChanged();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+
+    private async Task StockComsumption()
+    {
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var dialog = await DialogService.ShowAsync<Consume>("Info", options);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
+        {
+            isProcessing = true;
+
+            context.ChangeTracker.Clear();
+            StateHasChanged();
+
+            isProcessing = false;
+        }
+    }
+
+    private Func<CompHistory, bool> _quickFilter2 => x =>
+    {
+        if (string.IsNullOrWhiteSpace(searchFilter2))
+            return true;
+
+        else
+        {
+            switch (searchField2)
+            {
+                case "Part Number":
+                    if (x.Component.PartNumber.Contains(searchFilter2, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    break;
+                // case "날짜":
+                //     if (x.Date.GetValueOrDefault().ToString("yyyy-MM-dd").Contains(searchFilter2, StringComparison.OrdinalIgnoreCase))
+                //         return true;
+                //     break;
+                default:
+                    break;
+            }
+        }
+
+        return false;
+    };
+
+    private void OnDateRangeChanged(DateRange? range)
+    {
+        _dateRange = range;
+
+        using var context = DbFactory.CreateDbContext();
+
+        if (range?.Start == null || range?.End == null)
+        {
+            FilteredData2 = context.CompHistory.Include(c => c.Component)
+                .OrderByDescending(x => x.Date)
+                .ToList();
+            totalPrice = 0;
+            return;
+        }
+
+        var start = range.Start.Value.Date;
+        var end = range.End.Value.Date.AddDays(1).AddTicks(-1);
+
+        FilteredData2 = context.CompHistory.Include(c => c.Component)
+            .Where(x => x.Date >= start && x.Date <= end)
+            .OrderByDescending(x => x.Date)
+            .ToList();
+
+        totalPrice = FilteredData2.Where(x => x.state == "출고").Sum(x => x.Component.Price * x.Quantity);
+    }
+
+    private async Task CommittedItemChanges(Component item)
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Attach(item!).State = EntityState.Modified;
+        await context.SaveChangesAsync();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+
+        context = DbFactory.CreateDbContext();
+        FilteredData2 = await context.CompHistory.Include(c => c.Component).ToListAsync();
+
+        isLoading = false;
+    }
+
+    private Func<CompHistory, string> _cellStyleFunc2 => x =>
+    {
+        string style = "";
+
+        if (x.state == "입고")
+            style += "background-color:#D9EAD3";
+        else if (x.state == "출고")
+            style += "background-color:#F9CB9C";
+
+        return style;
+    };
+
+    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+}
+

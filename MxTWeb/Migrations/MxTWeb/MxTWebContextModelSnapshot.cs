@@ -22,6 +22,54 @@ namespace MxTWeb.Migrations.MxTWeb
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("MxTWeb.Models.Bom", b =>
+                {
+                    b.Property<int>("BomId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BomId"));
+
+                    b.Property<string>("BomVersion")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ProductName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("BomId");
+
+                    b.ToTable("Bom");
+                });
+
+            modelBuilder.Entity("MxTWeb.Models.BomDetail", b =>
+                {
+                    b.Property<int>("BomDetailId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BomDetailId"));
+
+                    b.Property<int>("BomId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ComponentId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.HasKey("BomDetailId");
+
+                    b.HasIndex("BomId");
+
+                    b.HasIndex("ComponentId");
+
+                    b.ToTable("BomDetail");
+                });
+
             modelBuilder.Entity("MxTWeb.Models.ChipPressure", b =>
                 {
                     b.Property<int>("Id")
@@ -57,7 +105,7 @@ namespace MxTWeb.Migrations.MxTWeb
 
                     b.HasKey("Id");
 
-                    b.ToTable("ChipPressure", (string)null);
+                    b.ToTable("ChipPressure");
                 });
 
             modelBuilder.Entity("MxTWeb.Models.ChipUsage", b =>
@@ -111,21 +159,21 @@ namespace MxTWeb.Migrations.MxTWeb
 
                     b.HasKey("Id");
 
-                    b.ToTable("ChipUsage", (string)null);
+                    b.ToTable("ChipUsage");
                 });
 
             modelBuilder.Entity("MxTWeb.Models.CompHistory", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("CompHistoryId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CompHistoryId"));
 
                     b.Property<string>("Account")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("ComponentId")
+                    b.Property<int>("ComponentId")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("Date")
@@ -134,10 +182,6 @@ namespace MxTWeb.Migrations.MxTWeb
                     b.Property<DateTime?>("EntryDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("PartNumber")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
 
@@ -145,20 +189,20 @@ namespace MxTWeb.Migrations.MxTWeb
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("Id");
+                    b.HasKey("CompHistoryId");
 
                     b.HasIndex("ComponentId");
 
-                    b.ToTable("CompHistory", (string)null);
+                    b.ToTable("CompHistory");
                 });
 
             modelBuilder.Entity("MxTWeb.Models.Component", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("ComponentId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ComponentId"));
 
                     b.Property<string>("Assembly")
                         .IsRequired()
@@ -213,9 +257,9 @@ namespace MxTWeb.Migrations.MxTWeb
                     b.Property<int>("TotalPrice")
                         .HasColumnType("int");
 
-                    b.HasKey("Id");
+                    b.HasKey("ComponentId");
 
-                    b.ToTable("Component", (string)null);
+                    b.ToTable("Component");
                 });
 
             modelBuilder.Entity("MxTWeb.Models.Cyropreserved", b =>
@@ -262,7 +306,7 @@ namespace MxTWeb.Migrations.MxTWeb
 
                     b.HasKey("Id");
 
-                    b.ToTable("Cyropreserved", (string)null);
+                    b.ToTable("Cyropreserved");
                 });
 
             modelBuilder.Entity("MxTWeb.Models.Equipment", b =>
@@ -308,7 +352,7 @@ namespace MxTWeb.Migrations.MxTWeb
 
                     b.HasKey("Id");
 
-                    b.ToTable("Equipment", (string)null);
+                    b.ToTable("Equipment");
                 });
 
             modelBuilder.Entity("MxTWeb.Models.Reagent", b =>
@@ -352,16 +396,49 @@ namespace MxTWeb.Migrations.MxTWeb
 
                     b.HasKey("Id");
 
-                    b.ToTable("Reagent", (string)null);
+                    b.ToTable("Reagent");
+                });
+
+            modelBuilder.Entity("MxTWeb.Models.BomDetail", b =>
+                {
+                    b.HasOne("MxTWeb.Models.Bom", "Bom")
+                        .WithMany("BomDetails")
+                        .HasForeignKey("BomId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MxTWeb.Models.Component", "Component")
+                        .WithMany("BomDetails")
+                        .HasForeignKey("ComponentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Bom");
+
+                    b.Navigation("Component");
                 });
 
             modelBuilder.Entity("MxTWeb.Models.CompHistory", b =>
                 {
                     b.HasOne("MxTWeb.Models.Component", "Component")
-                        .WithMany()
-                        .HasForeignKey("ComponentId");
+                        .WithMany("CompHistories")
+                        .HasForeignKey("ComponentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Component");
+                });
+
+            modelBuilder.Entity("MxTWeb.Models.Bom", b =>
+                {
+                    b.Navigation("BomDetails");
+                });
+
+            modelBuilder.Entity("MxTWeb.Models.Component", b =>
+                {
+                    b.Navigation("BomDetails");
+
+                    b.Navigation("CompHistories");
                 });
 #pragma warning restore 612, 618
         }

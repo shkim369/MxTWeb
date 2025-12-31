@@ -37,19 +37,6 @@
 
 <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" ActivePanelIndexChanged="OnTabChanged">
     <MudTabPanel Text="RUO 칩 사용 관리대장" OnClick="@(StateHasChanged)">
-        <MudGrid Spacing="5" Style="margin-top: 0px; margin-bottom: 10px">
-            <MudSpacer />
-            <MudSpacer />
-            <MudMenu Label="@SearchField" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Secondary">
-                <MudMenuItem Label="날짜" @onclick="@(() => SelectSearchField("날짜"))" />
-                <MudMenuItem Label="웨이퍼 정보" @onclick="@(() => SelectSearchField("웨이퍼 정보"))" />
-                <MudMenuItem Label="납품일시" @onclick="@(() => SelectSearchField("납품일시"))" />
-                <MudMenuItem Label="사용부서" @onclick="@(() => SelectSearchField("사용부서"))" />
-            </MudMenu>
-            &nbsp&nbsp&nbsp&nbsp
-            <MudTextField @bind-Value="SearchFilter" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
-                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-        </MudGrid>
         <MudDataGrid T="ChipUsage" Class="custom-grid" @ref="dataGrid" Items="FilteredData.AsQueryable()" SortMode="SortMode.Single"
                      Dense="true" Style="white-space: nowrap" Hover="true" Bordered="true" Striped="true" SelectOnRowClick="false"
                      MultiSelection="true" SelectedItems="@selectedItems" SelectedItemsChanged="@(_ => StateHasChanged())">
@@ -62,25 +49,21 @@
                     <MudMenuItem Label="B01_Small chip" @onclick="@(() => SelectChip("B01_Small"))" />
                     <MudMenuItem Label="B01_Large chip" @onclick="@(() => SelectChip("B01_Large"))" />
                 </MudMenu>
-
-                <MudSpacer />
-
+                &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
                 <MudGrid Spacing="5">
-                    <MudSpacer />
-
                     <MudItem>
-                        <MudButton Class="me-2" @onclick="CreateNew" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">
+                        <MudButton Class="mt-1" @onclick="CreateNew" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">
                             Add New
                         </MudButton>
                     </MudItem>
 
                     <MudItem>
-                        <MudButton Class="me-2" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete"
+                        <MudButton Class="mt-1" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete"
                                    Color="@Color.Error" Disabled="@IsDeleteDisabled" OnClick="@DeleteData"> Delete </MudButton>
                     </MudItem>
 
                     <MudItem>
-                        <MudFileUpload Class="me-2" T="IBrowserFile" Accept=".xlsx, .csv" @ref="excelUpload" FilesChanged="UploadFile">
+                        <MudFileUpload Class="mt-1" T="IBrowserFile" Accept=".xlsx, .csv" @ref="excelUpload" FilesChanged="UploadFile">
                             <ActivatorContent>
                                 <MudButton Disabled="@importing" Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Custom.FileFormats.FileExcel">
                                     @if (importing)
@@ -98,7 +81,7 @@
                     </MudItem>
 
                     <MudItem>
-                        <MudButton Disabled="@exporting" @onclick="ExportToExcel" Variant="Variant.Filled" Color="Color.Info" StartIcon="@Icons.Custom.FileFormats.FileExcel">
+                        <MudButton Class="mt-1" Disabled="@exporting" @onclick="ExportToExcel" Variant="Variant.Filled" Color="Color.Info" StartIcon="@Icons.Custom.FileFormats.FileExcel">
                             @if (exporting)
                             {
                                 <MudProgressCircular Indeterminate="true" Color="Color.Info" Size="Size.Small" Class="me-2" />
@@ -111,6 +94,20 @@
                         </MudButton>
                     </MudItem>
                 </MudGrid>
+
+
+                <MudGrid Spacing="5" Class="mt-1">
+                    <MudMenu Label="@SearchField" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Secondary">
+                        <MudMenuItem Label="날짜" @onclick="@(() => SelectSearchField("날짜"))" />
+                        <MudMenuItem Label="웨이퍼 정보" @onclick="@(() => SelectSearchField("웨이퍼 정보"))" />
+                        <MudMenuItem Label="납품일시" @onclick="@(() => SelectSearchField("납품일시"))" />
+                        <MudMenuItem Label="사용부서" @onclick="@(() => SelectSearchField("사용부서"))" />
+                    </MudMenu>
+                    &nbsp&nbsp&nbsp&nbsp
+                    <MudTextField @bind-Value="SearchFilter" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                                    AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" />
+                </MudGrid>
+
             </ToolBarContent>
 
             <Columns>

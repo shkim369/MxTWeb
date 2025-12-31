@@ -1,0 +1,326 @@
+﻿@page "/bom"
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using MxTWeb.Models
+@using MxTWeb.Data
+@using MxTWeb.Enums
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@implements IAsyncDisposable
+@inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>BOM 관리</PageTitle>
+
+<style>
+    .custom-grid .mud-table-cell .column-header .column-options .mud-menu .mud-icon-button-label {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
+    .custom-grid .mud-table-cell .column-header .column-options .mud-menu {
+        display: none !important;
+        visibility: hidden !important;
+        width: 0px !important;
+    }
+
+    .custom-grid .mud-table-cell {
+        padding-right: 15px !important;
+    }
+</style>
+
+<h2>BOM 관리</h2>
+<br/>
+<MudGrid Spacing="5" Class="mb-2">
+    <MudItem Class="ms-2">
+        <MudSelect Style="min-width: 10vw" @bind-Value="_selectedProduct" Variant="Variant.Text" Label="Selected Product" ShrinkLabel
+                   TextChanged="@OnProductChanged">
+            @foreach (var bom in _boms)
+            {
+                <MudSelectItem Value="@bom">@bom</MudSelectItem>
+            }
+        </MudSelect>
+    </MudItem>
+    <MudItem>
+        <MudIcon Icon="@Icons.Material.Filled.ArrowForward" Class="mt-5"/>
+    </MudItem>
+    <MudItem>
+        <MudSelect Style="min-width: 10vw" @bind-Value="_selectedVersion" Variant="Variant.Text" Label="Selected Version" ShrinkLabel>
+            @foreach (var bom in _boms)
+            {
+                <MudSelectItem Value="@bom">@bom</MudSelectItem>
+            }
+        </MudSelect>
+    </MudItem>
+    &nbsp&nbsp
+    <MudItem>
+        <MudButton Class="mt-3" @onclick="AddNew2" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit">
+            ADD BOM
+        </MudButton>
+    </MudItem>
+    <MudItem>
+        <MudIconButton Class="mt-3" Icon="@Icons.Material.Filled.Delete" Variant="Variant.Filled" Color="Color.Error" Size="Size.Medium" 
+                       Disabled="@IsDeleteDisabled2" />
+    </MudItem>
+</MudGrid>
+
+<MudDataGrid T="Component" Class="custom-grid" Items="@FilteredData" @ref="_dataGrid"
+             SortMode="SortMode.Single" Dense="true" Style="white-space: nowrap" Hover="true" Bordered="true" Striped="true"
+             EditMode="DataGridEditMode.Cell" ReadOnly="false" Groupable="true" GroupClass="pa-3"
+             CommittedItemChanges="@CommittedItemChanges"
+             RowsPerPage="1000" SelectOnRowClick="false"
+             MultiSelection="true" SelectedItems="@selectedItems" SelectedItemsChanged="@(_ => StateHasChanged())"
+             QuickFilter="@_quickFilter"
+             Loading="@isLoading">
+
+    <ToolBarContent>
+        <MudGrid Spacing="5" Style="margin-top: 0px; margin-bottom: 10px">
+            <MudItem>
+                <MudButton Class="me-2" OnClick="@ExpandAllGroupsAsync" Variant="Variant.Outlined" Color="@Color.Primary">펼치기</MudButton>
+            </MudItem>
+            <MudItem>
+                <MudButton Class="me-2" OnClick="@CollapseAllGroupsAsync" Variant="Variant.Outlined" Color="@Color.Primary">접기</MudButton>
+            </MudItem>
+            <MudItem>
+                <MudButton Class="me-2" @onclick="AddNew" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">
+                    Add Part
+                </MudButton>
+            </MudItem>
+            <MudItem>
+                <MudButton Class="me-2" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete"
+                           Color="@Color.Error" OnClick="@DeleteData" Disabled="@IsDeleteDisabled">
+                    Delete
+                </MudButton>
+            </MudItem>
+
+            <MudItem Style="margin-left: auto">
+                <MudMenu Class="mb-1" Label="@searchField" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Secondary">
+                    <MudMenuItem Label="Assembly" @onclick="@(() => SelectSearchField("Assembly"))" />
+                    <MudMenuItem Label="Part Number" @onclick="@(() => SelectSearchField("Part Number"))" />
+                    <MudMenuItem Label="Description" @onclick="@(() => SelectSearchField("Description"))" />
+                    <MudMenuItem Label="Seller" @onclick="@(() => SelectSearchField("Seller"))" />
+                </MudMenu>
+            </MudItem>
+            <MudItem>
+                <MudTextField Class="mt-1 pe-5" Style="min-width: 25vw" @bind-Value="searchFilter" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                              AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" />
+            </MudItem>
+        </MudGrid>
+    </ToolBarContent>
+
+    <ColGroup>
+        <col style="width: 0px;"/>
+        <col />
+        <col />
+        <col style="width: 150px;"/>
+        <col />
+        <col style="width: 50px;" />
+        <col style="width: 80px;" />
+        <col style="width: 110px;" />
+        <col style="width: 110px;" />
+        <col style="width: 80px;" />
+        <col />
+        <col />
+        <col style="width: 50px;" />
+        <col />
+    </ColGroup>
+    <Columns>
+        <SelectColumn T="Component" />
+        <PropertyColumn Property="x => x.Assembly" Title="Assembly" Sortable="true"
+                        Grouping="true" GroupExpanded="true" GroupByOrder="2">
+            <GroupTemplate>
+                @{
+                    var key = context.Grouping.Key;
+                    decimal total = 0M;
+                    if (FilteredData != null)
+                    {
+                        total = FilteredData
+                            .Where(x => Equals(x.Assembly, key))
+                            .Sum(x => (decimal)x.Quantity * x.Price);
+                    }
+                }
+                <span style="font-weight:bold">@context.Title: @(context.Grouping.Key) Total Price: @total.ToString("N0")</span>
+            </GroupTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.PartNumber" Title="Part Number" sortable="true" InitialDirection="SortDirection.Ascending" />
+        <PropertyColumn Property="x => x.Description" Title="Description" Sortable="false" Required="false"/>
+        <PropertyColumn Property="x => x.Model" Title="Model" Sortable="false" Required="false" />
+        <PropertyColumn Property="x => x.Origin" Title="Origin" Sortable="false" Required="false" />
+        <PropertyColumn Property="x => x.Quantity" Title="Q'ty" Sortable="false" Required="false" Format="N0"/>
+        <PropertyColumn Property="x => x.Price" Title="Price" Required="false" Format="N0" />
+        <PropertyColumn Property="x => (x.Quantity * x.Price)" Title="Total" Required="false" Format="N0" />
+        <PropertyColumn Property="x => x.Category" Title="Category" Sortable="false" Required="false" />
+        <PropertyColumn Property="x => x.Maker" Title="Maker" sortable="false" Required="false" />
+        <PropertyColumn Property="x => x.Seller" Title="Seller" Sortable="false" Required="false" />
+        <PropertyColumn Property="x => x.LeadTime" Title="Lead" sortable="false" Required="false" />
+        <PropertyColumn Property="x => x.Note" Title="Comment" sortable="false" Required="false" />
+    </Columns>
+</MudDataGrid>
+<br />
+<br />
+<br />
+
+@code {
+    private MxTWebContext context = default!;
+
+    private string searchField = "Assembly";
+    private string searchFilter = "";
+
+    private IEnumerable<Component> FilteredData = new List<Component>();
+    private Component component = new();
+    private HashSet<Component> selectedItems = new();
+    private string _selectedProduct = "BOM1";
+    private string _selectedVersion = "BOM1";
+    private readonly List<string> _boms = new() { "BOM1", "BOM2", "BOM3" };
+    private bool IsDeleteDisabled => selectedItems.Count == 0;
+    private bool IsDeleteDisabled2 => _selectedVersion == "";
+    private bool isProcessing = false;
+    private bool isLoading = true;
+    private bool _readonly = true;
+
+    private MudDataGrid<Component> _dataGrid = null!;
+
+    private async Task AddNew()
+    {
+        var parameters = new DialogParameters<Edit>
+        {
+            { x => x.action, UIActionEnum.Insert }
+        };
+
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var dialog = await DialogService.ShowAsync<Edit>("Add New Component", parameters, options);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
+        {
+            FilteredData = context.Component.ToList();
+            StateHasChanged();
+        }
+    }
+
+    private async Task AddNew2()
+    {
+        var parameters = new DialogParameters<BomEdit>
+        {
+            { x => x.action, UIActionEnum.Insert }
+        };
+
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var dialog = await DialogService.ShowAsync<Edit>("Add New Component", parameters, options);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
+        {
+            FilteredData = context.Component.ToList();
+            StateHasChanged();
+        }
+    }
+
+    private async Task DeleteData()
+    {
+        var parameters = new DialogParameters<BomDelete>
+        {
+            ["bomDetail"] = selectedItems.ToList()
+        };
+
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var dialog = await DialogService.ShowAsync<BomDelete>("Delete Data", parameters, options);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
+        {         
+            FilteredData = context.Component.ToList();
+            selectedItems.Clear();
+        }
+    }
+
+    private Func<Component, bool> _quickFilter => x =>
+    {
+        if (string.IsNullOrWhiteSpace(searchFilter))
+            return true;
+
+        else
+        {
+            switch (searchField)
+            {
+                case "Assembly":
+                    if (x.Assembly.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    break;
+
+                case "Part Number":
+                    if (x.PartNumber.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    break;
+
+                case "Description":
+                    if (x.Description.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    break;
+
+                case "Seller":
+                    if (x.Seller.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    break;
+
+                default:
+                    break;
+            }
+        }
+        return false;
+    };
+
+    private async Task CommittedItemChanges(Component item)
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Attach(item!).State = EntityState.Modified;
+        await context.SaveChangesAsync();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+
+        context = DbFactory.CreateDbContext();
+        //FilteredData = await context.BomDetail.ToListAsync();
+
+        isLoading = false;
+    }
+
+    private void SelectSearchField(string item)
+    {
+        searchField = item;
+    }
+
+    private void OnProductChanged(string value)
+    {
+        _selectedVersion = string.Empty;
+        //await LoadAutoComplete();
+    }
+
+    private Func<Component, string> _cellStyleFunc => x =>
+    {
+        string style = "";
+
+        if (x.Stock < x.Required)
+            style += "background-color:#F8766B";
+        else if (x.Stock < x.Required * 2)
+            style += "background-color:#F3D86C";
+
+        return style;
+    };
+
+    private Task ExpandAllGroupsAsync()
+    {
+        return _dataGrid.ExpandAllGroupsAsync();
+    }
+
+    private Task CollapseAllGroupsAsync()
+    {
+        return _dataGrid.CollapseAllGroupsAsync();
+    }
+
+    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+
+}

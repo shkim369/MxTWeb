@@ -1,4 +1,5 @@
 ﻿@implements IDisposable
+@rendermode InteractiveServer
 
 @inject NavigationManager NavigationManager
 
@@ -48,7 +49,7 @@
                         칩 사용 대장
                     </MudNavLink>
 
-					<MudNavGroup Title="부품 재고 관리" Expanded="true"
+					<MudNavGroup Title="부품 재고 관리" onclick=""
                                  IconColor="Color.Surface"
                                  Icon="@Icons.Material.Filled.Warehouse" Style="font-size: 16px; font-weight:bolder; color: floralwhite"
                                  Class="fw-bolder">
@@ -56,9 +57,13 @@
                                     Class="fw-bolder">
                             재고 현황
                         </MudNavLink>
-                        <MudNavLink Match="NavLinkMatch.Prefix" Href="components" Style="font-size: 16px; font-weight:bolder; color: floralwhite"
+                        <MudNavLink Match="NavLinkMatch.Prefix" Href="histories" Style="font-size: 16px; font-weight:bolder; color: floralwhite"
                                     Class="fw-bolder">
-                            BOM
+                            입·출고 이력
+                        </MudNavLink>
+                        <MudNavLink Match="NavLinkMatch.Prefix" Href="bom" Style="font-size: 16px; font-weight:bolder; color: floralwhite"
+                                    Class="fw-bolder">
+                            BOM 관리
                         </MudNavLink>
                     </MudNavGroup>
 
