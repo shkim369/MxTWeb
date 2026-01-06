@@ -11,85 +11,78 @@
 <EditForm method="post" Model="Bom" OnValidSubmit="OnValidSubmit" FormName="edit" Enhance>
     <MudDialog>
         <DialogContent>
-            <MudDropContainer T="ComponentWrapper" Items="@AllComponents" ItemsSelector="@((item, dropzone) => item.Zone == dropzone)"
-                      ItemDropped="ItemUpdated" Class="d-flex flex-wrap flex-grow-1">
-        <ChildContent>
-            <MudGrid>
-                <MudItem xs="12" md="6">
-                    <MudPaper Elevation="2" Class="pa-4" Style="min-height: 800px;">
-                        <MudText Typo="Typo.h6" Class="mb-3">소스 테이블</MudText>
-                        <MudDropZone T="ComponentWrapper" Identifier="source" Class="flex-grow-1">
-                            <MudTable T="ComponentWrapper" Items="@sourceComponents" MultiSelection="true" Hover="true"
-                                      @bind-SelectedItems="selectedSourceItems" SelectOnRowClick="false" 
-                                      RowsPerPage="1000" FixedHeader="true" Height="650px" Dense="true">
-                                <HeaderContent>
-                                    <MudTh>Assembly</MudTh>
-                                    <MudTh>PartNumber</MudTh>
-                                    <MudTh>Description</MudTh>
-                                </HeaderContent>
-                                <RowTemplate Context="x">
-                                    <MudTd DataLabel="Assembly">@x.Component.Assembly</MudTd>
-                                    <MudTd DataLabel="PartNumber">@x.Component.PartNumber</MudTd>
-                                    <MudTd DataLabel="Description">@x.Component.Description</MudTd>
-                                </RowTemplate>
-                            </MudTable>
-                        </MudDropZone>
-                        <MudText Typo="Typo.caption" Class="mt-2">항목 수: @sourceComponents.Count()</MudText>
-                    </MudPaper>
+            <MudGrid Style="width: 1600px">
+                <MudItem xs="5">
+                    <MudTable T="Component" Items="@SourceComponents" Filter="new Func<Component, bool>(FilterFunc1_)"
+                              Dense="true" Style="white-space: nowrap" Hover="true" Bordered="true" Striped="true"
+                              GroupBy="@_groupDefinition1"
+                              GroupHeaderStyle="background-color:var(--mud-palette-background-gray)"
+                              RowsPerPage="1000" SelectOnRowClick="false"
+                              MultiSelection="true" @bind-SelectedItems="selectedSourceItems"
+                              FixedHeader="true" Height="670px">
+                        <HeaderContent>
+                            <MudTh>Assembly</MudTh>
+                            <MudTh>PartNumber</MudTh>
+                            <MudTh>Description</MudTh>
+                        </HeaderContent>
+                        <GroupHeaderTemplate Context="x">
+                            <MudTh Class="mud-table-cell-custom-group" colspan="5">@($"{x.GroupName}: {x.Key}") </MudTh>
+                        </GroupHeaderTemplate>
+                        <RowTemplate Context="x">
+                            <MudTd DataLabel="Assembly">@x.Assembly</MudTd>
+                            <MudTd DataLabel="PartNumber">@x.PartNumber</MudTd>
+                            <MudTd DataLabel="Description">@x.Description</MudTd>
+                        </RowTemplate>
+                    </MudTable>
                 </MudItem>
-                
-                <MudItem xs="12" md="6">
-                    <MudPaper Elevation="2" Class="pa-4" Style="min-height: 800px;">
-                        <MudText Typo="Typo.h6" Class="mb-3">대상 테이블</MudText>
-                        <MudDropZone T="ComponentWrapper" Identifier="target" Class="flex-grow-1">
-                            <MudTable T="ComponentWrapper" Items="@targetComponents" MultiSelection="true" Hover="true"
-                                      @bind-SelectedItems="selectedTargetItems" SelectOnRowClick="false" 
-                                      RowsPerPage="1000" FixedHeader="true" Height="650px" Dense="true">
-                                <HeaderContent>
-                                    <MudTh>Assembly</MudTh>
-                                    <MudTh>PartNumber</MudTh>
-                                    <MudTh>Description</MudTh>
-                                </HeaderContent>
-                                <RowTemplate Context="x">
-                                    <MudTd DataLabel="Assembly">@x.Component.Assembly</MudTd>
-                                    <MudTd DataLabel="PartNumber">@x.Component.PartNumber</MudTd>
-                                    <MudTd DataLabel="Description">@x.Component.Description</MudTd>
-                                </RowTemplate>
-                            </MudTable>
-                        </MudDropZone>
-                        <MudText Typo="Typo.caption" Class="mt-2">항목 수: @targetComponents.Count()</MudText>
-                    </MudPaper>
+
+                <MudItem xs="1">
+
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudTable T="BomDetail" Items="@TargetComponents" Filter="new Func<BomDetail, bool>(FilterFunc2_)"
+                              Dense="true" Hover="true" Bordered="true" Striped="true"
+                              GroupBy="@_groupDefinition2"
+                              GroupHeaderStyle="background-color:var(--mud-palette-background-gray)"
+                              RowsPerPage="1000" SelectOnRowClick="false"
+                              MultiSelection="false" @bind-SelectedItems="selectedTargetItems"
+                              FixedHeader="true" Height="670px">
+                        <HeaderContent>
+                            <MudTh>Assembly</MudTh>
+                            <MudTh>PartNumber</MudTh>
+                            <MudTh>Description</MudTh>
+                            <MudTh>Quantity</MudTh>
+                            <MudTh>Price</MudTh>
+                        </HeaderContent>
+                        <GroupHeaderTemplate Context="x">
+                            <MudTh colspan="5">@($"{x.GroupName}: {x.Key}") </MudTh>
+                        </GroupHeaderTemplate>
+                        <RowTemplate Context="x">
+                            <MudTd DataLabel="Assembly">@x.Component.Assembly</MudTd>
+                            <MudTd DataLabel="PartNumber">@x.Component.PartNumber</MudTd>
+                            <MudTd DataLabel="Description">@x.Component.Description</MudTd>
+                            <MudTd DataLabel="Quantity">@x.Quantity</MudTd>
+                            <MudTd DataLabel="Price">@x.Price</MudTd>
+                        </RowTemplate>
+                    </MudTable>
                 </MudItem>
             </MudGrid>
-        </ChildContent>
-        <ItemRenderer Context="x">
-            <MudPaper Elevation="1" Class="pa-2 ma-1 cursor-move">
-                <MudText Typo="Typo.body2">@x.Component.PartNumber - @x.Component.Description</MudText>
-            </MudPaper>
-        </ItemRenderer>
-    </MudDropContainer>
-
-
+            <MudAlert Severity="Severity.Info" Class="mt-3" Dense="true">
+                <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                    <MudIcon Icon="@Icons.Material.Filled.TouchApp" />
+                    <MudText><strong>사용 방법:</strong> 각 항목을 드래그하여 다른 테이블로 이동하세요.</MudText>
+                </MudStack>
+            </MudAlert>
         </DialogContent>
         <DialogActions>
-            <MudButton Class="mb-5 me-5" ButtonType="ButtonType.Submit" Variant="Variant.Filled"
-                       StartIcon="@(action == UIActionEnum.Update ? Icons.Material.Filled.Edit : Icons.Material.Filled.Add)" Color="Color.Info">
-                @(action == UIActionEnum.Update ? "Edit" : "ADD")
-            </MudButton>
             <MudButton Class="mb-5 me-5" Variant="Variant.Filled" Color="Color.Secondary" OnClick="() => MudDialog.Cancel()">Cancel</MudButton>
         </DialogActions>
     </MudDialog>
 </EditForm>
 
 @code {
-    public class ComponentWrapper
-    {
-        public Component Component { get; set; } = null!;
-        public string Zone { get; set; } = "source";
-    }
-
-    [Parameter]
-    public UIActionEnum action { get; set; } = UIActionEnum.Insert;
+    private MxTWebContext context = default!;
 
     [SupplyParameterFromQuery]
     private int Id { get; set; }
@@ -100,21 +93,19 @@
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; }
 
-    private IEnumerable<ComponentWrapper> AllComponents = new List<ComponentWrapper>();
-    private IEnumerable<ComponentWrapper> BomComponents = new List<ComponentWrapper>();
+    private IEnumerable<Component> SourceComponents = new List<Component>();
+    private IEnumerable<BomDetail> TargetComponents = new List<BomDetail>();
 
-    private HashSet<ComponentWrapper> selectedSourceItems = new();
-    private HashSet<ComponentWrapper> selectedTargetItems = new();
+    private HashSet<Component> selectedSourceItems = new();
+    private HashSet<BomDetail> selectedTargetItems = new();
 
-    private IEnumerable<ComponentWrapper> sourceComponents => AllComponents.Where(c => c.Zone == "source");
-    private IEnumerable<ComponentWrapper> targetComponents => AllComponents.Where(c => c.Zone == "target");
+    private string searchString1 = "";
+    private string searchString2 = "";
+
 
     private async Task OnValidSubmit()
     {
-        if (action == UIActionEnum.Insert)
-        {
-            await AddComponent();
-        }
+
     }
 
     private async Task AddComponent()
@@ -130,48 +121,53 @@
 
     protected override async Task OnInitializedAsync()
     {
-        AllComponents = DbFactory.CreateDbContext().Component.ToList().Select(c => new ComponentWrapper
-        {
-            Component = c,
-            Zone = "source"
-        }).ToList();
+        context = DbFactory.CreateDbContext();
+        SourceComponents = await context.Component.ToListAsync();
     }
 
-    private void ItemUpdated(MudItemDropInfo<ComponentWrapper> dropItem)
+    private bool FilterFunc1_(Component component) => FilterFunc1(component, searchString1);
+
+    private bool FilterFunc1(Component component, string searchString)
     {
-        if (dropItem.Item != null)
-        {
-            dropItem.Item.Zone = dropItem.DropzoneIdentifier;
-        }
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        if (component.Assembly.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (component.PartNumber.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return false;
     }
 
-    private void MoveSelectedToTarget()
+    private TableGroupDefinition<Component> _groupDefinition1 = new()
     {
-        foreach (var item in selectedSourceItems)
-        {
-            item.Zone = "target";
-        }
-        selectedSourceItems.Clear();
-    }
+        GroupName = "Assembly",
+        Indentation = false,
+        Expandable = true,
+        IsInitiallyExpanded = false,
+        Selector = (e) => e.Assembly
+    };
 
-    private void MoveSelectedToSource()
+    private bool FilterFunc2_(BomDetail bomDetail) => FilterFunc2(bomDetail, searchString1);
+
+    private bool FilterFunc2(BomDetail bomDetail, string searchString)
     {
-        foreach (var item in selectedTargetItems)
-        {
-            item.Zone = "source";
-        }
-        selectedTargetItems.Clear();
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        if (bomDetail.Component.Assembly.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (bomDetail.Component.PartNumber.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return false;
     }
 
-    // 실제 사용 시: 이동된 Component들만 추출하는 메서드
-    public List<Component> GetTargetComponents()
+    private TableGroupDefinition<BomDetail> _groupDefinition2 = new()
     {
-        return targetComponents.Select(w => w.Component).ToList();
-    }
-
-    public List<Component> GetSourceComponents()
-    {
-        return sourceComponents.Select(w => w.Component).ToList();
-    }
-
+        GroupName = "Assembly",
+        Indentation = false,
+        Expandable = true,
+        IsInitiallyExpanded = false,
+        Selector = (e) => e.Component.Assembly
+    };
 }

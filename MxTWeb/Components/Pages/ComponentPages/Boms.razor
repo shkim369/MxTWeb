@@ -180,13 +180,8 @@
 
     private async Task AddNew() // Add Part
     {
-        var parameters = new DialogParameters<BomDetailEdit>
-        {
-            { x => x.action, UIActionEnum.Insert }
-        };
-
-        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
-        var dialog = await DialogService.ShowAsync<BomDetailEdit>("Add New Component", parameters, options);
+        var options = new DialogOptions { MaxWidth = MaxWidth.ExtraExtraLarge };
+        var dialog = await DialogService.ShowAsync<BomDetailEdit>("Add New Component", options);
         var result = await dialog.Result;
 
         if (result is not null && !result.Canceled)
