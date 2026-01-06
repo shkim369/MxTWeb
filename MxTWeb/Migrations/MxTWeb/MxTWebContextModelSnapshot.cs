@@ -58,6 +58,12 @@ namespace MxTWeb.Migrations.MxTWeb
                     b.Property<int>("ComponentId")
                         .HasColumnType("int");
 
+                    b.Property<string>("Currency")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
 
@@ -214,6 +220,9 @@ namespace MxTWeb.Migrations.MxTWeb
                     b.Property<string>("Color_Etch")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Currency")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
@@ -239,22 +248,16 @@ namespace MxTWeb.Migrations.MxTWeb
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("Price")
-                        .HasColumnType("int");
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("Quantity")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Required")
                         .HasColumnType("int");
 
                     b.Property<string>("Seller")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Stock")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TotalPrice")
                         .HasColumnType("int");
 
                     b.HasKey("ComponentId");

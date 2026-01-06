@@ -1,0 +1,53 @@
+﻿@page "/components/delete3"
+@using Microsoft.EntityFrameworkCore
+@using MxTWeb.Models
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Delete</PageTitle>
+
+<EditForm method="post" Model="bomDetails" OnValidSubmit="OnValidSubmitted" FormName="delete" Enhance>
+    <MudDialog>
+        <DialogContent>
+            <MudText>Are you sure you want to delete this?</MudText>
+        </DialogContent>
+
+        <DialogActions>
+            <MudButton Class="mb-3 me-5" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Error"
+                       StartIcon="@Icons.Material.Filled.Delete">Delete</MudButton>
+            <MudButton Class="mb-3 me-5" Variant="Variant.Filled" Color="Color.Secondary" OnClick="() => MudDialog.Cancel()">Cancel</MudButton>
+        </DialogActions>
+    </MudDialog>
+</EditForm>
+
+@code {
+    [Parameter]
+    public List<BomDetail> bomDetails { get; set; } = new();
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; }
+    [SupplyParameterFromQuery]
+    private int id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+
+    }
+
+    private async Task OnValidSubmitted()
+    {
+        using var context = DbFactory.CreateDbContext();
+
+        foreach (var item in bomDetails)
+        {
+            context.BomDetail.Remove(item!);
+        }
+        
+        await context.SaveChangesAsync();
+
+        Snackbar.Add("삭제가 완료되었습니다.", Severity.Success);
+        MudDialog.Close();
+    }
+}

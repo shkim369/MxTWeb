@@ -14,8 +14,8 @@ namespace MxTWeb.Models
         public string? Model { get; set;  }
         public string? Origin { get; set; }
         public int Quantity { get; set; }
-        public int Price { get; set; }
-        public int TotalPrice { get; set; }
+        public decimal Price { get; set; }
+        public string? Currency { get; set; }
         public string? Category { get; set; }
         public string? Maker { get; set; }
         public string? Material { get; set; }
@@ -23,7 +23,6 @@ namespace MxTWeb.Models
         public string? Seller { get; set; }
         public string? LeadTime { get; set; }
         public int Stock { get; set; }
-        public int Required { get; set; }
         public string? Note { get; set; }
         public ICollection<CompHistory> CompHistories { get; set; } = new List<CompHistory>();
         public ICollection<BomDetail> BomDetails { get; set; } = new List<BomDetail>();

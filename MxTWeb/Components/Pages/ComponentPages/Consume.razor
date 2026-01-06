@@ -46,7 +46,7 @@
         {
             await context.Component
                 .ExecuteUpdateAsync(s => s
-                .SetProperty(b => b.Stock, b => b.Stock - b.Required));
+                .SetProperty(b => b.Stock, b => b.Stock - b.Quantity));
 
             await context.SaveChangesAsync();
         }

@@ -6,173 +6,121 @@
 @attribute [Authorize]
 @inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
 @inject NavigationManager NavigationManager
+@inject IDialogService DialogService
 @inject ISnackbar Snackbar
 
-<EditForm method="post" Model="Bom" OnValidSubmit="OnValidSubmit" FormName="edit" Enhance>
-    <MudDialog>
-        <DialogContent>
-            <DataAnnotationsValidator />            
-            <MudAutocomplete Class="mb-5" Variant="Variant.Outlined"
-                             Label="Product Name"
-                             @bind-Value="Bom.ProductName" TextChanged="@OnSelectProduct"
-                             Immediate="true" Required="true" Clearable="true"
-                             CoerceValue="true"
-                             SearchFunc="@(async (value, token) => await SearchAutoComplete(value, token, "Product"))" />
+<style>
+    .custom-grid .mud-table-cell .column-header .column-options .mud-menu .mud-icon-button-label {
+        display: none !important;
+        visibility: hidden !important;
+    }
 
-            <MudAutocomplete Class="mb-5" Variant="Variant.Outlined"
-                             Label="Bom Version"
-                             @bind-Value="Bom.BomVersion"
-                             Immediate="true" Required="true" Clearable="true"
-                             CoerceValue="true"
-                             SearchFunc="@(async (value, token) => await SearchAutoComplete(value, token, "Version"))" />
-        </DialogContent>
-        <DialogActions>
-            <MudButton Class="mb-5 me-5" ButtonType="ButtonType.Submit" Variant="Variant.Filled"
-                       StartIcon="@(action == UIActionEnum.Update ? Icons.Material.Filled.Edit : Icons.Material.Filled.Add)" Color="Color.Info">
-                @(action == UIActionEnum.Update ? "Edit" : "ADD")
-            </MudButton>
-            <MudButton Class="mb-5 me-5" Variant="Variant.Filled" Color="Color.Secondary" OnClick="() => MudDialog.Cancel()">Cancel</MudButton>
-        </DialogActions>
-    </MudDialog>
-</EditForm>
+    .custom-grid .mud-table-cell .column-header .column-options .mud-menu {
+        display: none !important;
+        visibility: hidden !important;
+        width: 0px !important;
+    }
+
+    .custom-grid .mud-table-cell {
+        padding-right: 15px !important;
+    }
+</style>
+
+<MudDialog Style="width: 50%">
+    <DialogContent>   
+        <MudDataGrid T="Bom" Class="custom-grid" SortMode="SortMode.Single"
+                     Style="white-space: nowrap" Hover="true" Bordered="true" Striped="true" RowsPerPage="100"
+                     EditMode="DataGridEditMode.Cell" ReadOnly="false" Dense="true"
+                     MultiSelection="false" @bind-SelectedItem="selectedItem"
+                     CommittedItemChanges="@CommittedItemChanges" Items="BomList.AsQueryable()">
+            <ToolBarContent>
+                <MudButton OnClick="@(() => AddBomData())" Variant="Variant.Filled" Color="@Color.Success" StartIcon="@Icons.Material.Filled.Add"
+                            Class="add-item-btn">Add New</MudButton>
+            </ToolBarContent>
+            <Columns>
+                <SelectColumn T="Bom" />
+                <PropertyColumn Property="x => x.ProductName" Title="Product Name" Editable="true" />
+                <PropertyColumn Property="x => x.BomVersion" Title="Bom Version" Editable="true" />
+                <PropertyColumn Property="x => x.CreatedAt" Title="Created Date" Editable="false" Format="yyyy-MM-dd"/>
+
+                <TemplateColumn Context="x" Editable="false">
+                    <CellTemplate>
+                        <MudIconButton Size="@Size.Small" Variant="Variant.Filled" Icon="@Icons.Material.Filled.Delete"
+                                       Color="@Color.Error" OnClick="@(() => DeleteBomData(x.Item))" />
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+        </MudDataGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Class="mb-5 me-5" Style="width: 16%;" Variant="Variant.Filled" Color="Color.Info" Disabled="IsLoadDisabled"
+                   OnClick="LoadBomData">Load</MudButton>
+        <MudButton Class="mb-5 me-5" Style="width: 16%;" Variant="Variant.Filled" Color="Color.Secondary"
+                   OnClick="() => MudDialog.Cancel()">Close</MudButton>
+    </DialogActions>
+</MudDialog>
 
 @code {
-    [Parameter]
-    public UIActionEnum action { get; set; } = UIActionEnum.Insert;
+    private MxTWebContext context = default!;
 
-    [SupplyParameterFromQuery]
-    private int Id { get; set; }
-
-    [Parameter]
-    public Bom Bom { get; set; } = new();
+    private Bom selectedItem = new();
+    private bool IsLoadDisabled => selectedItem == null || selectedItem.BomId == 0;
 
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; }
 
-    private string?[] _productStates = Array.Empty<string>();
-    private string?[] _versionStates = Array.Empty<string>();
-
-    private async Task OnValidSubmit()
-    {
-        if (action == UIActionEnum.Insert)
-        {
-            await AddComponent();
-        }
-        else if (action == UIActionEnum.Update)
-        {
-            await UpdateComponent();
-        }
-    }
-
-    private async Task AddComponent()
-    {
-        using var context = DbFactory.CreateDbContext();
-        context.Bom.Add(Bom);
-        await context.SaveChangesAsync();
-        NavigationManager.NavigateTo("/components");
-
-        Snackbar.Add("성공적으로 추가되었습니다.", Severity.Success);
-        MudDialog.Close();
-    }
+    private IEnumerable<Bom> BomList = new List<Bom>();
 
     protected override async Task OnInitializedAsync()
     {
-        if (action == UIActionEnum.Insert)
-        {
-
-        }
-        else if (action == UIActionEnum.Update)
-        {
-            using var context = DbFactory.CreateDbContext();
-            Bom ??= await context.Bom.FirstOrDefaultAsync(m => m.BomId == Id);
-
-            if (Bom is null)
-            {
-                NavigationManager.NavigateTo("notfound");
-            }
-        }
-
-        await LoadAutoComplete();
+        context = DbFactory.CreateDbContext();
+        BomList = context.Bom.ToList();
     }
 
-    // To protect from overposting attacks, enable the specific properties you want to bind to.
-    // For more information, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
-    private async Task UpdateComponent()
+    private async Task CommittedItemChanges(Bom item)
     {
         using var context = DbFactory.CreateDbContext();
-        context.Attach(Bom!).State = EntityState.Modified;
-
-        try
-        {
-            await context.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            if (!ComponentExists(Bom!.BomId))
-            {
-                NavigationManager.NavigateTo("notfound");
-            }
-            else
-            {
-                throw;
-            }
-        }
-
-        Snackbar.Add("성공적으로 수정되었습니다.", Severity.Success);
-        MudDialog.Close();
+        context.Attach(item!).State = EntityState.Modified;
+        await context.SaveChangesAsync();
     }
 
-    private bool ComponentExists(int id)
+    private async Task AddBomData()
     {
         using var context = DbFactory.CreateDbContext();
-        return context.Component.Any(e => e.ComponentId == id);
+
+        var newBom = new Bom();
+        newBom = new Bom
+        {
+            ProductName = "Product",
+            BomVersion = "Version",
+            CreatedAt = DateTime.Now
+        };
+        context.Bom.Add(newBom);
+        await context.SaveChangesAsync();
+
+        BomList = context.Bom.ToList();
     }
 
-    private async Task<IEnumerable<string?>> SearchAutoComplete(string value, CancellationToken token, string column)
+    private async Task DeleteBomData(Bom bom)
     {
-        // In real life use an asynchronous function for fetching data from an api.
-        await Task.Delay(5, token);
-
-        string?[] _states = column switch
+        var parameters = new DialogParameters<BomDelete>
         {
-            "Product" => _productStates,
-            "Version" => _versionStates,
-            _ => Array.Empty<string>(),
+            { x => x.bom, bom },
         };
 
-        // if text is null or empty, show complete list
-        if (string.IsNullOrEmpty(value))
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var dialog = await DialogService.ShowAsync<BomDelete>("Delete Data", parameters, options);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
         {
-            return _states;
+            BomList = context.Bom.ToList();
         }
-
-        return _states.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
     }
 
-    private async Task OnSelectProduct(string value)
+    private async Task LoadBomData()
     {
-        Bom.BomVersion = string.Empty;
-        await LoadAutoComplete();
-    }
-
-    private async Task LoadAutoComplete()
-    {
-        using var context = DbFactory.CreateDbContext();
-
-        _productStates = await context.Bom
-            .Select(x => x.ProductName)
-            .Distinct()
-            .Where(x => !string.IsNullOrEmpty(x) && x != "-")
-            .OrderBy(x => x)
-            .ToArrayAsync();
-
-        _versionStates = await context.Bom
-            .Select(x => x.BomVersion)
-            .Distinct()
-            .Where(x => x == Bom.ProductName)
-            .OrderBy(x => x)
-            .ToArrayAsync();
-
-        StateHasChanged();
+        DialogResult dialogResult = DialogResult.Ok(selectedItem);
+        MudDialog.Close(dialogResult);
     }
 }
