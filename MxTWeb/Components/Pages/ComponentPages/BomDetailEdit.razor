@@ -1,4 +1,5 @@
 ﻿@page "/components/edit4"
+@rendermode InteractiveServer
 @using Microsoft.EntityFrameworkCore
 @using MxTWeb.Models
 @using MxTWeb.Enums
@@ -14,19 +15,25 @@
             <MudGrid Style="width: 1600px">
                 <MudItem xs="5">
                     <MudTable T="Component" Items="@SourceComponents" Filter="new Func<Component, bool>(FilterFunc1_)"
-                              Dense="true" Style="white-space: nowrap" Hover="true" Bordered="true" Striped="true"
+                              Dense="true" Hover="true" Bordered="true" Striped="true"
                               GroupBy="@_groupDefinition1"
                               GroupHeaderStyle="background-color:var(--mud-palette-background-gray)"
                               RowsPerPage="1000" SelectOnRowClick="false"
                               MultiSelection="true" @bind-SelectedItems="selectedSourceItems"
-                              FixedHeader="true" Height="670px">
+                              FixedHeader="true" Height="716px">
+                        <ToolBarContent>
+                            <MudText Typo="Typo.body2" Class="pa-2">총 부품 수: @SourceComponents.Count()</MudText>
+                            <MudSpacer />
+                            <MudTextField Class="pe-5" @bind-Value="searchString1" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" />
+                        </ToolBarContent>
                         <HeaderContent>
                             <MudTh>Assembly</MudTh>
                             <MudTh>PartNumber</MudTh>
                             <MudTh>Description</MudTh>
                         </HeaderContent>
                         <GroupHeaderTemplate Context="x">
-                            <MudTh Class="mud-table-cell-custom-group" colspan="5">@($"{x.GroupName}: {x.Key}") </MudTh>
+                            <MudTh colspan="5">@($"{x.GroupName}: {x.Key}") </MudTh>
                         </GroupHeaderTemplate>
                         <RowTemplate Context="x">
                             <MudTd DataLabel="Assembly">@x.Assembly</MudTd>
@@ -36,8 +43,18 @@
                     </MudTable>
                 </MudItem>
 
-                <MudItem xs="1">
-
+                <MudItem xs="1" Style="display: flex; align-items:center; justify-content:center;">
+                    <MudStack Row="false" Spacing="15" Justify="Justify.Center" AlignItems="AlignItems.Center">
+                        <MudIconButton Style="height: 60px; width: 60px" Variant="Variant.Filled" Color="Color.Primary"
+                                   OnClick="MoveSelectedToTarget" Disabled="@(!selectedSourceItems.Any())"
+                                   Icon="@Icons.Material.Filled.ArrowForward" Size="Size.Large">
+                        </MudIconButton>
+                        <MudIconButton Style="height: 60px; width: 60px" Variant="Variant.Filled" Color="Color.Secondary"
+                                   OnClick="MoveSelectedToSource" Disabled="@(!selectedTargetItems.Any())"
+                                   Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Large">
+                        </MudIconButton>
+                        <MudSpacer />
+                    </MudStack>
                 </MudItem>
 
                 <MudItem xs="6">
@@ -46,13 +63,19 @@
                               GroupBy="@_groupDefinition2"
                               GroupHeaderStyle="background-color:var(--mud-palette-background-gray)"
                               RowsPerPage="1000" SelectOnRowClick="false"
-                              MultiSelection="false" @bind-SelectedItems="selectedTargetItems"
-                              FixedHeader="true" Height="670px">
+                              MultiSelection="true" @bind-SelectedItems="selectedTargetItems"
+                              FixedHeader="true" Height="716px">
+                        <ToolBarContent>
+                            <MudText Typo="Typo.body2" Class="pa-2">총 부품 수: @TargetComponents.Count()</MudText>
+                            <MudSpacer />
+                            <MudTextField Class="pe-5" @bind-Value="searchString2" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" />
+                        </ToolBarContent>
                         <HeaderContent>
                             <MudTh>Assembly</MudTh>
                             <MudTh>PartNumber</MudTh>
                             <MudTh>Description</MudTh>
-                            <MudTh>Quantity</MudTh>
+                            <MudTh>Q'ty</MudTh>
                             <MudTh>Price</MudTh>
                         </HeaderContent>
                         <GroupHeaderTemplate Context="x">
@@ -68,16 +91,14 @@
                     </MudTable>
                 </MudItem>
             </MudGrid>
-            <MudAlert Severity="Severity.Info" Class="mt-3" Dense="true">
+            @* <MudAlert Severity="Severity.Info" Class="mt-3" Dense="true">
                 <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
                     <MudIcon Icon="@Icons.Material.Filled.TouchApp" />
                     <MudText><strong>사용 방법:</strong> 각 항목을 드래그하여 다른 테이블로 이동하세요.</MudText>
                 </MudStack>
-            </MudAlert>
+            </MudAlert> *@
+            <br/>
         </DialogContent>
-        <DialogActions>
-            <MudButton Class="mb-5 me-5" Variant="Variant.Filled" Color="Color.Secondary" OnClick="() => MudDialog.Cancel()">Cancel</MudButton>
-        </DialogActions>
     </MudDialog>
 </EditForm>
 
@@ -90,11 +111,14 @@
     [Parameter]
     public Bom Bom { get; set; } = new();
 
+    [Parameter]
+    public int SelectedBomId { get; set; }
+
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; }
 
-    private IEnumerable<Component> SourceComponents = new List<Component>();
-    private IEnumerable<BomDetail> TargetComponents = new List<BomDetail>();
+    private List<Component> SourceComponents = new();
+    private List<BomDetail> TargetComponents = new();
 
     private HashSet<Component> selectedSourceItems = new();
     private HashSet<BomDetail> selectedTargetItems = new();
@@ -122,7 +146,12 @@
     protected override async Task OnInitializedAsync()
     {
         context = DbFactory.CreateDbContext();
-        SourceComponents = await context.Component.ToListAsync();
+        SourceComponents = await context.Component.OrderBy(c => c.PartNumber).ToListAsync();
+        TargetComponents = await context.BomDetail
+            .Include(b => b.Component)
+            .Where(b => b.BomId == SelectedBomId)
+            .OrderBy(b => b.Component.PartNumber)
+            .ToListAsync();
     }
 
     private bool FilterFunc1_(Component component) => FilterFunc1(component, searchString1);
@@ -134,6 +163,8 @@
         if (component.Assembly.Contains(searchString, StringComparison.OrdinalIgnoreCase))
             return true;
         if (component.PartNumber.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (component.Description.Contains(searchString, StringComparison.OrdinalIgnoreCase))
             return true;
 
         return false;
@@ -148,7 +179,7 @@
         Selector = (e) => e.Assembly
     };
 
-    private bool FilterFunc2_(BomDetail bomDetail) => FilterFunc2(bomDetail, searchString1);
+    private bool FilterFunc2_(BomDetail bomDetail) => FilterFunc2(bomDetail, searchString2);
 
     private bool FilterFunc2(BomDetail bomDetail, string searchString)
     {
@@ -157,6 +188,8 @@
         if (bomDetail.Component.Assembly.Contains(searchString, StringComparison.OrdinalIgnoreCase))
             return true;
         if (bomDetail.Component.PartNumber.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (bomDetail.Component.Description.Contains(searchString, StringComparison.OrdinalIgnoreCase))
             return true;
 
         return false;
@@ -170,4 +203,61 @@
         IsInitiallyExpanded = false,
         Selector = (e) => e.Component.Assembly
     };
+
+    private async Task MoveSelectedToTarget()
+    {
+        if (!selectedSourceItems.Any())
+            return;
+
+        // 이미 존재하는 ComponentId들을 조회
+        var existingComponentIds = await context.BomDetail
+            .Where(bd => bd.BomId == SelectedBomId)
+            .Select(bd => bd.ComponentId)
+            .ToListAsync();
+
+        // 중복되지 않는 항목만 필터링
+        var toAdd = selectedSourceItems
+            .Where(s => !existingComponentIds.Contains(s.ComponentId))
+            .Select(s => new BomDetail
+            {
+                BomId = SelectedBomId,
+                ComponentId = s.ComponentId,
+                Quantity = s.Quantity,
+                Price = s.Price
+            })
+            .ToList();
+
+        if (toAdd.Count == 0)
+            return;
+
+        context.BomDetail.AddRange(toAdd);
+        await context.SaveChangesAsync();
+        selectedSourceItems.Clear();
+        // 갱신
+        TargetComponents = await context.BomDetail
+            .Include(b => b.Component)
+            .Where(b => b.BomId == SelectedBomId)
+            .OrderBy(b => b.Component.PartNumber)
+            .ToListAsync();
+
+        StateHasChanged();
+    }
+
+    private async Task MoveSelectedToSource()
+    {
+        if (!selectedTargetItems.Any())
+            return;
+
+        context.BomDetail.RemoveRange(selectedTargetItems);
+        await context.SaveChangesAsync();
+        selectedTargetItems.Clear();
+        // 갱신
+        TargetComponents = await context.BomDetail
+            .Include(b => b.Component)
+            .Where(b => b.BomId == SelectedBomId)
+            .OrderBy(b => b.Component.PartNumber)
+            .ToListAsync();
+
+        StateHasChanged();
+    }
 }

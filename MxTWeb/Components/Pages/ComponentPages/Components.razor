@@ -31,58 +31,66 @@
 </style>
 
 <h2>부품 재고 현황</h2>
-
-<MudGrid Spacing="5" Style="margin-top: 0px; margin-bottom: 10px">
-
-    <MudItem>
-        <MudButton Class="me-2" OnClick="@ExpandAllGroupsAsync" Variant="Variant.Outlined" Color="@Color.Primary">펼치기</MudButton>
-    </MudItem>
-    <MudItem>
-        <MudButton Class="me-2" OnClick="@CollapseAllGroupsAsync" Variant="Variant.Outlined" Color="@Color.Primary">접기</MudButton>
-    </MudItem>
-
-    <MudItem>
-        <MudButton Class="me-2" @onclick="CreateNew" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">
-            Add New
-        </MudButton>
-    </MudItem>
-    <MudItem>
-        <MudButton Class="me-2" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Edit"
-                    Color="@Color.Info" OnClick="@UpdateData" Disabled="@IsEditDisabled"> Edit </MudButton>
-    </MudItem>
-    <MudItem>
-        <MudButton Class="me-2" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete"
-                    Color="@Color.Error" OnClick="@DeleteData" Disabled="@IsEditDisabled"> Delete </MudButton>
-    </MudItem>
-
-    <MudSpacer />
-    <MudMenu Class="mt-3" Label="@searchField" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Secondary">
-        <MudMenuItem Label="Assembly" @onclick="@(() => SelectSearchField("Assembly"))" />
-        <MudMenuItem Label="Part Number" @onclick="@(() => SelectSearchField("Part Number"))" />
-        <MudMenuItem Label="Description" @onclick="@(() => SelectSearchField("Description"))" />
-        <MudMenuItem Label="Seller" @onclick="@(() => SelectSearchField("Seller"))" />
-    </MudMenu>
-    &nbsp&nbsp&nbsp&nbsp
-    <MudTextField Class="mt-5 pe-5" @bind-Value="searchFilter" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
-                    AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium"/>
-</MudGrid>
-<br />
+<br/>
 <MudDataGrid T="Component" Class="custom-grid" Items="@FilteredData" @ref="_dataGrid"
-                SortMode="SortMode.Single" Dense="true" Style="white-space: nowrap" Hover="true" Bordered="true" Striped="true"
+                SortMode="SortMode.Single" Dense="true" Hover="true" Bordered="true" Striped="true"
                 EditMode="DataGridEditMode.Cell" ReadOnly="false" Groupable="true" GroupClass="pa-3"
-                CommittedItemChanges="@CommittedItemChanges" ColumnResizeMode="ResizeMode.Column"
-                RowsPerPage="1000" SelectOnRowClick="false"
+                CommittedItemChanges="@CommittedItemChanges" RowsPerPage="1000" SelectOnRowClick="false"
                 MultiSelection="false" @bind-SelectedItem="selectedItem"
                 QuickFilter="@_quickFilter" FixedHeader="true"
                 Loading="@isLoading">
+
+    <ToolBarContent>
+        <MudGrid Spacing="5" Style="margin-top: 0px; margin-bottom: 20px">
+            <MudItem>
+                <MudButton Class="me-2" OnClick="@ExpandAllGroupsAsync" Variant="Variant.Outlined" Color="@Color.Primary">펼치기</MudButton>
+            </MudItem>
+            <MudItem>
+                <MudButton Class="me-2" OnClick="@CollapseAllGroupsAsync" Variant="Variant.Outlined" Color="@Color.Primary">접기</MudButton>
+            </MudItem>
+
+            <MudItem>
+                <MudButton Class="me-2" @onclick="CreateNew" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">
+                    부품 추가
+                </MudButton>
+            </MudItem>
+            <MudItem>
+                <MudButton Class="me-2" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Edit"
+                           Color="@Color.Info" OnClick="@UpdateData" Disabled="@IsEditDisabled"> Edit </MudButton>
+            </MudItem>
+            <MudItem>
+                <MudButton Class="me-2" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete"
+                           Color="@Color.Error" OnClick="@DeleteData" Disabled="@IsEditDisabled"> Delete </MudButton>
+            </MudItem>
+            <MudItem>
+                <MudText Typo="Typo.body2" Class="pa-2">총 부품 수: @FilteredData.Count()</MudText>
+            </MudItem>
+
+
+            <MudSpacer />
+            <MudMenu Class="mt-3" Label="@searchField" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Secondary">
+                <MudMenuItem Label="Assembly" @onclick="@(() => SelectSearchField("Assembly"))" />
+                <MudMenuItem Label="Part Number" @onclick="@(() => SelectSearchField("Part Number"))" />
+                <MudMenuItem Label="Description" @onclick="@(() => SelectSearchField("Description"))" />
+                <MudMenuItem Label="Seller" @onclick="@(() => SelectSearchField("Seller"))" />
+            </MudMenu>
+            &nbsp&nbsp&nbsp&nbsp
+            <MudTextField Class="mt-5 pe-5" @bind-Value="searchFilter" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" />
+
+
+        </MudGrid>
+    </ToolBarContent>
+
     <ColGroup>
         <col style="width: 0;" />
-        <col style="width: 13%;" />
-        <col style="width: 14%;" />
-        <col style="width: 18%;" />
+        <col style="width: 11%;" />
+        <col style="width: 9%;" />
+        <col style="width: 20%;" />
         <col style="width: 5%;" />
         <col style="width: 10%;" />
         <col style="width: 5%;" />
+        <col style="width: 8%;" />
         <col style="width: 6%;" />
         <col style="width: 6%;" />
         <col />
@@ -92,20 +100,21 @@
     <Columns>
         <SelectColumn T="Component" />
         <PropertyColumn Property="x => x.Assembly" Title="Assembly" Sortable="true" 
-                        Grouping="true" GroupExpanded="true" GroupByOrder="2">
+                        Grouping="true" GroupExpanded="true" GroupByOrder="2" Editable="false">
             <GroupTemplate>
                 <span style="font-weight:bold">@context.Title: @(context.Grouping.Key)</span>
             </GroupTemplate>
         </PropertyColumn>
-        <PropertyColumn Property="x => x.PartNumber" Title="Part Number" sortable="true" InitialDirection="SortDirection.Ascending"/>
-        <PropertyColumn Property="x => x.Description" Title="Description" Sortable="false" Required="false" Resizable="true"/>
-        <PropertyColumn Property="x => x.Category" Title="Category" sortable="false" Required="false" Resizable="true" />
-        <PropertyColumn Property="x => x.Seller" Title="Seller" sortable="false" Required="false" Resizable="true"/>
-        <PropertyColumn Property="x => x.LeadTime" Title="Lead" sortable="false" Required="false" Resizable="true"/>
-        <PropertyColumn Property="x => x.Quantity" Title="Q'ty" sortable="false" Resizable="true" />
-        <PropertyColumn Property="x => x.Stock" Title="Stock" sortable="false" Resizable="true" 
+        <PropertyColumn Property="x => x.PartNumber" Title="Part Number" sortable="true" InitialDirection="SortDirection.Ascending" Editable="false" />
+        <PropertyColumn Property="x => x.Description" Title="Description" Sortable="false" Required="false" Editable="false" />
+        <PropertyColumn Property="x => x.Category" Title="Category" sortable="false" Required="false" Editable="false" />
+        <PropertyColumn Property="x => x.Seller" Title="Seller" sortable="false" Required="false" Editable="false" />
+        <PropertyColumn Property="x => x.LeadTime" Title="Lead" sortable="false" Required="false" Editable="false" />
+        <PropertyColumn Property="x => x.Price" Title="단가" sortable="false" Format="N0" Editable="false" />
+        <PropertyColumn Property="x => x.Quantity" Title="필요" sortable="false" />
+        <PropertyColumn Property="x => x.Stock" Title="재고" sortable="false" 
                         CellStyleFunc="@_cellStyleFunc" />  
-        <PropertyColumn Property="x => x.Note" Title="Comment" sortable="false" Required="false" Resizable="true" />
+        <PropertyColumn Property="x => x.Note" Title="Comment" sortable="false" Required="false" />
 
         <TemplateColumn Context="x" Resizable="false" Editable="false" Sortable="false" Title="➕">
             <CellTemplate>
@@ -113,10 +122,15 @@
                                 Color="@Color.Tertiary" OnClick="@(() => this.CreateNew2(x))" />
             </CellTemplate>
         </TemplateColumn>
-    </Columns>
- 
+    </Columns>        
 </MudDataGrid>
 
+<MudScrollToTop TopOffset="100"
+                Selector="#another_unique_identifier"
+                VisibleCssClass="visible absolute"
+                HiddenCssClass="hidden absolute">
+    <div class="mud-theme-secondary px-3 py-6 mud-elevation-16 rounded-xl" style="bottom:20px;left:20px;">Scroll to top custom button</div>
+</MudScrollToTop>
 <br />
 
 @code {

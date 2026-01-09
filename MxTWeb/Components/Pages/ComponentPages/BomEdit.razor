@@ -31,15 +31,17 @@
         <MudDataGrid T="Bom" Class="custom-grid" SortMode="SortMode.Single"
                      Style="white-space: nowrap" Hover="true" Bordered="true" Striped="true" RowsPerPage="100"
                      EditMode="DataGridEditMode.Cell" ReadOnly="false" Dense="true"
-                     MultiSelection="false" @bind-SelectedItem="selectedItem"
+                     MultiSelection="false" @bind-SelectedItem="selectedItem" SelectOnRowClick="false"
                      CommittedItemChanges="@CommittedItemChanges" Items="BomList.AsQueryable()">
             <ToolBarContent>
                 <MudButton OnClick="@(() => AddBomData())" Variant="Variant.Filled" Color="@Color.Success" StartIcon="@Icons.Material.Filled.Add"
-                            Class="add-item-btn">Add New</MudButton>
+                           Class="add-item-btn">Add New</MudButton>
+                <MudButton Class="ms-5" Style="width: 120px;" Variant="Variant.Filled" Color="Color.Info" Disabled="IsLoadDisabled"
+                           StartIcon="@Icons.Material.Filled.Download" OnClick="LoadBomData">Load</MudButton>
             </ToolBarContent>
             <Columns>
                 <SelectColumn T="Bom" />
-                <PropertyColumn Property="x => x.ProductName" Title="Product Name" Editable="true" />
+                <PropertyColumn Property="x => x.ProductName" Title="Product Name" Editable="true" InitialDirection="SortDirection.Ascending"/>
                 <PropertyColumn Property="x => x.BomVersion" Title="Bom Version" Editable="true" />
                 <PropertyColumn Property="x => x.CreatedAt" Title="Created Date" Editable="false" Format="yyyy-MM-dd"/>
 
@@ -51,13 +53,8 @@
                 </TemplateColumn>
             </Columns>
         </MudDataGrid>
+        <br />
     </DialogContent>
-    <DialogActions>
-        <MudButton Class="mb-5 me-5" Style="width: 16%;" Variant="Variant.Filled" Color="Color.Info" Disabled="IsLoadDisabled"
-                   OnClick="LoadBomData">Load</MudButton>
-        <MudButton Class="mb-5 me-5" Style="width: 16%;" Variant="Variant.Filled" Color="Color.Secondary"
-                   OnClick="() => MudDialog.Cancel()">Close</MudButton>
-    </DialogActions>
 </MudDialog>
 
 @code {
@@ -74,7 +71,7 @@
     protected override async Task OnInitializedAsync()
     {
         context = DbFactory.CreateDbContext();
-        BomList = context.Bom.ToList();
+        BomList = context.Bom.OrderBy(b => b.ProductName).ToList();
     }
 
     private async Task CommittedItemChanges(Bom item)
@@ -98,7 +95,7 @@
         context.Bom.Add(newBom);
         await context.SaveChangesAsync();
 
-        BomList = context.Bom.ToList();
+        BomList = context.Bom.OrderBy(b => b.ProductName).ToList();
     }
 
     private async Task DeleteBomData(Bom bom)
@@ -114,7 +111,7 @@
 
         if (result is not null && !result.Canceled)
         {
-            BomList = context.Bom.ToList();
+            BomList = context.Bom.OrderBy(b => b.ProductName).ToList();
         }
     }
 

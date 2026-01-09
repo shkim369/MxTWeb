@@ -35,50 +35,50 @@
             <MudGrid Class="mb-5">
                 <MudItem xs="4">
                     <MudTextField Variant="Variant.Outlined"
+                                  Label="Category"
+                                  @bind-Value="Component.Category" />
+                </MudItem>
+                <MudItem xs="4">
+                    <MudTextField Variant="Variant.Outlined"
                                   Label="Origin"
                                   @bind-Value="Component.Origin" />
                 </MudItem>
                 <MudItem xs="4">
                     <MudTextField Variant="Variant.Outlined"
-                                  Label="Q'ty"
-                                  @bind-Value="Component.Quantity" />
-                </MudItem>
-                <MudItem xs="4">
-                    <MudTextField Variant="Variant.Outlined"
-                                  Label="Unit Price"
-                                  @bind-Value="Component.Price" Format="N0"/>
+                                  Label="Maker"
+                                  @bind-Value="Component.Maker" />
                 </MudItem>
             </MudGrid>
 
             <MudGrid Class="mb-5">
-                <MudItem xs="4">
-                    <MudTextField Variant="Variant.Outlined"
-                                  Label="Category"
-                                  @bind-Value="Component.Category" />
-                </MudItem>
-
-                <MudItem xs="4">
-                    <MudTextField Variant="Variant.Outlined"
-                                  Label="Maker"
-                                  @bind-Value="Component.Maker" />
-                </MudItem>
-
                 <MudItem xs="4">
                     <MudTextField Variant="Variant.Outlined"
                                   Label="Seller"
                                   @bind-Value="Component.Seller" />
                 </MudItem>
-            </MudGrid>
 
-            <MudGrid Class="mb-5">
                 <MudItem xs="4">
                     <MudTextField Variant="Variant.Outlined"
                                   Label="Lead Time"
                                   @bind-Value="Component.LeadTime" />
                 </MudItem>
+
                 <MudItem xs="4">
                     <MudTextField Variant="Variant.Outlined"
-                                  Label="Stock"
+                                  Label="단가"
+                                  @bind-Value="Component.Price" Format="N0" />
+                </MudItem>
+            </MudGrid>
+
+            <MudGrid Class="mb-5">
+                <MudItem xs="4">
+                    <MudTextField Variant="Variant.Outlined"
+                                  Label="수량"
+                                  @bind-Value="Component.Quantity" />
+                </MudItem>
+                <MudItem xs="4">
+                    <MudTextField Variant="Variant.Outlined"
+                                  Label="재고"
                                   @bind-Value="Component.Stock" />
                 </MudItem>
                 <MudItem xs="4">
@@ -91,7 +91,7 @@
         <DialogActions>
             <MudButton Class="mb-5 me-5" ButtonType="ButtonType.Submit" Variant="Variant.Filled"
                        StartIcon="@(action == UIActionEnum.Update ? Icons.Material.Filled.Edit : Icons.Material.Filled.Add)" Color="Color.Info">
-                @(action == UIActionEnum.Update ? "Edit" : "ADD")
+                @(action == UIActionEnum.Update ? "Edit" : "ADD") 
             </MudButton>
             <MudButton Class="mb-5 me-5" Variant="Variant.Filled" Color="Color.Secondary" OnClick="() => MudDialog.Cancel()">Cancel</MudButton>
         </DialogActions>
