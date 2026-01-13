@@ -3,130 +3,238 @@
 @using Microsoft.EntityFrameworkCore
 @using MxTWeb.Models
 @using MxTWeb.Data
+@using MxTWeb.Enums
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize]
 @implements IAsyncDisposable
 @inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
 
 <PageTitle>연구용 장비·기기 관리대장</PageTitle>
 
-<h1>연구용 장비·기기 관리대장</h1>
+<style>
+    .custom-grid .mud-table-cell .column-header .column-options .mud-menu .mud-icon-button-label {
+        display: none !important;
+        visibility: hidden !important;
+    }
 
+    .custom-grid .mud-table-cell .column-header .column-options .mud-menu {
+        display: none !important;
+        visibility: hidden !important;
+        width: 0px !important;
+    }
+
+    .custom-grid .mud-table-cell {
+        padding-right: 15px !important;
+    }
+
+    .custom-grid .mud-table-toolbar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background-color: var(--mud-palette-surface);
+        /* box-shadow: 0 2px 4px rgba(0,0,0,0.1); */
+    }
+</style>
+
+<h2>연구용 장비·기기 관리대장</h2>
 <br />
-<div class="dropdown">
-    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-        @SearchField
-    </button>
-    <ul class="dropdown-menu">
-        <li><a class="dropdown-item" @onclick="@(() => SelectItem("관리번호"))">관리번호</a></li>
-        <li><a class="dropdown-item" @onclick="@(() => SelectItem("품명"))">품명</a></li>
-        <li><a class="dropdown-item" @onclick="@(() => SelectItem("모델명"))">모델명</a></li>
-        <li><a class="dropdown-item" @onclick="@(() => SelectItem("제조사"))">제조사</a></li>
-        <li><a class="dropdown-item" @onclick="@(() => SelectItem("구입일"))">구입일</a></li>  
-        <li><a class="dropdown-item" @onclick="@(() => SelectItem("구입처"))">구입처</a></li>
-        <li><a class="dropdown-item" @onclick="@(() => SelectItem("설치장소"))">설치장소</a></li>
-        <li><a class="dropdown-item" @onclick="@(() => SelectItem("관리자"))">관리자</a></li>
-    </ul>
+<MudDataGrid T="Equipment" Class="custom-grid" Items="@FilteredData" @ref="_dataGrid"
+             SortMode="SortMode.Single" Dense="true" Hover="true" Bordered="true" Striped="true"
+             EditMode="DataGridEditMode.Cell" ReadOnly="true" 
+             CommittedItemChanges="@CommittedItemChanges" RowsPerPage="100" SelectOnRowClick="false"
+             MultiSelection="false" @bind-SelectedItem="selectedItem"
+             QuickFilter="@_quickFilter" FixedHeader="true"
+             Loading="@isLoading">
 
-    <input type="search" @bind="SearchFilter" @bind:event="oninput" placeholder="검색어 입력" 
-           style="width:300px; margin-top:20px;" />
+    <ToolBarContent>
+        <MudGrid Spacing="5" Style="margin-top: 0px; margin-bottom: 20px">
+            <MudItem>
+                <MudButton Class="me-2" @onclick="CreateNew" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">
+                    항목 추가
+                </MudButton>
+            </MudItem>
+            <MudItem>
+                <MudButton Class="me-2" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Edit"
+                           Color="@Color.Info" OnClick="@UpdateData" Disabled="@IsEditDisabled"> Edit </MudButton>
+            </MudItem>
+            <MudItem>
+                <MudButton Class="me-2" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete"
+                           Color="@Color.Error" OnClick="@DeleteData" Disabled="@IsEditDisabled"> Delete </MudButton>
+            </MudItem>
+            <MudItem>
+                <MudText Typo="Typo.body2" Class="pa-2">총 항목 수: @FilteredData.Count()</MudText>
+            </MudItem>
 
-    <i class="bi bi-search"></i> Search
-</div>
+
+            <MudSpacer />
+            <MudMenu Class="mt-3" Label="@searchField" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Secondary">
+                <MudMenuItem Label="관리번호" @onclick="@(() => SelectSearchField("관리번호"))" />
+                <MudMenuItem Label="품명" @onclick="@(() => SelectSearchField("품명"))" />
+                <MudMenuItem Label="모델명" @onclick="@(() => SelectSearchField("모델명"))" />
+                <MudMenuItem Label="제조사" @onclick="@(() => SelectSearchField("제조사"))" />
+            </MudMenu>
+            &nbsp&nbsp&nbsp&nbsp
+            <MudTextField Class="mt-5 pe-5" @bind-Value="searchFilter" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" />
+        </MudGrid>
+    </ToolBarContent>
+
+    <Columns>
+        <SelectColumn T="Equipment" />
+        <PropertyColumn Property="x => x.ManageCode" Title="관리번호" sortable="true" InitialDirection="SortDirection.Ascending"/>
+        <PropertyColumn Property="x => x.Name" Title="품명" Sortable="false" />
+        <PropertyColumn Property="x => x.Model" Title="모델명" sortable="false" Required="false" />
+        <PropertyColumn Property="x => x.Manufacturer" Title="제조사" sortable="true" Required="false" />
+        <PropertyColumn Property="x => x.PurchaseDate" Title="구입일" sortable="true" Required="false" Format="yyyy-MM-dd" Editable="false" />
+        <PropertyColumn Property="x => x.Seller" Title="구입처" sortable="true" Required="false" />
+        <PropertyColumn Property="x => x.Location" Title="설치장소" sortable="true" Required="false"/>
+        <PropertyColumn Property="x => x.Management" Title="관리부서" sortable="true" Required="false"/>
+        <PropertyColumn Property="x => x.Manager_Main" Title="관리자(정)" sortable="false" Required="false"/>
+        <PropertyColumn Property="x => x.Manager_Sub" Title="관리자(부)" sortable="false" Required="false" />
+        <PropertyColumn Property="x => x.Note" Title="비고" sortable="false" Required="false" />
+    </Columns>
+
+    <PagerContent>
+        <MudDataGridPager />
+    </PagerContent>
+</MudDataGrid>
+
+<MudScrollToTop>
+    <MudFab Color="Color.Tertiary" StartIcon="@Icons.Material.Filled.ArrowCircleUp" />
+</MudScrollToTop>
 <br />
-<p>
-    <a href="equipments/create" class="btn btn-outline-secondary">Create New</a>
-</p>
-
-<div>
-	<MudDataGrid Class="table table-bordered table-sm" Items="FilteredData.AsQueryable()" Pagination="pagination">
-        <PropertyColumn Property="equipment => equipment.ManageCode" Title="관리번호" Sortable="true"
-                        Class="text pe-0" />
-		<PropertyColumn Property="equipment => equipment.Name" Title="품명" Sortable="true" 
-                        Class="text pe-0" />
-        <PropertyColumn Property="equipment => equipment.Model" Title="모델명" Sortable="true"
-                        Class="text pe-0"/>
-		<PropertyColumn Property="equipment => equipment.Manufacturer" Title="제조사" Sortable="true"
-                        Class="text pe-0" />
-		<PropertyColumn Property="equipment => equipment.PurchaseDate" Title="구입일" Sortable="true"
-                        Class="text pe-0" />
-		<PropertyColumn Property="equipment => equipment.Seller" Title="구입처" Sortable="true"
-                        Class="text pe-0" />
-		<PropertyColumn Property="equipment => equipment.Location" Title="설치장소" Sortable="true"
-                        Class="text pe-0" />
-        <PropertyColumn Property="equipment => equipment.Management" Title="유지보수 활동" 
-                        Class="text pe-0" />
-        <PropertyColumn Property="equipment => equipment.Manager" Title="관리자 (정/부)" 
-                        Class="text pe-0" />
-        <PropertyColumn Property="equipment => equipment.Note" Title="비고 (용도, 위치)" 
-                        Class="text pe-0" />
-    </MudDataGrid>
-</div>
 
 @code {
     private MxTWebContext context = default!;
 
-    private readonly SemaphoreSlim _searchSemaphore = new(1, 1);
-    private CancellationTokenSource? _searchCts;
-    private List<Equipment> _filteredResults = new();
+    private string searchField = "관리번호";
+    private string searchFilter;
 
-    private string SearchField = "품명"; // 기본 검색 항목
-    private string _searchFilter = "";
-    private string SearchFilter
+    private IEnumerable<Equipment> FilteredData = new List<Equipment>();
+    private Equipment selectedItem = new();
+    private bool IsEditDisabled => selectedItem == null || selectedItem.Id == 0;
+
+    private bool isProcessing = false;
+    private bool isLoading = true;
+
+    private MudDataGrid<Equipment> _dataGrid = null!;
+
+    private async Task CreateNew()
     {
-        get => _searchFilter;
-        set
+        var parameters = new DialogParameters<Edit>
         {
-            _searchFilter = value;
-            _ = PerformSearchAsync();
+            { x => x.action, UIActionEnum.Insert }
+        };
+
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var dialog = await DialogService.ShowAsync<Edit>("Add New Equipment", parameters, options);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
+        {
+            FilteredData = context.Equipment.ToList();
+            StateHasChanged();
+        }  
+    }
+
+    private async Task UpdateData()
+    {
+        var parameters = new DialogParameters<Edit>
+        {
+            { x => x.action, UIActionEnum.Update },
+            { x => x.Equipment, selectedItem } // 선택된 row의 데이터를 직접 전달
+        };
+
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var dialog = await DialogService.ShowAsync<Edit>("Edit Data", parameters, options);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
+        {
+            FilteredData = context.Equipment.ToList();
+            StateHasChanged();
+        }    
+    }
+
+    private async Task DeleteData()
+    {
+        var parameters = new DialogParameters<Delete>
+        {
+            { x => x.equipment, selectedItem } // 선택된 row의 데이터를 직접 전달
+        };
+
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var dialog = await DialogService.ShowAsync<Delete>("Delete Data", parameters, options);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
+        {
+            selectedItem = new();
+            FilteredData = context.Equipment.ToList();
+            StateHasChanged();
         }
     }
-    private IEnumerable<Equipment> FilteredData => _filteredResults;
 
-    private async Task PerformSearchAsync()
+    private Func<Equipment, bool> _quickFilter => x =>
     {
-        // 동시 실행 방지 // available semaphore가 없으면 바로 return
-        if (!await _searchSemaphore.WaitAsync(0)) return;
+        if (string.IsNullOrWhiteSpace(searchFilter))
+            return true;
 
-        try
+        else
         {
-            _searchCts?.Cancel();
-            _searchCts = new CancellationTokenSource();
-
-            using var context = DbFactory.CreateDbContext();
-
-            var query = SearchField switch
+            switch (searchField)
             {
-                "관리번호" => context.Equipment.Where(m => m.ManageCode!.Contains(SearchFilter)),
-                "품명" => context.Equipment.Where(m => m.Name!.ToString().Contains(SearchFilter)),
-                "모델명" => context.Equipment.Where(m => m.Model!.Contains(SearchFilter)),
-                "제조사" => context.Equipment.Where(m => m.Manufacturer!.Contains(SearchFilter)),
-                "구입일" => context.Equipment.Where(m => m.PurchaseDate!.ToString().Contains(SearchFilter)),
-                "구입처" => context.Equipment.Where(m => m.Seller!.ToString().Contains(SearchFilter)),
-                "설치장소" => context.Equipment.Where(m => m.Location!.Contains(SearchFilter)),
-                "관리자" => context.Equipment.Where(m => m.Manager!.Contains(SearchFilter)),
-                _ => context.Equipment.Where(m => m.Name!.Contains(SearchFilter))
-            };
+                case "관리번호":
+                    if (x.ManageCode.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    break;
 
-            _filteredResults = await query.ToListAsync(_searchCts.Token);
-            await InvokeAsync(StateHasChanged);
+                case "품명":
+                    if (x.Name.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    break;
+
+                case "모델명":
+                    if (x.Model.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    break;
+
+                case "제조사":
+                    if (x.Manufacturer.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    break;
+
+                default:
+                    break;
+            }
+
         }
-        catch (OperationCanceledException) { }
-        finally
-        {
-            _searchSemaphore.Release();
-        }
+
+        return false;
+    };
+
+    private async Task CommittedItemChanges(Equipment item)
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Attach(item!).State = EntityState.Modified;
+        await context.SaveChangesAsync();
     }
 
-    private void SelectItem(string item)
+    protected override async Task OnInitializedAsync()
     {
-        SearchField = item;
-    }
+        isLoading = true;
 
-    protected override void OnInitialized()
-    {
         context = DbFactory.CreateDbContext();
-        _filteredResults = context.Equipment.ToList();
+        FilteredData = await context.Equipment.ToListAsync();
+
+        isLoading = false;
+    }
+
+    private void SelectSearchField(string item)
+    {
+        searchField = item;
     }
 
     public async ValueTask DisposeAsync() => await context.DisposeAsync();

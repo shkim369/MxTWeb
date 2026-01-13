@@ -17,7 +17,7 @@ namespace MxTWeb.Models
 
         public string? Manufacturer { get; set; }
 
-        public DateOnly PurchaseDate { get; set; }
+        public DateTime? PurchaseDate { get; set; }
 
         public string? Seller { get; set; }
 
@@ -25,7 +25,9 @@ namespace MxTWeb.Models
 
         public string? Management { get; set; }
 
-        public string? Manager { get; set; }
+        public string? Manager_Main { get; set; }
+
+        public string? Manager_Sub { get; set; }
 
         public string? Note { get; set; }
 

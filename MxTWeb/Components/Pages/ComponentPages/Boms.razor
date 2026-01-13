@@ -29,6 +29,14 @@
         padding-right: 15px !important;
     }
 
+    .custom-grid .mud-table-toolbar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background-color: var(--mud-palette-surface);
+        /* box-shadow: 0 2px 4px rgba(0,0,0,0.1); */
+    }
+
     .mud-table-cell-custom-group {
         font-weight: 500;
         font-size: 1.1em;
@@ -77,10 +85,10 @@
 <MudTable T="BomDetail" Class="custom-grid" Items="@FilteredData" @ref="_tableRef"
           Dense="true" Hover="true" Bordered="true" Striped="true" RowsPerPage="1000" 
           GroupBy="@_groupDefinition" GroupHeaderStyle="background-color:var(--mud-palette-background-gray)" GroupFooterClass="mb-4"
-          MultiSelection="true" @bind-SelectedItems="selectedItems" FixedHeader="true" AllowUnsorted="false"
+          MultiSelection="false" @bind-SelectedItems="selectedItems" FixedHeader="true" AllowUnsorted="false"
           Filter="new Func<BomDetail,bool>(FilterFunc1)" SelectOnRowClick="false"
           RowEditCommit="ItemHasBeenCommitted" EditTrigger="TableEditTrigger.EditButton" EditButtonPosition="TableEditButtonPosition.End"
-          Loading="@isLoading">
+          RowEditPreview="BackupItem" RowEditCancel="ResetItemToOriginalValues" Loading="@isLoading">
 
     <ToolBarContent>
         <MudGrid Spacing="5" Style="margin-top: 0px; margin-bottom: 10px">
@@ -94,12 +102,6 @@
                 <MudButton Class="me-2" @onclick="AddNew" Variant="Variant.Filled" Color="Color.Primary" 
                            StartIcon="@Icons.Material.Filled.Add" Disabled="@IsAddPartDisabled">
                     부품 추가
-                </MudButton>
-            </MudItem>
-            <MudItem>
-                <MudButton Class="me-2" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete"
-                           Color="@Color.Error" OnClick="@DeleteData" Disabled="@IsDeleteDisabled">
-                    Delete
                 </MudButton>
             </MudItem>
 
@@ -116,7 +118,7 @@
                 </MudMenu>
             </MudItem>
             <MudItem>
-                <MudTextField Class="mt-1 pe-5" Style="width: 1r" @bind-Value="searchString" Placeholder="Search" Immediate="true"
+                <MudTextField Class="mt-1 pe-5" Style="width: 20vw" @bind-Value="searchString" Placeholder="Search" Immediate="true"
                               Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" />
             </MudItem>
         </MudGrid>
@@ -128,7 +130,7 @@
 
     <HeaderContent>
         <MudTh><MudTableSortLabel SortBy="new Func<BomDetail, object?>(x => x.Component.Assembly)">Assembly</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<BomDetail, object?>(x => x.Component.PartNumber)" 
+        <MudTh Style="width: 140px"><MudTableSortLabel SortBy="new Func<BomDetail, object?>(x => x.Component.PartNumber)" 
                                   InitialDirection="SortDirection.Ascending">Part Number</MudTableSortLabel></MudTh>
         <MudTh>Description</MudTh>
         <MudTh>Model</MudTh>
@@ -137,7 +139,7 @@
         <MudTh>Seller</MudTh>
         <MudTh>Lead</MudTh>
         <MudTh>단가</MudTh>
-        <MudTh>수량</MudTh>
+        <MudTh Style="width: 60px">수량</MudTh>
         <MudTh>Total</MudTh>
         <MudTh>Comment</MudTh>
     </HeaderContent>
@@ -214,8 +216,7 @@
         <MudTd />
         <MudTh Class="mud-table-cell-custom-group mud-table-cell-custom-group-footer" colspan="2">
             <br/>
-            Total Price: @FilteredData.Sum(x => (x.Quantity * x.Price)).ToString("N0")
-            <br/>
+            <MudText Typo="Typo.h6">Total Price: @FilteredData.Sum(x => (x.Quantity * x.Price)).ToString("N0")</MudText>
             <br/>
         </MudTh>
     </FooterContent>
@@ -239,6 +240,7 @@
     private string searchString = "";
 
     private IEnumerable<BomDetail> FilteredData = new List<BomDetail>();
+    private BomDetail bomDetailBeforeEdit = new();
     private HashSet<BomDetail> selectedItems = new();
     private string _selectedProduct = string.Empty;
     private string _selectedVersion = string.Empty;
@@ -476,6 +478,21 @@
         using var context = DbFactory.CreateDbContext();
         context.Attach(item!).State = EntityState.Modified;
         context.SaveChanges();
+    }
+
+    private void BackupItem(object bomDetail)
+    {
+        bomDetailBeforeEdit = new()
+        {
+            Quantity = ((BomDetail)bomDetail).Quantity,
+            Price = ((BomDetail)bomDetail).Price,
+        };
+    }
+
+    private void ResetItemToOriginalValues(object bomDetail)
+    {
+        ((BomDetail)bomDetail).Quantity = bomDetailBeforeEdit.Quantity;
+        ((BomDetail)bomDetail).Price = bomDetailBeforeEdit.Price;
     }
 
 

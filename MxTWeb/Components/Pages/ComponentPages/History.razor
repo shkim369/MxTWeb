@@ -65,7 +65,7 @@
 
 <MudDataGrid T="CompHistory" Class="custom-grid" SortMode="SortMode.Single" Items="@FilteredData2"
              Dense="true" Style="white-space: nowrap" Hover="true" Bordered="true" Striped="true"
-             RowsPerPage="100" SelectOnRowClick="false" QuickFilter="_quickFilter2">
+             RowsPerPage="25" SelectOnRowClick="false" QuickFilter="_quickFilter2">
     <Columns>
         <PropertyColumn Property="x => x.Date" Title="날짜" Sortable="true" Format="yyyy-MM-dd" />
         <PropertyColumn Property="x => x.Component.Assembly" Title="Assembly" Sortable="true" />
@@ -90,21 +90,21 @@
     </Columns>
 
     <PagerContent>
+        <MudCardContent Style="display:flex; justify-content:flex-end; align-items:flex-end;" Class="me-5">
+            <MudText Typo="Typo.h6">Total Price : </MudText> &nbsp&nbsp
+            @if (_dateRange is null)
+            {
+                <MudText Typo="Typo.h6">날짜를 선택해주세요.</MudText>
+            }
+            else
+            {
+                <MudText Typo="Typo.h6">@totalPrice.ToString("N0")</MudText>
+            }
+        </MudCardContent>
+
         <MudDataGridPager />
     </PagerContent>
 </MudDataGrid>
-
-<MudCardContent Style="display:flex; justify-content:flex-end; align-items:flex-end;">
-    <MudText Typo="Typo.h5">Total Price : </MudText> &nbsp&nbsp
-    @if (_dateRange is null)
-    {
-        <MudText Typo="Typo.h5">날짜를 선택해주세요.</MudText>
-    }
-    else
-    {
-        <MudText Typo="Typo.h5">@totalPrice.ToString("N0")</MudText>
-    }
-</MudCardContent>
 @code {
     private MxTWebContext context = default!;
 
@@ -118,7 +118,6 @@
     private decimal totalPrice = 0;
 
     private DateRange _dateRange { get; set; }
-
 
     private async Task CreateNew2()
     {
@@ -260,6 +259,7 @@
 
         context = DbFactory.CreateDbContext();
         FilteredData2 = await context.CompHistory.Include(c => c.Component).ToListAsync();
+        _dateRange = new DateRange(DateTime.Today.AddMonths(-1), DateTime.Today);
 
         isLoading = false;
     }

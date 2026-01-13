@@ -330,7 +330,10 @@ namespace MxTWeb.Migrations.MxTWeb
                     b.Property<string>("Management")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Manager")
+                    b.Property<string>("Manager_Main")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Manager_Sub")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Manufacturer")
@@ -347,8 +350,8 @@ namespace MxTWeb.Migrations.MxTWeb
                     b.Property<string>("Note")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateOnly>("PurchaseDate")
-                        .HasColumnType("date");
+                    b.Property<DateTime?>("PurchaseDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Seller")
                         .HasColumnType("nvarchar(max)");

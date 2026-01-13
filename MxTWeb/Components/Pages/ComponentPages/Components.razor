@@ -28,6 +28,14 @@
     .custom-grid .mud-table-cell {
         padding-right: 15px !important;
     }
+
+    .custom-grid .mud-table-toolbar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background-color: var(--mud-palette-surface);
+        /* box-shadow: 0 2px 4px rgba(0,0,0,0.1); */
+    }
 </style>
 
 <h2>부품 재고 현황</h2>
@@ -125,11 +133,8 @@
     </Columns>        
 </MudDataGrid>
 
-<MudScrollToTop TopOffset="100"
-                Selector="#another_unique_identifier"
-                VisibleCssClass="visible absolute"
-                HiddenCssClass="hidden absolute">
-    <div class="mud-theme-secondary px-3 py-6 mud-elevation-16 rounded-xl" style="bottom:20px;left:20px;">Scroll to top custom button</div>
+<MudScrollToTop>
+    <MudFab Color="Color.Tertiary" StartIcon="@Icons.Material.Filled.ArrowCircleUp" />
 </MudScrollToTop>
 <br />
 
