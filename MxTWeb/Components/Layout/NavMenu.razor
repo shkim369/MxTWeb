@@ -3,6 +3,12 @@
 
 @inject NavigationManager NavigationManager
 
+<style>
+    .custom-nav-group .mud-nav-group-expander svg {
+        color: floralwhite !important;
+    }
+</style>
+
 <div class="top-row ps-2 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">
@@ -11,7 +17,7 @@
     </div>
 </div>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler"/>
+@* <input type="checkbox" title="Navigation menu" class="navbar-toggler"/> *@
 
 <div class="nav-scrollable" >
     <nav class="nav flex-column">
@@ -19,12 +25,15 @@
         <AuthorizeView>
             <Authorized>
                 <MudNavMenu Rounded="true" Margin="Margin.Normal" Color="Color.Tertiary" Class="pa-3">
-                    <MudNavLink Match="NavLinkMatch.All" Href="" IconColor="Color.Surface"
-                                Icon="@Icons.Material.Filled.Home" Style="font-size: 16px; font-weight:bolder; color: floralwhite"
-                                Class="fw-bolder">
-                        Home
-                    </MudNavLink>
+                    <MudGrid>
+                        <MudSpacer/>
+                        <MudItem>
+                            <MudCheckBox T="bool" Class="navbar-toggler" Size="Size.Large" Style="color: floralwhite" Color="Color.Inherit"
+                                         CheckedIcon="@Icons.Material.Filled.MenuOpen" UncheckedIcon="@Icons.Material.Filled.Menu" />
+                        </MudItem>
+                    </MudGrid>
 					<MudDivider Class="my-1" />
+
                     <MudNavLink Match="NavLinkMatch.Prefix" Href="cyropreserveds" IconColor="Color.Surface"
                                 Icon="@Icons.Material.Filled.AcUnit" Style="font-size: 16px; font-weight:bolder; color: floralwhite"
                                 Class="fw-bolder">
@@ -49,10 +58,11 @@
                         칩 사용 대장
                     </MudNavLink>
 
-					<MudNavGroup Title="부품 재고 관리" onclick=""
+                    <MudNavGroup Title="부품 재고 관리"
                                  IconColor="Color.Surface"
-                                 Icon="@Icons.Material.Filled.Warehouse" Style="font-size: 16px; font-weight:bolder; color: floralwhite"
-                                 Class="fw-bolder">
+                                 Icon="@Icons.Material.Filled.Warehouse"
+                                 Style="font-size: 16px; font-weight:bolder; color: floralwhite"
+                                 Class="fw-bolder custom-nav-group">
                         <MudNavLink Match="NavLinkMatch.Prefix" Href="components" Style="font-size: 16px; font-weight:bolder; color: floralwhite"
                                     Class="fw-bolder">
                             재고 현황

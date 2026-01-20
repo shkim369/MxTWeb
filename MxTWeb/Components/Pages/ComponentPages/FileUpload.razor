@@ -7,12 +7,14 @@
 @using System.Net.Http.Headers
 @using System.Net.Http.Json
 @using System.Text.Json
+@using Microsoft.AspNetCore.Authorization
 @inject ISnackbar Snackbar
 @inject HttpClient Http
 @inject IHttpClientFactory ClientFactory
 @inject ILogger<FileUpload> Logger
 @inject IJSRuntime JS
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@attribute [Authorize]
 
 <PageTitle>File Upload</PageTitle>
 

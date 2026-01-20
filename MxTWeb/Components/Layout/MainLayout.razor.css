@@ -12,6 +12,14 @@ main {
     background-image: linear-gradient(180deg, #107474 0%, #1cab94 70%);
 }
 
+.sidebar.expanded {
+    width: 240px;
+}
+
+.sidebar.collapsed {
+    width: 80px;
+}
+
 .top-row {
     background-color: #f7f7f7;
     border-bottom: 1px solid #d6d5d5;
@@ -52,8 +60,8 @@ main {
     }
 
     .sidebar {
-        width: 260px;
-        min-width: 260px;
+        width: 240px;
+        min-width: 240px;
         height: auto;
         position: sticky;
         top: 0;

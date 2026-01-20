@@ -111,9 +111,9 @@
 }
 
 @media (min-width: 641px) {
-/*    .navbar-toggler {
+    .navbar-toggler {
         display: none;
-    }*/
+    }
 
     .nav-scrollable {
         /* Never collapse the sidebar for wide screens */

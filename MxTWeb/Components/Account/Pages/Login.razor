@@ -26,7 +26,7 @@
     }
 </style>
 
-<div class="d-flex flex-column justify-content-center align-items-center min-vh-100">
+<div class="d-flex flex-column justify-content-center align-items-center" style="height: 800px">
     <div class="mb-2">
         <img src="@imageSource" class="img-fluid" style="width:800px; max-width: 100%; max-width:100%">
     </div>
@@ -62,9 +62,9 @@
                     <p>
                         <a href="Account/ForgotPassword">Forgot your password?</a>
                     </p>
-                    <p>
+                    @* <p>
                         <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))">Register as a new user</a>
-                    </p>
+                    </p> *@
                 </div>
             </EditForm>
         </section>
