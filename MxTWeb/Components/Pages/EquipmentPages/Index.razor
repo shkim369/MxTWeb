@@ -74,12 +74,28 @@
                 <MudMenuItem Label="품명" @onclick="@(() => SelectSearchField("품명"))" />
                 <MudMenuItem Label="모델명" @onclick="@(() => SelectSearchField("모델명"))" />
                 <MudMenuItem Label="제조사" @onclick="@(() => SelectSearchField("제조사"))" />
+                <MudMenuItem Label="구입처" @onclick="@(() => SelectSearchField("구입처"))" />
+                <MudMenuItem Label="설치장소" @onclick="@(() => SelectSearchField("설치장소"))" />
+                <MudMenuItem Label="관리자(정)" @onclick="@(() => SelectSearchField("관리자(정)"))" />
+                <MudMenuItem Label="관리자(부)" @onclick="@(() => SelectSearchField("관리자(부)"))" />
             </MudMenu>
             &nbsp&nbsp&nbsp&nbsp
             <MudTextField Class="mt-5 pe-5" @bind-Value="searchFilter" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
                           AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" />
         </MudGrid>
     </ToolBarContent>
+
+    <ColGroup>
+        <col />
+        <col />
+        <col />
+        <col />
+        <col />
+        <col style="width: 105px"/>
+        <col />
+        <col />
+        <col style="width: 125px"/>
+    </ColGroup>
 
     <Columns>
         <SelectColumn T="Equipment" />
@@ -90,7 +106,7 @@
         <PropertyColumn Property="x => x.PurchaseDate" Title="구입일" sortable="true" Required="false" Format="yyyy-MM-dd" Editable="false" />
         <PropertyColumn Property="x => x.Seller" Title="구입처" sortable="true" Required="false" />
         <PropertyColumn Property="x => x.Location" Title="설치장소" sortable="true" Required="false"/>
-        <PropertyColumn Property="x => x.Management" Title="관리부서" sortable="true" Required="false"/>
+        <PropertyColumn Property="x => x.Management" Title="관리부서" sortable="false" Required="false"/>
         <PropertyColumn Property="x => x.Manager_Main" Title="관리자(정)" sortable="false" Required="false"/>
         <PropertyColumn Property="x => x.Manager_Sub" Title="관리자(부)" sortable="false" Required="false" />
         <PropertyColumn Property="x => x.Note" Title="비고" sortable="false" Required="false" />
@@ -203,6 +219,26 @@
 
                 case "제조사":
                     if (x.Manufacturer.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    break;
+
+                case "구입처":
+                    if (x.Seller.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    break;
+
+                case "설치장소":
+                    if (x.Location.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    break;
+
+                case "관리자(정)":
+                    if (x.Manager_Main.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    break;
+
+                case "관리자(부)":
+                    if (x.Manager_Sub.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
                         return true;
                     break;
 

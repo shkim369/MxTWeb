@@ -37,7 +37,7 @@
             <MudDrawer @bind-Open="@_open" ClipMode="DrawerClipMode.Never" Breakpoint="Breakpoint.None" Elevation="1" Variant="DrawerVariant.Mini"
                        OpenMiniOnHover="false">
                 <MudNavMenu Rounded="true" Margin="Margin.Normal" Color="Color.Tertiary"
-                            Style="background-image: linear-gradient(180deg, #1cab94 0%, #107474 70%); min-height: 100%">
+                            Style="background-image: linear-gradient(180deg, #107474 0%, #1cab94 70%); min-height: 100%">
 
                     <MudGrid Style="background: #0A4947; height: 90px; align-items: center;">
                         @if (_open)
@@ -68,6 +68,11 @@
                         }
                     </MudGrid>
 
+                    <MudNavLink Match="NavLinkMatch.All" Href="" IconColor="Color.Surface"
+                                Icon="@Icons.Material.Filled.Home" Style="font-size: 16px; font-weight:bolder; color: floralwhite; margin-left:2px"
+                                Class="fw-bolder">
+                        Home
+                    </MudNavLink>
                     <MudDivider Class="my-1" />
                     <MudNavLink Match="NavLinkMatch.Prefix" Href="cyropreserveds" IconColor="Color.Surface"
                                 Icon="@Icons.Material.Filled.AcUnit" Style="font-size: 16px; font-weight:bolder; color: floralwhite; margin-left:2px"
@@ -162,6 +167,7 @@
     private bool _open = false;
     private bool _expanded = false;
     private string? currentUrl;
+    private DrawerVariant _drawerVariant = DrawerVariant.Persistent;
 
     private void ToggleDrawer()
     {
@@ -186,6 +192,7 @@
     {
         currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
         NavigationManager.LocationChanged += OnLocationChanged;
+        StateHasChanged();
     }
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
