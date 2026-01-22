@@ -11,85 +11,230 @@
 
 <PageTitle>Home</PageTitle>  
 
+<style>
+    .stat-container {
+        background: transparent;
+    }
+    
+    .stat-card-modern {
+        border-radius: 16px;
+        transition: all 0.3s ease;
+        background: white;
+        border: 1px solid rgba(0,0,0,0.08);
+    }
+    
+    .stat-card-modern:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.1) !important;
+    }
+    
+    .stat-card-success {
+        background: linear-gradient(135deg, #ffffff 0%, #f1f8f4 100%);
+    }
+    
+    .stat-card-warning {
+        background: linear-gradient(135deg, #ffffff 0%, #fff8f0 100%);
+    }
+    
+    .stat-card-error {
+        background: linear-gradient(135deg, #ffffff 0%, #fff5f5 100%);
+    }
+    
+    .stat-value-modern {
+        font-weight: 700;
+        background: linear-gradient(135deg, #594AE2 0%, #8B7FE8 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+</style>
+
 <AuthorizeView>
     <Authorized>
-        <MudText Typo="Typo.h4">MxT Biotech WMS</MudText>
+        <MudText Typo="Typo.h4" Style="font-weight: bold">MxT Biotech WMS</MudText>
         <br />
+
+        <MudPaper Elevation="0" Class="stat-container mb-4">
+            <MudGrid Spacing="3">
+
+                <MudItem xs="12" sm="6" md="2">
+                    <MudPaper Elevation="2" Class="stat-card-modern stat-card-success pa-4">
+                        <MudStack Spacing="1" AlignItems="AlignItems.Center">
+                            <MudItem>
+                                <MudIcon Icon="@Icons.Material.Filled.Warehouse" Color="Color.Success" Size="Size.Medium" />
+                                <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Color="Color.Success" Size="Size.Medium" />
+                            </MudItem>
+                            <MudText Typo="Typo.h4" Class="stat-value-modern">@weeklyReceiptCount</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Success">금주 부품 입고</MudText>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+
+                <MudItem xs="12" sm="6" md="2">
+                    <MudPaper Elevation="2" Class="stat-card-modern stat-card-warning pa-4">
+                        <MudStack Spacing="1" AlignItems="AlignItems.Center">
+                            <MudItem>
+                                <MudIcon Icon="@Icons.Material.Filled.Warehouse" Color="Color.Warning" Size="Size.Medium" />
+                                <MudIcon Icon="@Icons.Material.Filled.TrendingDown" Color="Color.Warning" Size="Size.Medium" />
+                            </MudItem>
+                            <MudText Typo="Typo.h4" Class="stat-value-modern">@weeklyShipmentCount</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Warning">금주 부품 출고</MudText>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+
+                <MudItem xs="12" sm="6" md="2">
+                    <MudPaper Elevation="2" Class="stat-card-modern pa-4">
+                        <MudStack Spacing="1" AlignItems="AlignItems.Center">
+                            <MudItem>
+                                <MudIcon Icon="@Icons.Material.Filled.DeveloperBoard" Color="Color.Success" Size="Size.Medium" />
+                                <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Color="Color.Success" Size="Size.Medium" />
+                            </MudItem>
+                            <MudText Typo="Typo.h4" Class="stat-value-modern">@weeklyChipProductionCount</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Success">금주 칩 제작 수</MudText>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+
+                <MudItem xs="12" sm="6" md="2">
+                    <MudPaper Elevation="2" Class="stat-card-modern pa-4">
+                        <MudStack Spacing="1" AlignItems="AlignItems.Center">
+                            <MudItem>
+                                <MudIcon Icon="@Icons.Material.Filled.DeveloperBoard" Color="Color.Warning" Size="Size.Medium" />
+                                <MudIcon Icon="@Icons.Material.Filled.TrendingDown" Color="Color.Warning" Size="Size.Medium" />
+                            </MudItem>                            
+                            <MudText Typo="Typo.h4" Class="stat-value-modern" >@weeklyChipUsageCount</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Warning">금주 칩 납품 수</MudText>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+
+                <MudItem xs="12" sm="6" md="2">
+                    <MudPaper Elevation="2" Class="stat-card-modern stat-card-error pa-4">
+                        <MudStack Spacing="1" AlignItems="AlignItems.Center">
+                            <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Error" Size="Size.Medium" />
+                            <MudText Typo="Typo.h4" Class="stat-value-modern">@shortageCount</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Error">재고 부족 알림</MudText>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+
 
         <MudGrid >
             <MudItem xs="4">
-                <MudDataGrid Items="cyropreservedData" SortMode="SortMode.None" Bordered="true">
+                <MudTable Items="compHistoryData" Bordered="true" Dense="true" Class="pb-1">
                     <ToolBarContent>
-                        <MudText Typo="Typo.h6">동결세포 관리</MudText>
+                        <MudText Typo="Typo.h6">부품 입·출고 이력</MudText>
                         <MudSpacer />
-                        <MudLink Href="cyropreserveds" Typo="Typo.h6">더 보기</MudLink>
+                        <MudLink Href="histories" Typo="Typo.h6">더 보기</MudLink>
                     </ToolBarContent>
-                    <Columns>
-                        <PropertyColumn Property="cyropreserved => cyropreserved.Name" Title="🧫세포"/>
-                        <PropertyColumn Property="cyropreserved => cyropreserved.ReceiptDate" Title="반입 날짜"/>
-                        <PropertyColumn Property="cyropreserved => cyropreserved.Supplier" Title="반입처" />
-                    </Columns>
-                </MudDataGrid>
+                    <HeaderContent>
+                        <MudTh>날짜</MudTh>
+                        <MudTh>구분</MudTh>
+                        <MudTh>Assembly</MudTh>
+                        <MudTh>Description</MudTh>
+                        <MudTh>수량</MudTh>
+                    </HeaderContent>
+                    <RowTemplate Context="x">
+                        <MudTd DataLabel="날짜" Style="min-width: 115px">@x.Date?.ToString("yyyy-MM-dd")</MudTd>
+                        <MudTd DataLabel="구분">
+                            <MudChip T="string" Size="Size.Small" Style="@GetStateColor(x.state)">
+                                @x.state
+                            </MudChip>
+                        </MudTd>
+                        <MudTd DataLabel="Assembly">@x.Component.Assembly</MudTd>
+                        <MudTd DataLabel="Chip 종류">@x.Component.Description</MudTd>
+                        <MudTd DataLabel="수량" Style="min-width: 60px">@x.Quantity</MudTd>
+                    </RowTemplate>
+                </MudTable>
             </MudItem>
+
             <MudItem xs="4">
-                <MudDataGrid Items="reagentData" SortMode="SortMode.None" Bordered="true">
-                    <ToolBarContent>
-                        <MudText Typo="Typo.h6">연구용 시약 관리</MudText>
-                        <MudSpacer />
-                        <MudLink Href="reagents" Typo="Typo.h6">더 보기</MudLink>
-                    </ToolBarContent>
-                    <Columns>
-                        <PropertyColumn Property="reagent => reagent.Code" Title="관리번호"/>
-                        <PropertyColumn Property="reagent => reagent.Name" Title="🧪시약명"/>
-                        <PropertyColumn Property="reagent => reagent.Manufacturer" Title="제조사"/>
-                    </Columns>
-                </MudDataGrid>
-            </MudItem>
-            <MudItem xs="4">
-                <MudDataGrid Items="equipmentData" SortMode="SortMode.None" Bordered="true">
-                    <ToolBarContent>
-                        <MudText Typo="Typo.h6">장비·기기 관리</MudText>
-                        <MudSpacer />
-                        <MudLink Href="equipments" Typo="Typo.h6">더 보기</MudLink>
-                    </ToolBarContent>
-                    <Columns>
-                        <PropertyColumn Property="equipment => equipment.ManageCode" Title="관리번호" />
-		                <PropertyColumn Property="equipment => equipment.Name" Title="품명"  />
-                        <PropertyColumn Property="equipment => equipment.Model" Title="모델명" />
-                    </Columns>
-                </MudDataGrid>
-            </MudItem>
-            <MudItem xs="4">
-                <MudDataGrid Items="chipUsageData" SortMode="SortMode.None" Bordered="true">
+                <MudTable Items="chipUsageData" Bordered="true" Dense="true" Class="pb-1">
                     <ToolBarContent>
                         <MudText Typo="Typo.h6">칩 사용 대장</MudText>
                         <MudSpacer />
                         <MudLink Href="chipusages" Typo="Typo.h6">더 보기</MudLink>
                     </ToolBarContent>
-                    <Columns>
-                        <PropertyColumn Property="chipusage => chipusage.Chip" Title="Chip 종류"/>
-                        <PropertyColumn Property="chipusage => chipusage.Division" Title="구분"/>
-                        <PropertyColumn Property="chipusage => chipusage.UseDate" Title="날짜" Format="yyyy-MM-dd"/>
-                    </Columns>
-				</MudDataGrid>
+                    <HeaderContent>
+                        <MudTh>날짜</MudTh>                        
+                        <MudTh>구분</MudTh>
+                        <MudTh>Chip 종류</MudTh>
+                        <MudTh>수량</MudTh>
+                    </HeaderContent>
+                    <RowTemplate Context="x">                        
+                        <MudTd DataLabel="날짜">@x.UseDate?.ToString("yyyy-MM-dd")</MudTd>
+                        <MudTd DataLabel="구분">
+                            <MudChip T="string" Size="Size.Small" Style="@GetStateColor(x.Division)">
+                                @x.Division
+                            </MudChip>
+                        </MudTd>     
+                        <MudTd DataLabel="Chip 종류">@x.Chip</MudTd>
+                        <MudTd DataLabel="수량">@x.Production</MudTd>
+                    </RowTemplate>
+                </MudTable>
             </MudItem>
 
             <MudItem xs="4">
-                <MudDataGrid Items="compHistoryData" SortMode="SortMode.None" Bordered="true">
+                <MudTable Items="equipmentData" Bordered="true" Dense="true" Class="pb-1">
                     <ToolBarContent>
-                        <MudText Typo="Typo.h6">부품 재고 관리</MudText>
+                        <MudText Typo="Typo.h6">장비·기기 관리</MudText>
                         <MudSpacer />
-                        <MudLink Href="components" Typo="Typo.h6">더 보기</MudLink>
+                        <MudLink Href="equipments" Typo="Typo.h6">더 보기</MudLink>
                     </ToolBarContent>
-                    <Columns>
-                        <PropertyColumn Property="x => x.Date" Title="날짜" Format="yyyy-MM-dd"/>
-                        <PropertyColumn Property="x => x.Component.PartNumber" Title="Part Number"/>
-                        <PropertyColumn Property="x => x.state" Title="구분"/>
-                        <PropertyColumn Property="x => x.Quantity" Title="수량" />
-                    </Columns>
-                </MudDataGrid>
+                    <HeaderContent>
+                        <MudTh>관리번호</MudTh>
+                        <MudTh>품명</MudTh>
+                        <MudTh>구입일</MudTh>
+                    </HeaderContent>
+                    <RowTemplate Context="x">
+                        <MudTd DataLabel="관리번호" Style="height: 45px">@x.ManageCode</MudTd>
+                        <MudTd DataLabel="품명">@x.Name</MudTd>
+                        <MudTd DataLabel="구입일" Style="min-width: 105px">@x.PurchaseDate?.ToString("yyyy-MM-dd")</MudTd>
+                    </RowTemplate>
+                </MudTable>
             </MudItem>
 
+            <MudItem xs="4">
+                <MudTable Items="cyropreservedData" Bordered="true" Dense="true" Class="pb-1">
+                    <ToolBarContent>
+                        <MudText Typo="Typo.h6">동결세포 관리</MudText>
+                        <MudSpacer />
+                        <MudLink Href="cyropreserveds" Typo="Typo.h6">더 보기</MudLink>
+                    </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh>🧫세포</MudTh>
+                        <MudTh>반입 날짜</MudTh>
+                        <MudTh>반입처</MudTh>
+                    </HeaderContent>
+                    <RowTemplate Context="x">
+                        <MudTd DataLabel="🧫세포" Style="height: 45px">@x.Name</MudTd>
+                        <MudTd DataLabel="반입 날짜r">@x.ReceiptDate</MudTd>
+                        <MudTd DataLabel="반입처">@x.Recipient</MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudItem>
+            <MudItem xs="4">
+                <MudTable Items="reagentData" Bordered="true" Dense="true" Class="pb-1">
+                    <ToolBarContent>
+                        <MudText Typo="Typo.h6">연구용 시약 관리</MudText>
+                        <MudSpacer />
+                        <MudLink Href="reagents" Typo="Typo.h6">더 보기</MudLink>
+                    </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh>관리번호</MudTh>
+                        <MudTh>🧪시약명</MudTh>
+                        <MudTh>반입 날짜</MudTh>
+                    </HeaderContent>
+                    <RowTemplate Context="x">
+                        <MudTd DataLabel="관리번호" Style="height: 45px">@x.Code</MudTd>
+                        <MudTd DataLabel="🧪시약명">@x.Name</MudTd>
+                        <MudTd DataLabel="반입 날짜">@x.ReceiptDate</MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudItem>
         </MudGrid>
     </Authorized>
     <NotAuthorized>
@@ -98,6 +243,9 @@
         }
     </NotAuthorized>
 </AuthorizeView>
+
+<br />
+<br />
 
 @code{
     private MxTWebContext webContext = default!;
@@ -108,15 +256,59 @@
     private IQueryable<ChipUsage>? chipUsageData;
     private IQueryable<CompHistory>? compHistoryData;
 
+    private int weeklyShipmentCount = 0;
+    private int weeklyReceiptCount = 0;
+    private int weeklyChipProductionCount = 0;
+    private int weeklyChipUsageCount = 0;
+    private int shortageCount = 0;   
+
     protected override void OnInitialized()
     {
         webContext = DbFactory.CreateDbContext();
 
-        cyropreservedData = webContext.Cyropreserved.Take(6).ToList().AsQueryable();
-        reagentData = webContext.Reagent.Take(6).ToList().AsQueryable();
-        equipmentData = webContext.Equipment.Take(6).ToList().AsQueryable();
-        chipUsageData = webContext.ChipUsage.OrderByDescending(x => x.UseDate).Take(6).ToList().AsQueryable();
-        compHistoryData = webContext.CompHistory.OrderByDescending(x => x.EntryDate).Take(6).ToList().AsQueryable();
+        cyropreservedData = webContext.Cyropreserved.OrderByDescending(x => x.ReceiptDate).Take(10).ToList().AsQueryable();
+        reagentData = webContext.Reagent.OrderByDescending(x => x.ReceiptDate).Take(10).ToList().AsQueryable();
+        equipmentData = webContext.Equipment.OrderByDescending(x => x.PurchaseDate).Take(10).ToList().AsQueryable();
+        chipUsageData = webContext.ChipUsage.OrderByDescending(x => x.UseDate).Take(10).ToList().AsQueryable();
+        compHistoryData = webContext.CompHistory.Include(x => x.Component).OrderByDescending(x => x.EntryDate).Take(10).ToList().AsQueryable();
+
+        weeklyShipmentCount = webContext.CompHistory
+            .Where(x => x.state == "출고" || x.state == "폐기")
+            .Where(x => x.Date >= DateTime.Now.AddDays(-7))
+            .Sum(x => x.Quantity);
+
+        weeklyReceiptCount = webContext.CompHistory
+            .Where(x => x.state == "입고")
+            .Where(x => x.Date >= DateTime.Now.AddDays(-7))
+            .Sum(x => x.Quantity);
+
+        weeklyChipProductionCount = webContext.ChipUsage
+            .Where(x => x.Division == "제작")
+            .Where(x => x.UseDate >= DateTime.Now.AddDays(-7))
+            .Sum(x => x.Production);
+
+        weeklyChipUsageCount = webContext.ChipUsage
+            .Where(x => x.Division == "납품")
+            .Where(x => x.UseDate >= DateTime.Now.AddDays(-7))
+            .Sum(x => x.Production);
+
+        shortageCount = webContext.Component.Where(x => x.Stock < x.Quantity).Count();
+    }
+
+    private string GetStateColor(string state)
+    {
+        return state switch
+        {
+            "입고" => "background: #e8f5e9; color: #388e3c;",
+            "제작" => "background: #e8f5e9; color: #388e3c;",
+
+            "출고" => "background: #fff3e0; color: #f57c00;",
+            "납품" => "background: #fff3e0; color: #f57c00;",
+
+            "폐기" => "background: #ffe9e5; color: #f8766b",
+            "소진" => "background: #ffe9e5; color: #f8766b",
+            _ => "background: #9e9e9e; color: white;"
+        };
     }
 
     public async ValueTask DisposeAsync() => await webContext.DisposeAsync();

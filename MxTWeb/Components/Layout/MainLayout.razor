@@ -7,155 +7,24 @@
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-<style>
-    .mud-drawer.mud-drawer-mini {
-        min-width: 62px !important; /* 기본값 약 56px */
-        scrollbar-width: none
-    }
-    .mud-nav-link:hover .mud-nav-link-expand-icon {
-        color: mediumseagreen;
-    }
-    .mud-nav-link .mud-nav-link-expand-icon {
-        color: floralwhite;
-        margin-left: -4px;
-    }
-    .mud-drawer-mini .mud-nav-link {
-        white-space: nowrap;
-        height: 45px;
-    }
-</style>
-
 <MudLayout>
-    <AuthorizeView>
-        <Authorized>
-            @* <MudAppBar Elevation="1" Dense="false" Style="background: white">
-                <MudCheckBox T="bool" CheckedIcon="@Icons.Material.Filled.MenuOpen" UncheckedIcon="@Icons.Material.Filled.Menu"
-                             Size="Size.Large" Color="Color.Inherit" ValueChanged="ToggleDrawer" Style="margin-left: -24px"/>
-                <MudSpacer />
-                <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" Href="https://github.com/MudBlazor/MudBlazor" Target="_blank" />
-            </MudAppBar> *@
-            <MudDrawer @bind-Open="@_open" ClipMode="DrawerClipMode.Never" Breakpoint="Breakpoint.None" Elevation="1" Variant="DrawerVariant.Mini"
-                       OpenMiniOnHover="false">
-                <MudNavMenu Rounded="true" Margin="Margin.Normal" Color="Color.Tertiary"
-                            Style="background-image: linear-gradient(180deg, #107474 0%, #1cab94 70%); min-height: 100%">
+    @* <MudAppBar Color="Color.Transparent" Fixed="true" Class="@appBarClass" Dense="true" Elevation="0">
+        
+        <MudSpacer />
+        <MudIconButton Icon="@(Deleted > 0 ? @Icons.Material.Filled.FlipToBack : @Icons.Material.Filled.FlipToFront)"
+                       Color="Color.Inherit" OnClick="ResetItems" />
+    </MudAppBar> *@
 
-                    <MudGrid Style="background: #0A4947; height: 90px; align-items: center;">
-                        @if (_open)
-                        {
-                            <MudItem xs="3">
-                                <MudIconButton Icon="@Icons.Material.Filled.MenuOpen"
-                                               Size="Size.Large"
-                                               OnClick="@ToggleDrawer"
-                                               Style="color: floralwhite;" />
-                            </MudItem>
-                            <MudItem xs="9" Style="display: flex; align-items: center; justify-content: center; margin-left: -10px" >
-                                <MudLink Href="">
-                                    <MudImage Src="@imageSource"
-                                              Elevation="0"
-                                              Class="img-fluid"
-                                              Style="max-height: 90px;" />
-                                </MudLink>
-                            </MudItem>
-                        }
-                        else
-                        {
-                            <MudItem xs="12">
-                                <MudIconButton Icon="@Icons.Material.Filled.Menu"
-                                               Size="Size.Large"
-                                               OnClick="@ToggleDrawer"
-                                               Style="color: floralwhite;" />
-                            </MudItem>
-                        }
-                    </MudGrid>
-
-                    <MudNavLink Match="NavLinkMatch.All" Href="" IconColor="Color.Surface"
-                                Icon="@Icons.Material.Filled.Home" Style="font-size: 16px; font-weight:bolder; color: floralwhite; margin-left:2px"
-                                Class="fw-bolder">
-                        Home
-                    </MudNavLink>
-                    <MudDivider Class="my-1" />
-                    <MudNavLink Match="NavLinkMatch.Prefix" Href="cyropreserveds" IconColor="Color.Surface"
-                                Icon="@Icons.Material.Filled.AcUnit" Style="font-size: 16px; font-weight:bolder; color: floralwhite; margin-left:2px"
-                                Class="fw-bolder" >
-                        동결세포 관리
-                    </MudNavLink>
-
-                    <MudNavLink Match="NavLinkMatch.Prefix" Href="reagents" IconColor="Color.Surface"
-                                Icon="@Icons.Custom.Uncategorized.BioHazard" Style="font-size: 16px; font-weight:bolder; color: floralwhite; margin-left:2px"
-                                Class="fw-bolder">
-                        연구용 시약 관리
-                    </MudNavLink>
-
-                    <MudNavLink Match="NavLinkMatch.Prefix" Href="equipments" IconColor="Color.Surface"
-                                Icon="@Icons.Material.Filled.Devices" Style="font-size: 16px; font-weight:bolder; color: floralwhite; margin-left:2px"
-                                Class="fw-bolder">
-                        장비·기기 관리
-                    </MudNavLink>
-
-                    <MudNavLink Match="NavLinkMatch.Prefix" Href="chipusages" IconColor="Color.Surface"
-                                Icon="@Icons.Material.Filled.DeveloperBoard" Style="font-size: 16px; font-weight:bolder; color: floralwhite; margin-left:3px"
-                                Class="fw-bolder">
-                        칩 사용 대장
-                    </MudNavLink>
-
-                    <MudNavGroup Title="부품 재고 관리"
-                                 IconColor="Color.Surface"
-                                 Icon="@Icons.Material.Filled.Warehouse"
-                                 Style="font-size: 16px; font-weight:bolder; color: floralwhite; margin-left:3px"
-                                 @bind-Expanded="@_expanded" @onclick="OnNavGroupExpand"
-                                 Class="fw-bolder custom-nav-group">
-                        <MudNavLink Match="NavLinkMatch.Prefix" Href="components" Style="font-size: 16px; font-weight:bolder; color: floralwhite"
-                                    Class="fw-bolder">
-                            재고 현황
-                        </MudNavLink>
-                        <MudNavLink Match="NavLinkMatch.Prefix" Href="histories" Style="font-size: 16px; font-weight:bolder; color: floralwhite"
-                                    Class="fw-bolder">
-                            입·출고 이력
-                        </MudNavLink>
-                        <MudNavLink Match="NavLinkMatch.Prefix" Href="bom" Style="font-size: 16px; font-weight:bolder; color: floralwhite"
-                                    Class="fw-bolder">
-                            BOM 관리
-                        </MudNavLink>
-                    </MudNavGroup>
-
-                    <MudNavLink Match="NavLinkMatch.Prefix" Href="shipping" IconColor="Color.Surface"
-                                Icon="@Icons.Material.Filled.HistoryEdu" Style="font-size: 16px; font-weight:bolder; color: floralwhite; margin-left:2px"
-                                Class="fw-bolder">
-                        출하 이력 관리
-                    </MudNavLink>
-
-                    <MudDivider Class="my-1" />
-                    <MudNavLink Match="NavLinkMatch.Prefix" Href="Account/Manage" IconColor="Color.Surface"
-                                Icon="@Icons.Material.Filled.Person" Style="font-size: 16px; font-weight:bolder; color: floralwhite"
-                                Class="fw-bolder" >
-                        마이페이지
-                    </MudNavLink>
-
-                    <MudNavLink Icon="@Icons.Material.Filled.Logout"
-                                IconColor="Color.Surface"
-                                Style="font-size: 16px; font-weight:bolder; color: floralwhite; margin-left: 2px"
-                                Class="fw-bolder"
-                                @onclick="HandleLogout">
-                        로그아웃
-                    </MudNavLink>
-                    <MudDivider Class="my-1" />
-                </MudNavMenu>
-            </MudDrawer>
-        </Authorized>
-    </AuthorizeView>
- 
+    @if (!HideNavbar())
+    {
+        <NavMenu />
+    }         
     <MudPaper>
         <article class="content" style="min-height: 100vh">
             @Body
         </article>
     </MudPaper>
 </MudLayout>
-
-
-<form action="Account/Logout" method="post" style="display:none;" id="logoutForm">
-    <AntiforgeryToken />
-    <input type="hidden" name="ReturnUrl" value="Account/Login" />
-</form>
 
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.
@@ -164,53 +33,27 @@
 </div>
 
 @code {
-    private bool _open = false;
-    private bool _expanded = false;
-    private string? currentUrl;
-    private DrawerVariant _drawerVariant = DrawerVariant.Persistent;
+    private string appBarClass = "";
+    private int Deleted = 0;
 
-    private void ToggleDrawer()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        _open = !_open;
-
-        if (_open == false)
+        if (firstRender)
         {
-            _expanded = false;
-        }
-    }
-    private void OnNavGroupExpand()
-    {
-        if (!_open)
-        {
-            _open = true;
+            await JSRuntime.InvokeVoidAsync("initScrollHandler", DotNetObjectReference.Create(this));
         }
     }
 
-    private string? imageSource => NavigationManager.BaseUri + "images/MxT Biotech_Original_white.png";
-
-    protected override void OnInitialized()
+    [JSInvokable]
+    public void UpdateAppBarVisibility(bool isVisible)
     {
-        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
-        NavigationManager.LocationChanged += OnLocationChanged;
+        appBarClass = isVisible ? "" : "hide-appbar";
         StateHasChanged();
     }
 
-    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    private void ResetItems()
     {
-        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
-        StateHasChanged();
-    }
-
-    public void Dispose()
-    {
-        NavigationManager.LocationChanged -= OnLocationChanged;
-    }
-
-    private async Task HandleLogout()
-    {
-        // JavaScript Interop으로 form submit
-        await JSRuntime.InvokeVoidAsync("eval",
-            "document.querySelector('form[action=\"Account/Logout\"]').submit()");
+        // 구현
     }
 
     private bool HideNavbar()

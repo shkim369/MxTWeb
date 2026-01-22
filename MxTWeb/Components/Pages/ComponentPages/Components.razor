@@ -74,7 +74,6 @@
                 <MudText Typo="Typo.body2" Class="pa-2">총 부품 수: @FilteredData.Count()</MudText>
             </MudItem>
 
-
             <MudSpacer />
             <MudMenu Class="mt-3" Label="@searchField" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Secondary">
                 <MudMenuItem Label="Assembly" @onclick="@(() => SelectSearchField("Assembly"))" />
@@ -134,7 +133,7 @@
 </MudDataGrid>
 
 <MudScrollToTop>
-    <MudFab Color="Color.Tertiary" StartIcon="@Icons.Material.Filled.ArrowCircleUp" />
+    <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.ArrowCircleUp" />
 </MudScrollToTop>
 <br />
 

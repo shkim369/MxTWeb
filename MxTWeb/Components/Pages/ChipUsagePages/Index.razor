@@ -39,7 +39,8 @@
     <MudTabPanel Text="RUO 칩 사용 관리대장" OnClick="@(StateHasChanged)">
         <MudDataGrid T="ChipUsage" Class="custom-grid" @ref="dataGrid" Items="FilteredData.AsQueryable()" SortMode="SortMode.Single"
                      Dense="true" Style="white-space: nowrap" Hover="true" Bordered="true" Striped="true" SelectOnRowClick="false"
-                     MultiSelection="true" SelectedItems="@selectedItems" SelectedItemsChanged="@(_ => StateHasChanged())">
+                     MultiSelection="true" SelectedItems="@selectedItems" SelectedItemsChanged="@(_ => StateHasChanged())"
+                     RowsPerPage="25">
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Chip 종류</MudText>
                 &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
