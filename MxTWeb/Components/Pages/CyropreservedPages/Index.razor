@@ -3,85 +3,109 @@
 @using Microsoft.EntityFrameworkCore
 @using MxTWeb.Models
 @using MxTWeb.Data
+@using MxTWeb.Enums
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize]
 @implements IAsyncDisposable
 @inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
 @inject IDialogService DialogService
+@inject ISnackbar Snackbar
 
-<PageTitle>동결세포 목록</PageTitle>
+<PageTitle>동결세포 관리</PageTitle>
 
-@* <div class="dropdown">
-	<button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-		@SearchField
-	</button>
-	<ul class="dropdown-menu">
-		<li><a class="dropdown-item" @onclick="@(() => SelectItem("세포"))">세포</a></li>
-        <li><a class="dropdown-item" @onclick="@(() => SelectItem("반입 날짜"))">반입 날짜</a></li>
-        <li><a class="dropdown-item" @onclick="@(() => SelectItem("반입자"))">반입자</a></li>
-        <li><a class="dropdown-item" @onclick="@(() => SelectItem("반입처"))">반입처</a></li>
-        <li><a class="dropdown-item" @onclick="@(() => SelectItem("보관 위치"))">보관 위치</a></li>
-	</ul>
+<style>
+    .custom-grid .mud-table-cell .column-header .column-options .mud-menu .mud-icon-button-label {
+        display: none !important;
+        visibility: hidden !important;
+    }
 
-    <input type="search" @bind="SearchFilter" @bind:event="oninput" placeholder="검색어 입력" pattern="[A-Za-z0-9\s]*"
-           style="width:300px; margin-top:20px;"/>
+    .custom-grid .mud-table-cell .column-header .column-options .mud-menu {
+        display: none !important;
+        visibility: hidden !important;
+        width: 0px !important;
+    }
 
-    <i class="bi bi-search"></i> Search
-</div> 
+    .custom-grid .mud-table-cell {
+        padding-right: 15px !important;
+    }
 
-<p>
-	<a href="cyropreserveds/create" class="btn btn-outline-secondary">Create New</a>
-</p> *@
+    .custom-grid .mud-table-toolbar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background-color: var(--mud-palette-surface);
+        /* box-shadow: 0 2px 4px rgba(0,0,0,0.1); */
+    }
+</style>
 
 <h2 style="margin-left: 10px">동결세포 목록</h2>
 <br />
 
-<style>    
-    .custom-grid .mud-table-cell .column-header .column-options .mud-menu .mud-icon-button-label {
-        display: none !important;
-    }
-</style>
-
-<MudDataGrid Class="custom-grid" @ref="dataGrid" Items="FilteredData.AsQueryable()" SortMode="SortMode.Single">
+<MudDataGrid T="Cyropreserved" Class="custom-grid" @ref="_dataGrid" Items="FilteredData" 
+             SortMode="SortMode.Single" Dense="true" Hover="true" Bordered="true" Striped="true"
+             RowsPerPage="25" SelectOnRowClick="false" MultiSelection="false"
+             @bind-SelectedItem="selectedItem" QuickFilter="@_quickFilter" FixedHeader="true">
     <ToolBarContent>
-        <MudButton Class="me-2" @onclick="CreateNew" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">
-            Add New
-        </MudButton>
-        <MudSpacer />
 
-        <MudMenu Label="@SearchField" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Secondary">
-            <MudMenuItem Label="세포" @onclick="@(() => SelectItem("세포"))" />
-            <MudMenuItem Label="반입 날짜" @onclick="@(() => SelectItem("반입 날짜"))" />
-            <MudMenuItem Label="반입자" @onclick="@(() => SelectItem("반입자"))" />
-            <MudMenuItem Label="반입처" @onclick="@(() => SelectItem("반입처"))" />
-        </MudMenu>
-        &nbsp&nbsp&nbsp&nbsp
-        <MudTextField @bind-Value="SearchFilter" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
-                        AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        <MudToggleGroup T="string" SelectionMode="SelectionMode.ToggleSelection" @bind-Value="SelectedDivision" Color="Color.Info"
+                        Style="width: 300px" Vertical="false">
+            <MudToggleItem Value="@("primary")" Text="Primary cell" />
+            <MudToggleItem Value="@("cellLine")" Text="Cell line" />
+        </MudToggleGroup>
 
+        &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
+        <MudGrid Spacing="5" Style="margin-top: 0px; margin-bottom: 20px">
+            <MudItem>
+                <MudButton Class="me-2" @onclick="CreateNew" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">
+                    항목 추가
+                </MudButton>
+            </MudItem>
+            <MudItem>
+                <MudButton Class="me-2" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Edit"
+                           Color="@Color.Info" OnClick="@UpdateData" Disabled="@IsEditDisabled"> Edit </MudButton>
+            </MudItem>
+            <MudItem>
+                <MudButton Class="me-2" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete"
+                           Color="@Color.Error" OnClick="@DeleteData" Disabled="@IsEditDisabled"> Delete </MudButton>
+            </MudItem>
+            <MudItem>
+                <MudText Typo="Typo.body2" Class="pa-2">총 항목 수: @FilteredData.Count()</MudText>
+            </MudItem>
+
+
+            <MudSpacer />
+            <MudMenu Class="mt-3" Label="@searchField" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Secondary">
+                <MudMenuItem Label="세포명" @onclick="@(() => SelectSearchField("세포명"))" />
+                <MudMenuItem Label="반입자" @onclick="@(() => SelectSearchField("반입자"))" />
+                <MudMenuItem Label="반입처" @onclick="@(() => SelectSearchField("반입처"))" />
+                <MudMenuItem Label="보관위치1" @onclick="@(() => SelectSearchField("보관위치1"))" />
+                <MudMenuItem Label="보관위치2" @onclick="@(() => SelectSearchField("보관위치2"))" />
+            </MudMenu>
+            &nbsp&nbsp&nbsp&nbsp
+            <MudTextField Class="mt-5 pe-5" @bind-Value="searchFilter" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" />
+        </MudGrid>
     </ToolBarContent>
 
     <Columns>
-        <PropertyColumn Property="x => x.Name" Title="🧫세포"/>
-        <PropertyColumn Property="x => x.Recipient" Title="반입자"/>
-        <PropertyColumn Property="x => x.ReceiptDate" Title="반입 날짜" Format="yyyy-MM-dd" />
-        <PropertyColumn Property="x => x.Supplier" Title="반입처"/>
-        <PropertyColumn Property="x => x.FreezeDate" Title="동결 날짜" Format="yyyy-MM-dd"/>
+        <HierarchyColumn T="Cyropreserved" EnableHeaderToggle="true" />
+
+        <SelectColumn T="Cyropreserved" />
+        <PropertyColumn Property="x => x.Name" Title="🧫세포" Sortable="true"/>
+        <PropertyColumn Property="x => x.Recipient" Title="반입자" Sortable="true"/>
+        <PropertyColumn Property="x => x.ReceiptDate" Title="반입 날짜" Format="yyyy-MM-dd" Sortable="true"
+                        InitialDirection="SortDirection.Descending"/>
+        <PropertyColumn Property="x => x.Supplier" Title="반입처" Sortable="true"/>
+        <PropertyColumn Property="x => x.FreezeDate" Title="동결 날짜" Format="yyyy-MM-dd" Sortable="true"/>
         <PropertyColumn Property="x => x.Quantity" Title="수량" Sortable="false"/>
         <PropertyColumn Property="x => x.Lot" Title="Lot" Sortable="false"/>
         <PropertyColumn Property="x => x.Density" Title="Cell density" Sortable="false"/>
-        <PropertyColumn Property="x => x.Location" Title="보관 위치"/>
-        <PropertyColumn Property="x => x.Note" Title="비고" Sortable="false"/>
-            
-        <TemplateColumn Context="x">
-            <CellTemplate>
-                <MudIconButton Class="me-2" Size="@Size.Small" Variant="Variant.Filled" Icon="@Icons.Material.Filled.Edit"
-                           Color="@Color.Info" OnClick="@(() => this.UpdateData(x))"/>
-                <MudIconButton Size="@Size.Small" Variant="Variant.Filled" Icon="@Icons.Material.Filled.Delete"
-                           Color="@Color.Error" OnClick="@(() => this.DeleteData(x))"/>
-            </CellTemplate>
-        </TemplateColumn>
+        <PropertyColumn Property="x => x.Location1" Title="보관 위치1" Sortable="true"/>
+        <PropertyColumn Property="x => x.Location2" Title="보관 위치2" Sortable="true"/>
+        <PropertyColumn Property="x => x.Test" Title="Mycoplasma" Sortable="true" />
+        <PropertyColumn Property="x => x.Note" Title="비고" Sortable="false"/>        
     </Columns>
+
     <PagerContent>
         <MudDataGridPager/>
     </PagerContent>
@@ -89,73 +113,54 @@
 
 @code {
     private MxTWebContext context = default!;
-    private MudDataGrid<Cyropreserved> dataGrid;
+    private MudDataGrid<Cyropreserved> _dataGrid = null!;
+    private string searchField = "세포명";
+    private string searchFilter;
 
-    private readonly SemaphoreSlim _searchSemaphore = new(1, 1);
-    private CancellationTokenSource? _searchCts;
-    private List<Cyropreserved> _filteredResults = new();
-
-    private string SearchField = "세포"; // 기본 검색 항목
-    private string _searchFilter = "";
-    private string SearchFilter
+    private IEnumerable<Cyropreserved> FilteredData = new List<Cyropreserved>();
+    private Cyropreserved selectedItem = new();
+    private bool IsEditDisabled => selectedItem == null || selectedItem.Id == 0;
+    private string _selectedDivision = "";
+    public string SelectedDivision
     {
-        get => _searchFilter;
+        get => _selectedDivision;
         set
         {
-            _searchFilter = value;
-            _ = PerformSearchAsync();
-        }
-    }
-    private IEnumerable<Cyropreserved> FilteredData => _filteredResults;
-
-    private async Task PerformSearchAsync()
-    {
-        // 동시 실행 방지 // available semaphore가 없으면 바로 return
-        if (!await _searchSemaphore.WaitAsync(0)) return;
-
-        try
-        {
-            _searchCts?.Cancel();
-            _searchCts = new CancellationTokenSource();
-
-            using var context = DbFactory.CreateDbContext();
-
-            var query = SearchField switch
+            if (_selectedDivision != value)
             {
-                "세포" => context.Cyropreserved.Where(m => m.Name!.Contains(SearchFilter)),
-                "반입 날짜" => context.Cyropreserved.Where(m => m.ReceiptDate.ToString().Contains(SearchFilter)),
-                "반입자" => context.Cyropreserved.Where(m => m.Recipient!.Contains(SearchFilter)),
-                "반입처" => context.Cyropreserved.Where(m => m.Supplier!.Contains(SearchFilter)),
-                _ => context.Cyropreserved.Where(m => m.Name!.Contains(SearchFilter))
-            };
-
-            _filteredResults = await query.ToListAsync(_searchCts.Token);
-            await InvokeAsync(StateHasChanged);
-        }
-        catch (OperationCanceledException) { }
-        finally
-        {
-            _searchSemaphore.Release();
+                _selectedDivision = value;
+                FilteredData = context.Cyropreserved
+                    .Where(x => string.IsNullOrEmpty(_selectedDivision) || x.Division == _selectedDivision)
+                    .ToList();
+                StateHasChanged();
+            }
         }
     }
 
     private async Task CreateNew()
     {
+        var parameters = new DialogParameters<Edit>
+        {
+            { x => x.action, UIActionEnum.Insert }
+        };
+
         var options = new DialogOptions { MaxWidth = MaxWidth.Large };
-        var dialog = await DialogService.ShowAsync<Create>("Add New Cyropreserved", options);
+        var dialog = await DialogService.ShowAsync<Edit>("Add New Cyropreserved", parameters, options);
         var result = await dialog.Result;
 
         if (result is not null && !result.Canceled)
         {            
-            await PerformSearchAsync();
+            FilteredData = context.Cyropreserved.ToList();
+            StateHasChanged();
         }
     }
 
-    private async Task UpdateData(CellContext<Cyropreserved> data)
+    private async Task UpdateData()
     {
         var parameters = new DialogParameters<Edit>
         {
-            { x => x.Cyropreserved, data.Item } // 선택된 row의 데이터를 직접 전달
+            { x => x.action, UIActionEnum.Update },
+            { x => x.Cyropreserved, selectedItem } 
         };
 
         var options = new DialogOptions { MaxWidth = MaxWidth.Large };
@@ -164,15 +169,16 @@
 
         if (result is not null && !result.Canceled)
         {
-            await PerformSearchAsync();
+            FilteredData = context.Cyropreserved.ToList();
+            StateHasChanged();
         }
     }
 
-    private async Task DeleteData(CellContext<Cyropreserved> data)
+    private async Task DeleteData()
     {
         var parameters = new DialogParameters<Edit>
         {
-            { x => x.Cyropreserved, data.Item } // 선택된 row의 데이터를 직접 전달
+            { x => x.Cyropreserved, selectedItem } // 선택된 row의 데이터를 직접 전달
         };
 
         var options = new DialogOptions { MaxWidth = MaxWidth.Large };
@@ -181,19 +187,69 @@
 
         if (result is not null && !result.Canceled)
         {
-            await PerformSearchAsync();
+            selectedItem = new();
+            FilteredData = context.Cyropreserved.ToList();
+            StateHasChanged();
         }
     }
 
-    private void SelectItem(string item)
+    private Func<Cyropreserved, bool> _quickFilter => x =>
     {
-        SearchField = item;
+        if (string.IsNullOrWhiteSpace(searchFilter))
+            return true;
+
+        else
+        {
+            switch (searchField)
+            {
+                case "세포명":
+                    if (x.Name.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    break;
+
+                case "반입자":
+                    if (x.Recipient.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    break;
+
+                case "반입처":
+                    if (x.Supplier.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    break;
+
+                case "보관위치1":
+                    if (x.Location1.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    break;
+
+                case "보관위치2":
+                    if (x.Location2.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    break;
+
+                default:
+                    break;
+            }
+
+        }
+
+        return false;
+    };
+
+    private void SelectSearchField(string item)
+    {
+        searchField = item;
     }
 
-    protected override void OnInitialized()
+    private async Task SelectDivision(string Type)
+    {
+        SelectedDivision = Type;
+    }
+
+    protected override async Task OnInitializedAsync()
     {
         context = DbFactory.CreateDbContext();
-        _filteredResults = context.Cyropreserved.ToList();
+        FilteredData = await context.Cyropreserved.ToListAsync();
     }
 
     public async ValueTask DisposeAsync() => await context.DisposeAsync();

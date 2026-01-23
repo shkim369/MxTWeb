@@ -1,0 +1,203 @@
+﻿@page "/shipments"
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using MxTWeb.Models
+@using MxTWeb.Data
+@using MxTWeb.Enums
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@implements IAsyncDisposable
+@inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>출하 이력 관리</PageTitle>
+
+<style>
+    .custom-grid .mud-table-cell .column-header .column-options .mud-menu .mud-icon-button-label {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
+    .custom-grid .mud-table-cell .column-header .column-options .mud-menu {
+        display: none !important;
+        visibility: hidden !important;
+        width: 0px !important;
+    }
+
+    .custom-grid .mud-table-cell {
+        padding-right: 15px !important;
+    }
+
+    .custom-grid .mud-table-toolbar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background-color: var(--mud-palette-surface);
+        /* box-shadow: 0 2px 4px rgba(0,0,0,0.1); */
+    }
+</style>
+
+<h2 style="margin-left: 10px">출하 이력 관리</h2>
+<br />
+
+<MudDataGrid T="Shipment" Class="custom-grid" @ref="_dataGrid" Items="FilteredData" 
+             SortMode="SortMode.Single" Dense="true" Hover="true" Bordered="true" Striped="true"
+             RowsPerPage="25" SelectOnRowClick="false" MultiSelection="false"
+             @bind-SelectedItem="selectedItem" QuickFilter="@_quickFilter" FixedHeader="true">
+    <ToolBarContent>
+        <MudGrid Spacing="5" Style="margin-top: 0px; margin-bottom: 20px">
+            <MudItem>
+                <MudButton Class="me-2" @onclick="CreateNew" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">
+                    항목 추가
+                </MudButton>
+            </MudItem>
+            <MudItem>
+                <MudButton Class="me-2" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Edit"
+                           Color="@Color.Info" OnClick="@UpdateData" Disabled="@IsEditDisabled"> Edit </MudButton>
+            </MudItem>
+            <MudItem>
+                <MudButton Class="me-2" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete"
+                           Color="@Color.Error" OnClick="@DeleteData" Disabled="@IsEditDisabled"> Delete </MudButton>
+            </MudItem>
+            <MudItem>
+                <MudText Typo="Typo.body2" Class="pa-2">총 항목 수: @FilteredData.Count()</MudText>
+            </MudItem>
+
+
+            <MudSpacer />
+            <MudMenu Class="mt-3" Label="@searchField" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Secondary">
+                <MudMenuItem Label="세포명" @onclick="@(() => SelectSearchField("세포명"))" />
+                <MudMenuItem Label="반입자" @onclick="@(() => SelectSearchField("반입자"))" />
+                <MudMenuItem Label="반입처" @onclick="@(() => SelectSearchField("반입처"))" />
+                <MudMenuItem Label="보관위치1" @onclick="@(() => SelectSearchField("보관위치1"))" />
+                <MudMenuItem Label="보관위치2" @onclick="@(() => SelectSearchField("보관위치2"))" />
+            </MudMenu>
+            &nbsp&nbsp&nbsp&nbsp
+            <MudTextField Class="mt-5 pe-5" @bind-Value="searchFilter" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" />
+        </MudGrid>
+    </ToolBarContent>
+
+    <Columns>
+        <SelectColumn T="Shipment" />
+        <PropertyColumn Property="x => x.Division" Title="구분" Sortable="true"/>
+        <PropertyColumn Property="x => x.Destination" Title="납품처" Sortable="true"/>
+        <PropertyColumn Property="x => x.Date" Title="납품일" Format="yyyy-MM-dd" Sortable="true"
+                        InitialDirection="SortDirection.Descending"/>
+        <PropertyColumn Property="x => x.SerialNumber" Title="Serial Number" Sortable="true"/>
+        <PropertyColumn Property="x => x.LotNumber" Title="Lot" Format="yyyy-MM-dd" Sortable="true"/>
+        <PropertyColumn Property="x => x.Quantity" Title="수량" Sortable="false"/>
+        <PropertyColumn Property="x => x.Chip" Title="칩 종류" Sortable="false"/>
+        <PropertyColumn Property="x => x.SWVersion" Title="S/W Version" Sortable="false"/>
+        <PropertyColumn Property="x => x.HWVersion" Title="H/W Version" Sortable="true"/>
+        <PropertyColumn Property="x => x.Comments" Title="비고" Sortable="true"/>
+    </Columns>
+    <PagerContent>
+        <MudDataGridPager/>
+    </PagerContent>
+</MudDataGrid>
+
+@code {
+    private MxTWebContext context = default!;
+    private MudDataGrid<Shipment> _dataGrid = null!;
+
+    private string searchField = "세포명";
+    private string searchFilter;
+
+    private IEnumerable<Shipment> FilteredData = new List<Shipment>();
+    private Shipment selectedItem = new();
+    private bool IsEditDisabled => selectedItem == null || selectedItem.ShipmentId == 0;
+
+    private async Task CreateNew()
+    {
+        var parameters = new DialogParameters<Edit>
+        {
+            { x => x.action, UIActionEnum.Insert }
+        };
+
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var dialog = await DialogService.ShowAsync<Edit>("Add New Shipping history", parameters, options);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
+        {            
+            FilteredData = context.Shipment.ToList();
+            StateHasChanged();
+        }
+    }
+
+    private async Task UpdateData()
+    {
+        var parameters = new DialogParameters<Edit>
+        {
+            { x => x.action, UIActionEnum.Update },
+            { x => x.Shipment, selectedItem } 
+        };
+
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var dialog = await DialogService.ShowAsync<Edit>("Edit Shipping History", parameters, options);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
+        {
+            FilteredData = context.Shipment.ToList();
+            StateHasChanged();
+        }
+    }
+
+    private async Task DeleteData()
+    {
+        var parameters = new DialogParameters<Edit>
+        {
+            { x => x.Shipment, selectedItem } // 선택된 row의 데이터를 직접 전달
+        };
+
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var dialog = await DialogService.ShowAsync<Delete>("Delete Data", parameters, options);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
+        {
+            selectedItem = new();
+            FilteredData = context.Shipment.ToList();
+            StateHasChanged();
+        }
+    }
+
+    private Func<Shipment, bool> _quickFilter => x =>
+    {
+        if (string.IsNullOrWhiteSpace(searchFilter))
+            return true;
+
+        else
+        {
+            switch (searchField)
+            {
+                case "납품처":
+                    if (x.Destination.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    break;
+
+                default:
+                    break;
+            }
+
+        }
+
+        return false;
+    };
+
+    private void SelectSearchField(string item)
+    {
+        searchField = item;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        context = DbFactory.CreateDbContext();
+        FilteredData = await context.Shipment.ToListAsync();
+    }
+
+    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+}

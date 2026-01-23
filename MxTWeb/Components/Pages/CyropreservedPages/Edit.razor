@@ -9,24 +9,28 @@
 
 <PageTitle>Edit</PageTitle>
 
-<EditForm method="post" Model="Cyropreserved" OnValidSubmit="UpdateCyropreserved" FormName="edit" Enhance>
+<EditForm method="post" Model="Cyropreserved" OnValidSubmit="OnValidSubmit" FormName="edit" Enhance>
     <MudDialog>
         <DialogContent>
             <DataAnnotationsValidator />
 
+            <MudSelect Class="mb-5" @bind-Value="Cyropreserved.Division" Label="구분" 
+                       Variant="Variant.Outlined" Required="true" >
+                <MudSelectItem Value="@("Primary cell")">Primary Cell</MudSelectItem>
+                <MudSelectItem Value="@("Cell line")">Cell Line</MudSelectItem>                
+            </MudSelect>
+
             <MudTextField Class="mb-5" Variant="Variant.Outlined"
-                            Label="세포"
-                            id="cell" @bind-Value="Cyropreserved.Name"
-                            For="@(() => Cyropreserved.Name)"
-                            Required="true" Immediate="true" />
+                          Label="세포"
+                          @bind-Value="Cyropreserved.Name"
+                          For="@(() => Cyropreserved.Name)"
+                          Required="true" Immediate="true" />
 
             <MudGrid Class="mb-5">
                 <MudItem xs="6">
                     <MudTextField Variant="Variant.Outlined"
                                     Label="반입자"
-                                    @bind-Value="Cyropreserved.Recipient"
-                                    For="@(() => Cyropreserved.Recipient)"
-                                    Required="true" Immediate="true" />
+                                    @bind-Value="Cyropreserved.Recipient"/>
                 </MudItem>
 
                 <MudItem xs="6">
@@ -43,9 +47,7 @@
                 <MudItem xs="6">
                     <MudTextField Variant="Variant.Outlined"
                                   Label="반입처"
-                                  @bind-Value="Cyropreserved.Supplier"
-                                  For="@(() => Cyropreserved.Supplier)"
-                                  Required="true" Immediate="true" />
+                                  @bind-Value="Cyropreserved.Supplier"/>
                 </MudItem>
 
                 <MudItem xs="6">
@@ -65,23 +67,54 @@
 
                 <MudItem xs="6">
                     <MudTextField Variant="Variant.Outlined"
-                                  Label="Lot"
-                                  @bind-Value="Cyropreserved.Lot"/>
+                                  Label="Cell density"
+                                  @bind-Value="Cyropreserved.Density" />
                 </MudItem>
             </MudGrid>
 
             <MudTextField Class="mb-5" Variant="Variant.Outlined"
-                            Label="Cell density"
-                            @bind-Value="Cyropreserved.Density"/>
+                          Label="Passage / Donor / Lot"
+                          @bind-Value="Cyropreserved.Lot" />
 
-            <MudTextField Class="mb-5"Variant="Variant.Outlined"
-                            Label="보관 위치"
-                            @bind-Value="Cyropreserved.Location"/>
+            <MudGrid Class="mb-5">
+                <MudItem xs="6">
+                    <MudTextField Variant="Variant.Outlined"
+                                  Label="보관 위치1"
+                                  @bind-Value="Cyropreserved.Location1" />
+                </MudItem>
 
+                <MudItem xs="6">
+                    <MudTextField Variant="Variant.Outlined"
+                                  Label="보관 위치2"
+                                  @bind-Value="Cyropreserved.Location2" />
+                </MudItem>
+            </MudGrid>
 
-            <MudTextField Class="mb-5" Variant="Variant.Outlined"
-                            Label="비고"
-                            @bind-Value="Cyropreserved.Note"/>
+            <MudGrid Class="mb-5">
+                @if (Cyropreserved.Division == "Cell line")
+                {
+                    <MudItem xs="6">
+                        <MudTextField Variant="Variant.Outlined"
+                                      Label="Mycoplasma Test"
+                                      @bind-Value="Cyropreserved.Test" />
+                    </MudItem>
+
+                    <MudItem xs="6">
+                        <MudTextField Class="mb-5" Variant="Variant.Outlined"
+                                      Label="비고"
+                                      @bind-Value="Cyropreserved.Note" />
+                    </MudItem>
+                }
+                else
+                {
+                    <MudItem xs="12">
+                        <MudTextField Class="mb-5" Variant="Variant.Outlined"
+                                      Label="비고"
+                                      @bind-Value="Cyropreserved.Note" />
+                    </MudItem>
+                }
+            </MudGrid>
+
         </DialogContent>
         <DialogActions>
             <MudButton Class="mb-5 me-5" ButtonType="ButtonType.Submit" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save" Color="Color.Info">SAVE</MudButton>
@@ -92,39 +125,56 @@
 
 
 @code {
+    [Parameter]
+    public UIActionEnum action { get; set; } = UIActionEnum.Insert;
+
     [SupplyParameterFromQuery]
     private int Id { get; set; }
 
     [Parameter]
-	public Cyropreserved? Cyropreserved { get; set; } = new();
+    public Cyropreserved? Cyropreserved { get; set; } = new();
 
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; }
 
+    private async Task OnValidSubmit()
+    {
+        if (action == UIActionEnum.Insert)
+        {
+            await AddComponent();
+        }
+        else if (action == UIActionEnum.Update)
+        {
+            await UpdateCyropreserved();
+        }
+    }
+
     protected override async Task OnInitializedAsync()
     {
-        // using var context = DbFactory.CreateDbContext();
-        // Cyropreserved ??= await context.Cyropreserved.FirstOrDefaultAsync(m => m.Id == Id);
-
-        // if (Cyropreserved is null)
-        // {
-        //     NavigationManager.NavigateTo("notfound");
-        // }
-
-        Cyropreserved = new Cyropreserved
+        if (action == UIActionEnum.Insert)
         {
-            Id = Cyropreserved.Id,
-            Name = Cyropreserved.Name,
-			Recipient = Cyropreserved.Recipient,
-			ReceiptDate = Cyropreserved.ReceiptDate,
-			Supplier = Cyropreserved.Supplier,
-			FreezeDate = Cyropreserved.FreezeDate,
-			Quantity = Cyropreserved.Quantity,
-			Lot = Cyropreserved.Lot,
-			Density = Cyropreserved.Density,
-			Location = Cyropreserved.Location,
-			Note = Cyropreserved.Note
-        };
+
+        }
+        else if (action == UIActionEnum.Update)
+        {
+            using var context = DbFactory.CreateDbContext();
+            Cyropreserved ??= await context.Cyropreserved.FirstOrDefaultAsync(m => m.Id == Id);
+
+            if (Cyropreserved is null)
+            {
+                NavigationManager.NavigateTo("notfound");
+            }
+        }
+    }
+
+    private async Task AddComponent()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Cyropreserved.Add(Cyropreserved);
+        await context.SaveChangesAsync();
+
+        Snackbar.Add("성공적으로 추가되었습니다.", Severity.Success);
+        MudDialog.Close();
     }
 
     private async Task UpdateCyropreserved()

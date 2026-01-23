@@ -24,6 +24,7 @@ namespace MxTWeb.Data
         public DbSet<CompHistory> CompHistory { get; set; } = default!;
         public DbSet<Bom> Bom { get; set; } = default!;
         public DbSet<BomDetail> BomDetail { get; set; } = default!;
+        public DbSet<Shipment> Shipment { get; set; } = default!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

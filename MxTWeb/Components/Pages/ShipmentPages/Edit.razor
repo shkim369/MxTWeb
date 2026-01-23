@@ -1,0 +1,142 @@
+﻿@page "/shipment/edit"
+@using Microsoft.EntityFrameworkCore
+@using MxTWeb.Models
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Edit</PageTitle>
+
+<EditForm method="post" Model="Shipment" OnValidSubmit="OnValidSubmit" FormName="edit" Enhance>
+    <MudDialog>
+        <DialogContent>
+            <DataAnnotationsValidator />
+
+            <MudTextField Class="mb-5" Variant="Variant.Outlined"
+                            Label="구분"
+                            id="cell" @bind-Value="Shipment.Division"
+                            For="@(() => Shipment.Division)"
+                            Required="true" Immediate="true" />
+
+            <MudGrid Class="mb-5">
+                <MudItem xs="6">
+                    <MudTextField Variant="Variant.Outlined"
+                                    Label="납품처"
+                                    @bind-Value="Shipment.Destination"
+                                  For="@(() => Shipment.Destination)"
+                                    Required="true" Immediate="true" />
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudDatePicker Variant="Variant.Outlined"
+                                   Label="납품일"
+                                   @bind-Date="Shipment.Date"
+                                   For="@(() => Shipment.Date)"
+                                   Required="true" Immediate="true" 
+                                   DateFormat="yyyy-MM-dd" />
+                </MudItem>
+            </MudGrid>
+
+            <MudGrid Class="mb-5">
+                <MudItem xs="6">
+                    <MudTextField Variant="Variant.Outlined"
+                                  Label="Serial Number"
+                                  @bind-Value="Shipment.SerialNumber"/>
+                </MudItem>
+            </MudGrid>
+
+        </DialogContent>
+        <DialogActions>
+            <MudButton Class="mb-5 me-5" ButtonType="ButtonType.Submit" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save" Color="Color.Info">SAVE</MudButton>
+            <MudButton Class="mb-5 me-5" Variant="Variant.Filled" Color="Color.Secondary" OnClick="() => MudDialog.Cancel()">Cancel</MudButton>
+        </DialogActions>
+    </MudDialog>
+</EditForm>
+
+
+@code {
+    [Parameter]
+    public UIActionEnum action { get; set; } = UIActionEnum.Insert;
+
+    [SupplyParameterFromQuery]
+    private int Id { get; set; }
+
+    [Parameter]
+    public Shipment? Shipment { get; set; } = new();
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; }
+
+    private async Task OnValidSubmit()
+    {
+        if (action == UIActionEnum.Insert)
+        {
+            await AddComponent();
+        }
+        else if (action == UIActionEnum.Update)
+        {
+            await UpdateData();
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (action == UIActionEnum.Insert)
+        {
+
+        }
+        else if (action == UIActionEnum.Update)
+        {
+            using var context = DbFactory.CreateDbContext();
+            Shipment ??= await context.Shipment.FirstOrDefaultAsync(m => m.ShipmentId == Id);
+
+            if (Shipment is null)
+            {
+                NavigationManager.NavigateTo("notfound");
+            }
+        }
+    }
+
+    private async Task AddComponent()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Shipment.Add(Shipment);
+        await context.SaveChangesAsync();
+
+        Snackbar.Add("성공적으로 추가되었습니다.", Severity.Success);
+        MudDialog.Close();
+    }
+
+    private async Task UpdateData()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Attach(Shipment!).State = EntityState.Modified;
+
+        try
+        {
+            await context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!DataExists(Shipment!.ShipmentId))
+            {
+                NavigationManager.NavigateTo("notfound");
+            }
+            else
+            {
+                throw;
+            }
+        }
+
+        Snackbar.Add("성공적으로 수정되었습니다.", Severity.Success);
+        MudDialog.Close();
+    }
+
+    private bool DataExists(int id)
+    {
+        using var context = DbFactory.CreateDbContext();
+        return context.Shipment.Any(e => e.ShipmentId == id);
+    }
+}
