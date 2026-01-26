@@ -106,6 +106,41 @@
         };
     </script>
 
+    <script>
+        window.NavMenuInterop = {
+            dotNetRef: null,
+            resizeHandler: null,
+
+            init: function(dotNetReference) {
+                this.dotNetRef = dotNetReference;
+                this.resizeHandler = this.debounce(() => {
+                    if (this.dotNetRef) {
+                        this.dotNetRef.invokeMethodAsync('OnWindowResize');
+                    }
+                }, 100);
+                window.addEventListener('resize', this.resizeHandler);
+            },
+
+            dispose: function() {
+                if (this.resizeHandler) {
+                    window.removeEventListener('resize', this.resizeHandler);
+                }
+                this.dotNetRef = null;
+            },
+
+            debounce: function(func, wait) {
+                let timeout;
+                return function executedFunction(...args) {
+                    const later = () => {
+                        clearTimeout(timeout);
+                        func(...args);
+                    };
+                    clearTimeout(timeout);
+                    timeout = setTimeout(later, wait);
+                };
+            }
+        };
+    </script>
     <style>
         .mud-appbar {
             transition: transform 0.3s ease-in-out;
@@ -115,7 +150,6 @@
                 transform: translateY(-100%);
             }
     </style>
-
 </body>
 
 </html>
