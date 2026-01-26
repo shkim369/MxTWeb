@@ -25,12 +25,21 @@ namespace MxTWeb.Data
         public DbSet<Bom> Bom { get; set; } = default!;
         public DbSet<BomDetail> BomDetail { get; set; } = default!;
         public DbSet<Shipment> Shipment { get; set; } = default!;
+        public DbSet<CyropreservedRequest> CyropreservedRequest { get; set; } = default!;
+        public DbSet<ChipusageRequest> ChipUsageRequest { get; set; } = default!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             //modelBuilder.Entity<Component>()
             //    .HasIndex(x => x.PartNumber)
             //    .IsUnique();
+
+            // CyropreservedRequest -> Cyropreserved FK 관계 설정
+            modelBuilder.Entity<CyropreservedRequest>()
+                .HasOne(r => r.Cyropreserved)
+                .WithMany()
+                .HasForeignKey(r => r.CyropreservedId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

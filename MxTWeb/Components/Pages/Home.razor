@@ -55,8 +55,23 @@
         <br />
 
         <MudPaper Elevation="0" Class="stat-container mb-4">
-            <MudGrid Spacing="3">
 
+            <AuthorizeView Roles="동결세포" Context="T">
+                <MudGrid Spacing="3">
+                    <MudItem xs="12" sm="6" md="2">
+                        <MudPaper Elevation="2" Class="stat-card-modern pa-4">
+                            <MudStack Spacing="1" AlignItems="AlignItems.Center">
+                                <MudIcon Icon="@Icons.Material.Filled.AcUnit" Color="Color.Primary" Size="Size.Medium" />
+                                <MudText Typo="Typo.h4" Class="stat-value-modern">@weeklyReceiptCount</MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Primary">동결세포 사용 신청</MudText>
+                            </MudStack>
+                        </MudPaper>
+                    </MudItem>
+                </MudGrid>
+                <br/>
+            </AuthorizeView>
+
+            <MudGrid Spacing="3">
                 <MudItem xs="12" sm="6" md="2">
                     <MudPaper Elevation="2" Class="stat-card-modern stat-card-success pa-4">
                         <MudStack Spacing="1" AlignItems="AlignItems.Center">
@@ -262,6 +277,8 @@
     private int weeklyChipUsageCount = 0;
     private int shortageCount = 0;   
 
+    private int cyropreservedRequestCount = 0;
+
     protected override void OnInitialized()
     {
         webContext = DbFactory.CreateDbContext();
@@ -293,6 +310,9 @@
             .Sum(x => x.Production);
 
         shortageCount = webContext.Component.Where(x => x.Stock < x.Quantity).Count();
+
+        cyropreservedRequestCount = webContext.CyropreservedRequest
+            .Where(x => x.Status == RequestStatusEnum.Pending).Count();
     }
 
     private string GetStateColor(string state)

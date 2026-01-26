@@ -1,0 +1,148 @@
+@page "/cyropreservedrequests/approval"
+@using Microsoft.EntityFrameworkCore
+@using MxTWeb.Models
+@using MxTWeb.Enums
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
+@inject ISnackbar Snackbar
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>신청서 승인/반려</PageTitle>
+
+<MudDialog>
+    <DialogContent>
+        @if (Request != null && Cyropreserved != null)
+        {
+            <MudPaper Class="pa-3 mb-4" Elevation="1" Style="background-color: #e3f2fd;">
+                <MudText Typo="Typo.subtitle1" Color="Color.Primary" Class="mb-2">신청 정보</MudText>
+                <br/>
+                <MudGrid>
+                    <MudItem xs="6"><MudText Typo="Typo.body1"><strong>세포명:</strong> @Cyropreserved.Name</MudText></MudItem>
+                    <MudItem xs="6"><MudText Typo="Typo.body1"><strong>구분:</strong> @Cyropreserved.Division</MudText></MudItem>
+                    <MudItem xs="6"><MudText Typo="Typo.body1"><strong>신청자:</strong> @Request.Applicant</MudText></MudItem>
+                    <MudItem xs="6"><MudText Typo="Typo.body1"><strong>신청일:</strong> @Request.ApplicationDate?.ToString("yyyy-MM-dd")</MudText></MudItem>
+                    <MudItem xs="6"><MudText Typo="Typo.body1"><strong>신청 수량:</strong> @Request.RequestedQuantity</MudText></MudItem>
+                    <MudItem xs="6"><MudText Typo="Typo.body1"><strong>현재 재고:</strong> @Cyropreserved.Quantity</MudText></MudItem>
+                    <MudItem xs="12"><MudText Typo="Typo.body1"><strong>사용 목적:</strong> @Request.Purpose</MudText></MudItem>
+                    @if (!string.IsNullOrEmpty(Request.Note))
+                    {
+                        <MudItem xs="12"><MudText Typo="Typo.body1"><strong>비고:</strong> @Request.Note</MudText></MudItem>
+                    }
+                </MudGrid>
+            </MudPaper>
+
+            @if (Request.RequestedQuantity > Cyropreserved.Quantity)
+            {
+                <MudAlert Severity="Severity.Warning" Class="mb-4">
+                    신청 수량(@Request.RequestedQuantity)이 현재 재고(@Cyropreserved.Quantity)보다 많습니다!
+                </MudAlert>
+            }
+
+            <MudRadioGroup @bind-Value="ApprovalAction" Class="mb-4">
+                <MudRadio Value="@("approve")" Color="Color.Success">승인</MudRadio>
+                <MudRadio Value="@("reject")" Color="Color.Error">반려</MudRadio>
+            </MudRadioGroup>
+
+            @if (ApprovalAction == "reject")
+            {
+                <MudTextField Variant="Variant.Outlined"
+                              Label="반려 사유"
+                              @bind-Value="RejectionReason"
+                              Required="true"
+                              Lines="3"
+                              Class="mb-4" />
+            }
+        }
+    </DialogContent>
+    <DialogActions>
+        @if (ApprovalAction == "approve")
+        {
+            <MudButton Class="mb-3 me-3" Variant="Variant.Filled" Color="Color.Success"
+                       StartIcon="@Icons.Material.Filled.Check" OnClick="ProcessApproval"
+                       Disabled="@(Request?.RequestedQuantity > Cyropreserved?.Quantity)">승인</MudButton>
+        }
+        else if (ApprovalAction == "reject")
+        {
+            <MudButton Class="mb-3 me-3" Variant="Variant.Filled" Color="Color.Error"
+                       StartIcon="@Icons.Material.Filled.Close" OnClick="ProcessApproval"
+                       Disabled="@string.IsNullOrWhiteSpace(RejectionReason)">반려</MudButton>
+        }
+        <MudButton Class="mb-3 me-3" Variant="Variant.Filled" Color="Color.Secondary"
+                   OnClick="() => MudDialog.Cancel()">취소</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter]
+    public CyropreservedRequest? Request { get; set; }
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    private Cyropreserved? Cyropreserved { get; set; }
+    private string ApprovalAction { get; set; } = "approve";
+    private string? RejectionReason { get; set; }
+    private string? CurrentUserName { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Request != null)
+        {
+            using var context = DbFactory.CreateDbContext();
+            Cyropreserved = await context.Cyropreserved.FindAsync(Request.CyropreservedId);
+        }
+
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        CurrentUserName = authState.User?.Identity?.Name ?? "Unknown";
+    }
+
+    private async Task ProcessApproval()
+    {
+        if (Request == null) return;
+
+        using var context = DbFactory.CreateDbContext();
+
+        if (ApprovalAction == "approve")
+        {
+            // 재고 확인
+            var cyro = await context.Cyropreserved.FindAsync(Request.CyropreservedId);
+            if (cyro == null || cyro.Quantity < Request.RequestedQuantity)
+            {
+                Snackbar.Add("재고가 부족합니다.", Severity.Error);
+                return;
+            }
+
+            // 재고 차감
+            cyro.Quantity -= Request.RequestedQuantity;
+
+            // 신청서 상태 업데이트
+            var req = await context.CyropreservedRequest.FindAsync(Request.CyropreservedRequestId);
+            if (req != null)
+            {
+                req.Status = RequestStatusEnum.Approved;
+                req.Approver = CurrentUserName;
+                req.ProcessedDate = DateTime.Now;
+            }
+
+            await context.SaveChangesAsync();
+            Snackbar.Add($"승인 완료! 재고가 {Request.RequestedQuantity}개 차감되었습니다.", Severity.Success);
+        }
+        else if (ApprovalAction == "reject")
+        {
+            var req = await context.CyropreservedRequest.FindAsync(Request.CyropreservedRequestId);
+            if (req != null)
+            {
+                req.Status = RequestStatusEnum.Rejected;
+                req.Approver = CurrentUserName;
+                req.ProcessedDate = DateTime.Now;
+                req.RejectionReason = RejectionReason;
+            }
+
+            await context.SaveChangesAsync();
+            Snackbar.Add("반려 처리되었습니다.", Severity.Info);
+        }
+
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+}

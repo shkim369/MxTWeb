@@ -1,0 +1,189 @@
+@page "/cyropreservedrequests/edit"
+@using Microsoft.EntityFrameworkCore
+@using MxTWeb.Models
+@using MxTWeb.Enums
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>사용 신청서 작성</PageTitle>
+
+<EditForm method="post" Model="Request" OnValidSubmit="OnValidSubmit" FormName="requestEdit" Enhance>
+    <MudDialog>
+        <DialogContent>
+            <DataAnnotationsValidator />
+
+            <MudAutocomplete T="Cyropreserved" Label="동결세포 선택" @bind-Value="SelectedCyropreserved"
+                             SearchFunc="@SearchCyropreserved" ToStringFunc="@(c => c?.Name ?? "")"
+                             Variant="Variant.Outlined" Required="true" Class="mb-5"
+                             ShowProgressIndicator="true" DebounceInterval="300">
+                <ItemTemplate Context="item">
+                    <MudText>@item.Name (@item.Division) - 재고: @item.Quantity</MudText>
+                </ItemTemplate>
+            </MudAutocomplete>
+
+            @if (SelectedCyropreserved != null)
+            {
+                <MudPaper Class="pa-3 mb-5" Elevation="1" Style="background-color: #f5f5f5;">
+                    <MudText Typo="Typo.subtitle2" Color="Color.Primary">선택된 세포 정보</MudText>
+                    <br/>
+                    <MudGrid>
+                        <MudItem xs="6"><MudText Typo="Typo.body2">세포명: @SelectedCyropreserved.Name</MudText></MudItem>
+                        <MudItem xs="6"><MudText Typo="Typo.body2">구분: @SelectedCyropreserved.Division</MudText></MudItem>
+                        <MudItem xs="6"><MudText Typo="Typo.body2">현재 재고: @SelectedCyropreserved.Quantity</MudText></MudItem>
+                        <MudItem xs="6"><MudText Typo="Typo.body2">보관위치: @SelectedCyropreserved.Location1 / @SelectedCyropreserved.Location2</MudText></MudItem>
+                    </MudGrid>
+                </MudPaper>
+            }
+
+            <MudGrid Class="mb-5">
+                <MudItem xs="6">
+                    <MudTextField Variant="Variant.Outlined"
+                                  Label="신청자"
+                                  @bind-Value="Request.Applicant"
+                                  For="@(() => Request.Applicant)"
+                                  Required="true" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudDatePicker Variant="Variant.Outlined"
+                                   Label="신청일"
+                                   @bind-Date="Request.ApplicationDate"
+                                   For="@(() => Request.ApplicationDate)"
+                                   Required="true"
+                                   DateFormat="yyyy-MM-dd" />
+                </MudItem>
+            </MudGrid>
+
+            <MudGrid Class="mb-5">
+                <MudItem xs="6">
+                    <MudNumericField Variant="Variant.Outlined"
+                                     Label="신청 수량"
+                                     @bind-Value="Request.RequestedQuantity"
+                                     For="@(() => Request.RequestedQuantity)"
+                                     Required="true" Min="1" />
+                </MudItem>
+                <MudItem xs="6">
+                    @if (SelectedCyropreserved != null)
+                    {
+                        <MudText Typo="Typo.body2" Class="mt-5 ms-1" Color="@(Request.RequestedQuantity > SelectedCyropreserved.Quantity ? Color.Error : Color.Default)">
+                            (현재 재고: @SelectedCyropreserved.Quantity)
+                        </MudText>
+                    }
+                </MudItem>
+            </MudGrid>
+
+            <MudTextField Class="mb-5" Variant="Variant.Outlined"
+                          Label="사용 목적"
+                          @bind-Value="Request.Purpose"
+                          Lines="3" />
+
+            <MudTextField Class="mb-5" Variant="Variant.Outlined"
+                          Label="비고"
+                          @bind-Value="Request.Note"
+                          Lines="2" />
+
+        </DialogContent>
+        <DialogActions>
+            <MudButton Class="mb-5 me-5" ButtonType="ButtonType.Submit" Variant="Variant.Filled"
+                       StartIcon="@Icons.Material.Filled.Save" Color="Color.Info"
+                       Disabled="@(SelectedCyropreserved == null)">저장</MudButton>
+            <MudButton Class="mb-5 me-5" Variant="Variant.Filled" Color="Color.Secondary"
+                       OnClick="() => MudDialog.Cancel()">취소</MudButton>
+        </DialogActions>
+    </MudDialog>
+</EditForm>
+
+@code {
+    [Parameter]
+    public UIActionEnum Action { get; set; } = UIActionEnum.Insert;
+
+    [Parameter]
+    public CyropreservedRequest? Request { get; set; } = new();
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    private Cyropreserved? SelectedCyropreserved { get; set; }
+    private List<Cyropreserved> CyropreservedList { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        CyropreservedList = await context.Cyropreserved.ToListAsync();
+
+        if (Action == UIActionEnum.Insert)
+        {
+            Request = new CyropreservedRequest
+            {
+                ApplicationDate = DateTime.Today
+            };
+        }
+        else if (Action == UIActionEnum.Update && Request != null)
+        {
+            SelectedCyropreserved = CyropreservedList.FirstOrDefault(c => c.Id == Request.CyropreservedId);
+        }
+    }
+
+    private async Task<IEnumerable<Cyropreserved>> SearchCyropreserved(string value, CancellationToken token)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return CyropreservedList;
+
+        return CyropreservedList
+            .Where(c => c.Name != null && c.Name.Contains(value, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
+
+    private async Task OnValidSubmit()
+    {
+        if (SelectedCyropreserved == null)
+        {
+            Snackbar.Add("동결세포를 선택해주세요.", Severity.Warning);
+            return;
+        }
+
+        Request!.CyropreservedId = SelectedCyropreserved.Id;
+
+        if (Action == UIActionEnum.Insert)
+        {
+            await AddRequest();
+        }
+        else if (Action == UIActionEnum.Update)
+        {
+            await UpdateRequest();
+        }
+    }
+
+    private async Task AddRequest()
+    {
+        using var context = DbFactory.CreateDbContext();
+        Request!.Status = RequestStatusEnum.Pending;
+        Request.CreatedDate = DateTime.Now;
+        context.CyropreservedRequest.Add(Request);
+        await context.SaveChangesAsync();
+
+        Snackbar.Add("신청서가 등록되었습니다.", Severity.Success);
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    private async Task UpdateRequest()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Attach(Request!).State = EntityState.Modified;
+
+        try
+        {
+            await context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            Snackbar.Add("수정 중 오류가 발생했습니다.", Severity.Error);
+            return;
+        }
+
+        Snackbar.Add("신청서가 수정되었습니다.", Severity.Success);
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+}

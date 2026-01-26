@@ -144,7 +144,7 @@
             { x => x.action, UIActionEnum.Insert }
         };
 
-        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await DialogService.ShowAsync<Edit>("Add New Cyropreserved", parameters, options);
         var result = await dialog.Result;
 
@@ -163,7 +163,7 @@
             { x => x.Cyropreserved, selectedItem } 
         };
 
-        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await DialogService.ShowAsync<Edit>("Edit Cyropreserved", parameters, options);
         var result = await dialog.Result;
 

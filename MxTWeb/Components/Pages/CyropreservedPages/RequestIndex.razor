@@ -1,0 +1,270 @@
+@page "/cyropreservedrequests"
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using MxTWeb.Models
+@using MxTWeb.Data
+@using MxTWeb.Enums
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@implements IAsyncDisposable
+@inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>동결세포 사용 신청서</PageTitle>
+
+<style>
+    .custom-grid .mud-table-toolbar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background-color: var(--mud-palette-surface);
+    }
+
+    .status-pending {
+        background-color: #fff9c4 !important;
+    }
+
+    .status-approved {
+        background-color: #c8e6c9 !important;
+    }
+
+    .status-rejected {
+        background-color: #ffcdd2 !important;
+    }
+</style>
+
+<h2 style="margin-left: 10px">동결세포 사용 신청서</h2>
+<br />
+
+<MudDataGrid T="CyropreservedRequest" Class="custom-grid" @ref="_dataGrid" Items="FilteredData"
+             SortMode="SortMode.Single" Dense="true" Hover="true" Bordered="true" Striped="false"
+             RowsPerPage="25" SelectOnRowClick="false" MultiSelection="false"
+             @bind-SelectedItem="selectedItem" QuickFilter="@_quickFilter" FixedHeader="true">
+    <ToolBarContent>
+        <MudToggleGroup T="RequestStatusEnum?" SelectionMode="SelectionMode.ToggleSelection" @bind-Value="SelectedStatus" Color="Color.Info"
+                        Style="width: 300px" Vertical="false">
+            <MudToggleItem Value="@((RequestStatusEnum?)null)" Text="전체" />
+            <MudToggleItem Value="@((RequestStatusEnum?)RequestStatusEnum.Pending)" Text="대기" />
+            <MudToggleItem Value="@((RequestStatusEnum?)RequestStatusEnum.Approved)" Text="승인" />
+            <MudToggleItem Value="@((RequestStatusEnum?)RequestStatusEnum.Rejected)" Text="반려" />
+        </MudToggleGroup>
+
+        &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
+
+        <MudGrid Spacing="5" Style="margin-top: 0px; margin-bottom: 20px">
+            <MudItem>
+                <MudButton Class="ms-0" @onclick="CreateNew" Variant="Variant.Filled" Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Add">
+                    신청서 작성
+                </MudButton>
+            </MudItem>
+
+            <MudItem>
+                <MudButton Class="ms-0" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Edit"
+                           Color="@Color.Info" OnClick="@UpdateData" Disabled="@(!CanEdit)">수정</MudButton>
+            </MudItem>
+
+            <AuthorizeView Roles="동결세포">
+                <MudItem>
+                    <MudButton Class="ms-0" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.CheckCircle"
+                               Color="@Color.Success" OnClick="@ApproveData" Disabled="@(!CanApprove)">승인/반려</MudButton>
+                </MudItem>
+
+                <MudItem>
+                    <MudButton Class="ms-0" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete"
+                               Color="@Color.Error" OnClick="@DeleteData" Disabled="@IsEditDisabled">삭제</MudButton>
+                </MudItem>
+            </AuthorizeView>
+
+            <MudItem>
+                <MudText Typo="Typo.body2" Class="pa-2">총 @FilteredData.Count()건</MudText>
+            </MudItem>
+
+
+            <MudSpacer />
+            <MudTextField Class="mt-5 pe-5" @bind-Value="searchFilter" Placeholder="검색 (신청자, 세포명)"
+                          Adornment="Adornment.Start" Immediate="true"
+                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" />
+        </MudGrid>
+    </ToolBarContent>
+
+    <Columns>
+        <SelectColumn T="CyropreservedRequest" ShowInHeader="false" />
+        <PropertyColumn Property="x => x.Cyropreserved.Name" Title="세포명" Sortable="true"/>
+        <PropertyColumn Property="x => x.Cyropreserved.Division" Title="구분" Sortable="true" />
+        <PropertyColumn Property="x => x.Applicant" Title="신청자" Sortable="true" />
+        <PropertyColumn Property="x => x.ApplicationDate" Title="신청일" Format="yyyy-MM-dd" Sortable="true"
+                        InitialDirection="SortDirection.Descending" />
+        <PropertyColumn Property="x => x.RequestedQuantity" Title="신청수량" Sortable="false" />
+        <PropertyColumn Property="x => x.Purpose" Title="사용목적" Sortable="false" />
+        <TemplateColumn Title="상태" Sortable="true">
+            <CellTemplate>
+                <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(context.Item.Status)">
+                    @GetStatusText(context.Item.Status)
+                </MudChip>
+            </CellTemplate>
+        </TemplateColumn>
+        <PropertyColumn Property="x => x.Approver" Title="처리자" Sortable="true" />
+        <PropertyColumn Property="x => x.ProcessedDate" Title="처리일시" Format="yyyy-MM-dd HH:mm" Sortable="true" />
+        <PropertyColumn Property="x => x.RejectionReason" Title="반려사유" Sortable="false" />
+        <PropertyColumn Property="x => x.Note" Title="비고" Sortable="false" />
+    </Columns>
+
+    <PagerContent>
+        <MudDataGridPager />
+    </PagerContent>
+</MudDataGrid>
+
+@code {
+    private MxTWebContext context = default!;
+    private MudDataGrid<CyropreservedRequest> _dataGrid = null!;
+    private string? searchFilter;
+
+    private List<CyropreservedRequest> AllData = new();
+    private IEnumerable<CyropreservedRequest> FilteredData => AllData
+        .Where(x => _selectedStatus == null || x.Status == _selectedStatus);
+
+    private CyropreservedRequest? selectedItem;
+    private bool IsEditDisabled => selectedItem == null || selectedItem.CyropreservedRequestId == 0;
+    private bool CanApprove => selectedItem != null && selectedItem.CyropreservedRequestId != 0 && selectedItem.Status == RequestStatusEnum.Pending;
+    private bool CanEdit => selectedItem != null && selectedItem.CyropreservedRequestId != 0 && selectedItem.Status == RequestStatusEnum.Pending;
+
+    private RequestStatusEnum? _selectedStatus;
+    public RequestStatusEnum? SelectedStatus
+    {
+        get => _selectedStatus;
+        set
+        {
+            if (_selectedStatus != value)
+            {
+                _selectedStatus = value;
+                StateHasChanged();
+            }
+        }
+    }
+
+    private string GetStatusText(RequestStatusEnum status) => status switch
+    {
+        RequestStatusEnum.Pending => "대기",
+        RequestStatusEnum.Approved => "승인",
+        RequestStatusEnum.Rejected => "반려",
+        _ => "알 수 없음"
+    };
+
+    private Color GetStatusColor(RequestStatusEnum status) => status switch
+    {
+        RequestStatusEnum.Pending => Color.Warning,
+        RequestStatusEnum.Approved => Color.Success,
+        RequestStatusEnum.Rejected => Color.Error,
+        _ => Color.Default
+    };
+
+    private Func<CyropreservedRequest, bool> _quickFilter => x =>
+    {
+        if (string.IsNullOrWhiteSpace(searchFilter))
+            return true;
+
+        if (x.Applicant?.Contains(searchFilter, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+
+        if (x.Cyropreserved?.Name?.Contains(searchFilter, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+
+        return false;
+    };
+
+    private async Task CreateNew()
+    {
+        var parameters = new DialogParameters<RequestEdit>
+        {
+            { x => x.Action, UIActionEnum.Insert }
+        };
+
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<RequestEdit>("신청서 작성", parameters, options);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
+        {
+            await LoadData();
+        }
+    }
+
+    private async Task UpdateData()
+    {
+        if (selectedItem == null) return;
+
+        var parameters = new DialogParameters<RequestEdit>
+        {
+            { x => x.Action, UIActionEnum.Update },
+            { x => x.Request, selectedItem }
+        };
+
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<RequestEdit>("신청서 수정", parameters, options);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
+        {
+            await LoadData();
+        }
+    }
+
+    private async Task ApproveData()
+    {
+        if (selectedItem == null) return;
+
+        var parameters = new DialogParameters<RequestApproval>
+        {
+            { x => x.Request, selectedItem }
+        };
+
+        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<RequestApproval>("신청서 승인/반려", parameters, options);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
+        {
+            selectedItem = null;
+            await LoadData();
+        }
+    }
+
+    private async Task DeleteData()
+    {
+        if (selectedItem == null) return;
+
+        var parameters = new DialogParameters<RequestDelete>
+        {
+            { x => x.Request, selectedItem }
+        };
+
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small };
+        var dialog = await DialogService.ShowAsync<RequestDelete>("신청서 삭제", parameters, options);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
+        {
+            selectedItem = null;
+            await LoadData();
+        }
+    }
+
+    private async Task LoadData()
+    {
+        AllData = await context.CyropreservedRequest
+            .Include(r => r.Cyropreserved)
+            .OrderByDescending(r => r.ApplicationDate)
+            .ToListAsync();
+        StateHasChanged();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        context = DbFactory.CreateDbContext();
+        await LoadData();
+    }
+
+    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+}

@@ -168,6 +168,53 @@ namespace MxTWeb.Migrations.MxTWeb
                     b.ToTable("ChipUsage");
                 });
 
+            modelBuilder.Entity("MxTWeb.Models.ChipusageRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Applicant")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("ApplicationDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Approver")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ChipType")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ProcessedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Purpose")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("RequestedQuantity")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ChipUsageRequest");
+                });
+
             modelBuilder.Entity("MxTWeb.Models.CompHistory", b =>
                 {
                     b.Property<int>("CompHistoryId")
@@ -317,6 +364,55 @@ namespace MxTWeb.Migrations.MxTWeb
                     b.HasKey("Id");
 
                     b.ToTable("Cyropreserved");
+                });
+
+            modelBuilder.Entity("MxTWeb.Models.CyropreservedRequest", b =>
+                {
+                    b.Property<int>("CyropreservedRequestId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CyropreservedRequestId"));
+
+                    b.Property<string>("Applicant")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("ApplicationDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Approver")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CyropreservedId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ProcessedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Purpose")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("RequestedQuantity")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("CyropreservedRequestId");
+
+                    b.HasIndex("CyropreservedId");
+
+                    b.ToTable("CyropreservedRequest");
                 });
 
             modelBuilder.Entity("MxTWeb.Models.Equipment", b =>
@@ -485,6 +581,17 @@ namespace MxTWeb.Migrations.MxTWeb
                         .IsRequired();
 
                     b.Navigation("Component");
+                });
+
+            modelBuilder.Entity("MxTWeb.Models.CyropreservedRequest", b =>
+                {
+                    b.HasOne("MxTWeb.Models.Cyropreserved", "Cyropreserved")
+                        .WithMany()
+                        .HasForeignKey("CyropreservedId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Cyropreserved");
                 });
 
             modelBuilder.Entity("MxTWeb.Models.Bom", b =>

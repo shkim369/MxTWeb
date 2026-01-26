@@ -144,29 +144,23 @@
                     칩 사용 대장
                 </MudNavLink>
 
-                <MudNavLink Match="NavLinkMatch.Prefix" Href="cyropreserveds" IconColor="Color.Surface"
-                            Icon="@Icons.Material.Filled.AcUnit" Style="font-size: 16px; font-weight:bolder; color: floralwhite; margin-left:2px"
-                            Class="fw-bolder">
-                    동결세포 관리
-                </MudNavLink>
-
                 <MudNavGroup Title="동결세포 관리"
                              IconColor="Color.Surface"
-                             Icon="@Icons.Material.Filled.Warehouse"
+                             Icon="@Icons.Material.Filled.AcUnit"
                              Style="font-size: 16px; font-weight:bolder; color: floralwhite; margin-left:3px"
                              @bind-Expanded="@_expanded2" @onclick="OnNavGroupExpand"
                              Class="fw-bolder custom-nav-group">
 
-                    <MudNavLink Match="NavLinkMatch.Prefix" Href="cyropreserveds" 
+                    <MudNavLink Match="NavLinkMatch.Prefix" Href="cyropreserveds"
                                 Style="font-size: 16px; font-weight:bolder; color: floralwhite;"
                                 Class="fw-bolder">
-                        동결세포 관리
+                        세포 목록
                     </MudNavLink>
 
-                    <MudNavLink Match="NavLinkMatch.Prefix" Href="histories" 
+                    <MudNavLink Match="NavLinkMatch.Prefix" Href="cyropreservedrequests"
                                 Style="font-size: 16px; font-weight:bolder; color: floralwhite"
                                 Class="fw-bolder">
-                        입·출고 이력
+                        사용 신청서
                     </MudNavLink>
                 </MudNavGroup>
 
