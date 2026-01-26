@@ -1,0 +1,227 @@
+@page "/user-roles"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using MxTWeb.Data
+@attribute [Authorize(Roles = "Admin")]
+
+@inject UserManager<ApplicationUser> UserManager
+@inject RoleManager<IdentityRole> RoleManager
+@inject IServiceScopeFactory ServiceScopeFactory
+@inject ISnackbar Snackbar
+
+<PageTitle>사용자 역할 관리</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-4">사용자 역할 관리</MudText>
+    
+    <MudPaper Elevation="2" Class="pa-4 mb-4">
+        <MudText Typo="Typo.h6" Class="mb-3">사용자 검색</MudText>
+        <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+            <MudTextField @bind-Value="_searchEmail" 
+                         Label="이메일로 검색" 
+                         Variant="Variant.Outlined"
+                         Placeholder="user@example.com"
+                         Style="flex: 1;" />
+            <MudButton Variant="Variant.Filled" 
+                      Color="Color.Primary" 
+                      StartIcon="@Icons.Material.Filled.Search"
+                      OnClick="SearchUser">
+                검색
+            </MudButton>
+        </MudStack>
+    </MudPaper>
+
+    @if (_selectedUser != null)
+    {
+        <MudPaper Elevation="2" Class="pa-4 mb-4">
+            <MudText Typo="Typo.h6" Class="mb-3">선택된 사용자</MudText>
+            <MudStack Spacing="2">
+                <MudText><strong>이메일:</strong> @_selectedUser.Email</MudText>
+                <MudText><strong>사용자명:</strong> @_selectedUser.UserName</MudText>
+            </MudStack>
+        </MudPaper>
+
+        <MudPaper Elevation="2" Class="pa-4">
+            <MudText Typo="Typo.h6" Class="mb-3">역할 할당</MudText>
+            
+            @if (_allRoles == null || !_allRoles.Any())
+            {
+                <MudText>등록된 역할이 없습니다.</MudText>
+            }
+            else
+            {
+                <MudStack Spacing="2">
+                    @foreach (var role in _allRoles)
+                    {
+                        var roleName = role.Name ?? string.Empty;
+                        var isInRole = _userRoles.Contains(roleName);
+                        <MudCheckBox T="bool" Value="@isInRole"
+                                    Label="@roleName"
+                                    Color="Color.Primary"
+                                    ValueChanged="@((bool isChecked) => OnRoleChanged(roleName, isChecked))" />
+                    }
+                </MudStack>
+            }
+        </MudPaper>
+    }
+    else if (!string.IsNullOrWhiteSpace(_searchEmail) && _searchPerformed)
+    {
+        <MudAlert Severity="Severity.Info">사용자를 찾을 수 없습니다.</MudAlert>
+    }
+    <br/>
+    <MudPaper Elevation="2" Class="pa-4 mb-4">
+        <MudText Typo="Typo.h6" Class="mb-3">모든 사용자</MudText>
+        @if (_allUsers == null || !_allUsers.Any())
+        {
+            <MudText>사용자가 없습니다.</MudText>
+        }
+        else
+        {
+            <MudTable Items="_allUsers" Hover="true" Dense="true" Class="mt-2">
+                <HeaderContent>
+                    <MudTh>이메일</MudTh>
+                    <MudTh>사용자명</MudTh>
+                    <MudTh>작업</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="이메일">@context.Email</MudTd>
+                    <MudTd DataLabel="사용자명">@context.UserName</MudTd>
+                    <MudTd>
+                        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="@(() => SelectUser(context))">선택</MudButton>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudPaper>
+</MudContainer>
+<br/>
+
+@code {
+    private ApplicationUser? _selectedUser;
+    private string? _selectedUserId;
+    private List<IdentityRole> _allRoles = new();
+    private List<ApplicationUser> _allUsers = new();
+    private List<string> _userRoles = new();
+    private string _searchEmail = string.Empty;
+    private bool _searchPerformed = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRolesAsync();
+        await LoadUsersAsync();
+    }
+
+    private async Task LoadRolesAsync()
+    {
+        using var scope = ServiceScopeFactory.CreateScope();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+        _allRoles = roleManager.Roles.ToList();
+        StateHasChanged();
+    }
+
+    private async Task LoadUsersAsync()
+    {
+        using var scope = ServiceScopeFactory.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        // 간단히 동기 ToList를 사용 — 데이터가 많으면 ToListAsync로 변경 고려
+        _allUsers = userManager.Users.ToList();
+        StateHasChanged();
+    }
+
+    private async Task SearchUser()
+    {
+        if (string.IsNullOrWhiteSpace(_searchEmail))
+        {
+            Snackbar.Add("이메일을 입력하세요.", Severity.Warning);
+            return;
+        }
+
+        using var scope = ServiceScopeFactory.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        
+        _selectedUser = await userManager.FindByEmailAsync(_searchEmail);
+        _selectedUserId = _selectedUser?.Id; 
+        _searchPerformed = true;
+
+        if (_selectedUser != null)
+        {
+            _userRoles = (await userManager.GetRolesAsync(_selectedUser)).ToList();
+            Snackbar.Add("사용자를 찾았습니다.", Severity.Success);
+        }
+        else
+        {
+            _userRoles.Clear();
+            Snackbar.Add("사용자를 찾을 수 없습니다.", Severity.Warning);
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task SelectUser(ApplicationUser user)
+    {
+        if (user == null) return;
+
+        _selectedUser = user;
+        _selectedUserId = user.Id;
+        using var scope = ServiceScopeFactory.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        _userRoles = (await userManager.GetRolesAsync(user)).ToList();
+        Snackbar.Add($"'{user.Email}' 사용자가 선택되었습니다.", Severity.Info);
+        StateHasChanged();
+    }
+
+    private async Task OnRoleChanged(string roleName, bool isChecked)
+    {
+        if (_selectedUser == null) return;
+
+        using var scope = ServiceScopeFactory.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+        var user = await userManager.FindByIdAsync(_selectedUserId);
+        if (user == null) return;
+
+        if (isChecked)
+        {
+            var result = await userManager.AddToRoleAsync(user, roleName);
+            if (result.Succeeded)
+            {
+                _userRoles.Add(roleName);
+                Snackbar.Add($"사용자에게 '{roleName}' 역할이 할당되었습니다.", Severity.Success);
+            }
+            else
+            {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                Snackbar.Add($"역할 할당 실패: {errors}", Severity.Error);
+            }
+        }
+        else
+        {
+            // Admin 역할 제거 시 최소 하나의 Admin이 남아있는지 확인
+            if (roleName == "Admin")
+            {
+                var allAdmins = await userManager.GetUsersInRoleAsync("Admin");
+                if (allAdmins.Count <= 1)
+                {
+                    Snackbar.Add("최소 하나의 Admin 사용자가 필요합니다. Admin 역할을 제거할 수 없습니다.", Severity.Warning);
+                    StateHasChanged(); // 체크박스 상태 복원
+                    return;
+                }
+            }
+
+            var result = await userManager.RemoveFromRoleAsync(user, roleName);
+            if (result.Succeeded)
+            {
+                _userRoles.Remove(roleName);
+                Snackbar.Add($"사용자에서 '{roleName}' 역할이 제거되었습니다.", Severity.Success);
+            }
+            else
+            {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                Snackbar.Add($"역할 제거 실패: {errors}", Severity.Error);
+            }
+        }
+
+        StateHasChanged();
+    }
+}

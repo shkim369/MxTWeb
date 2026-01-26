@@ -1,0 +1,152 @@
+@page "/roles"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using MxTWeb.Data
+@attribute [Authorize(Roles = "Admin")]
+
+@inject RoleManager<IdentityRole> RoleManager
+@inject IServiceScopeFactory ServiceScopeFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>역할 관리</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-4">역할 관리</MudText>
+    
+    <MudPaper Elevation="2" Class="pa-4">
+        <MudText Typo="Typo.h6" Class="mb-3">새 역할 추가</MudText>
+        <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+            <MudTextField @bind-Value="_newRoleName" 
+                         Label="역할 이름" 
+                         Variant="Variant.Outlined"
+                         Required="true"
+                         RequiredError="역할 이름을 입력하세요"
+                         Style="flex: 1;" />
+            <MudButton Variant="Variant.Filled" 
+                      Color="Color.Primary" 
+                      StartIcon="@Icons.Material.Filled.Add"
+                      OnClick="CreateRole"
+                      Disabled="@string.IsNullOrWhiteSpace(_newRoleName)">
+                추가
+            </MudButton>
+        </MudStack>
+    </MudPaper>
+
+    <MudDivider Class="my-4" />
+
+    <MudPaper Elevation="2" Class="pa-4">
+        <MudText Typo="Typo.h6" Class="mb-3">역할 목록</MudText>
+        
+        @if (_roles == null)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+        }
+        else if (!_roles.Any())
+        {
+            <MudText>등록된 역할이 없습니다.</MudText>
+        }
+        else
+        {
+            <MudTable Items="_roles" Hover="true" Dense="true" Striped="true">
+                <HeaderContent>
+                    <MudTh>역할 이름</MudTh>
+                    <MudTh>작업</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="역할 이름">
+                        <MudText>@context.Name</MudText>
+                    </MudTd>
+                    <MudTd DataLabel="작업">
+                        <MudButtonGroup Variant="Variant.Text" Size="Size.Small">
+                            <MudButton StartIcon="@Icons.Material.Filled.Delete" 
+                                      Color="Color.Error"
+                                      OnClick="@(() => DeleteRole(context))"
+                                      Disabled="@(context.Name == "Admin")">
+                                삭제
+                            </MudButton>
+                        </MudButtonGroup>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<IdentityRole> _roles = new();
+    private string _newRoleName = string.Empty;
+    private string _roleToDelete = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRolesAsync();
+    }
+
+    private async Task LoadRolesAsync()
+    {
+        using var scope = ServiceScopeFactory.CreateScope();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+        _roles = roleManager.Roles.ToList();
+        StateHasChanged();
+    }
+
+    private async Task CreateRole()
+    {
+        if (string.IsNullOrWhiteSpace(_newRoleName))
+        {
+            Snackbar.Add("역할 이름을 입력하세요.", Severity.Warning);
+            return;
+        }
+
+        using var scope = ServiceScopeFactory.CreateScope();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+
+        if (await roleManager.RoleExistsAsync(_newRoleName))
+        {
+            Snackbar.Add($"역할 '{_newRoleName}'이(가) 이미 존재합니다.", Severity.Warning);
+            return;
+        }
+
+        var result = await roleManager.CreateAsync(new IdentityRole(_newRoleName));
+
+        if (result.Succeeded)
+        {
+            Snackbar.Add($"역할 '{_newRoleName}'이(가) 성공적으로 생성되었습니다.", Severity.Success);
+            _newRoleName = string.Empty;
+            await LoadRolesAsync();
+        }
+        else
+        {
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            Snackbar.Add($"역할 생성 실패: {errors}", Severity.Error);
+        }
+    }
+
+    private async Task DeleteRole(IdentityRole role)
+    {
+        if (role.Name == "Admin")
+        {
+            Snackbar.Add("Admin 역할은 삭제할 수 없습니다.", Severity.Warning);
+            return;
+        }
+
+        _roleToDelete = role.Name ?? string.Empty;
+
+        var parameters = new DialogParameters<RoleManagementConfirm>
+        {
+            { x => x._roleToDelete, _roleToDelete } // 선택된 row의 데이터를 직접 전달
+        };
+
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var dialog = await DialogService.ShowAsync<RoleManagementConfirm>("Delete Data", parameters, options);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
+        {
+            _roleToDelete = string.Empty;
+            await LoadRolesAsync();
+        }      
+    }
+}

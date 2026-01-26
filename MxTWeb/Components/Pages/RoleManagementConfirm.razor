@@ -1,0 +1,96 @@
+@page "/roles/confirm"
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using MxTWeb.Data
+@attribute [Authorize(Roles = "Admin")]
+
+@inject RoleManager<IdentityRole> RoleManager
+@inject IServiceScopeFactory ServiceScopeFactory
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">역할 삭제 확인</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText>역할 '<strong>@_roleToDelete</strong>'을(를) 삭제하시겠습니까?</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Warning" Class="mt-2">
+            이 작업은 되돌릴 수 없습니다.
+        </MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CancelDelete">취소</MudButton>
+        <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="ConfirmDelete">삭제</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private List<IdentityRole> _roles = new();
+    [Parameter]
+    public string _roleToDelete { get; set; } = string.Empty;
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRolesAsync();
+    }
+
+    private async Task LoadRolesAsync()
+    {
+        using var scope = ServiceScopeFactory.CreateScope();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+        _roles = roleManager.Roles.ToList();
+        StateHasChanged();
+    }
+
+    private void DeleteRole(IdentityRole role)
+    {
+        if (role.Name == "Admin")
+        {
+            Snackbar.Add("Admin 역할은 삭제할 수 없습니다.", Severity.Warning);
+            return;
+        }
+
+        _roleToDelete = role.Name ?? string.Empty;
+    }
+
+    private void CancelDelete()
+    {
+        _roleToDelete = string.Empty;
+        MudDialog.Close();
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (string.IsNullOrWhiteSpace(_roleToDelete))
+        {
+            return;
+        }
+
+        using var scope = ServiceScopeFactory.CreateScope();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+        var role = await roleManager.FindByNameAsync(_roleToDelete);
+
+        if (role != null)
+        {
+            var result = await roleManager.DeleteAsync(role);
+
+            if (result.Succeeded)
+            {
+                Snackbar.Add($"역할 '{_roleToDelete}'이(가) 성공적으로 삭제되었습니다.", Severity.Success);
+                await LoadRolesAsync();
+            }
+            else
+            {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                Snackbar.Add($"역할 삭제 실패: {errors}", Severity.Error);
+            }
+        }
+
+        MudDialog.Close();
+        _roleToDelete = string.Empty;
+    }
+}

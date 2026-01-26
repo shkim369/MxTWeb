@@ -19,10 +19,10 @@
                 </MudItem>
                 <MudItem xs="6">
                     <MudMenu Class="me-5 ms-1" Label="@ChipUsage.Chip" Variant="Variant.Outlined" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Default">
-                        <MudMenuItem Label="A01_Small" @onclick="@(() => SelectChip("A01_Small"))" />
-                        <MudMenuItem Label="A01_Large" @onclick="@(() => SelectChip("A01_Large"))" />
                         <MudMenuItem Label="B01_Small" @onclick="@(() => SelectChip("B01_Small"))" />
                         <MudMenuItem Label="B01_Large" @onclick="@(() => SelectChip("B01_Large"))" />
+                        <MudMenuItem Label="A01_Small" @onclick="@(() => SelectChip("A01_Small"))" />
+                        <MudMenuItem Label="A01_Large" @onclick="@(() => SelectChip("A01_Large"))" />
                     </MudMenu>
                 </MudItem>
             </MudGrid>
@@ -111,6 +111,9 @@
     private int Id { get; set; }
 
     [Parameter]
+    public string? chipType { get; set; }
+
+    [Parameter]
     public ChipUsage ChipUsage { get; set; } = new();
 
     [CascadingParameter]
@@ -126,7 +129,7 @@
     {
         if (action == UIActionEnum.Insert)
         {
-            ChipUsage.Chip = "A01_Small"; // Default value
+            ChipUsage.Chip = chipType;
 
             ChipUsage.UseDate = DateTime.Today;
             ChipUsage.ReceiptDate = DateTime.Today;

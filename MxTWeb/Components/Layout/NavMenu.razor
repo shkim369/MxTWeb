@@ -1,4 +1,4 @@
-﻿@implements IDisposable
+@implements IDisposable
 @rendermode InteractiveServer
 @inject IJSRuntime JSRuntime
 
@@ -8,6 +8,26 @@
     .mud-drawer.mud-drawer-mini {
         min-width: 62px !important; /* 기본값 약 56px */
         scrollbar-width: none
+    }
+
+    /* MudDrawer height: 기본 100vh, 내용이 많으면 자동 확장 */
+    .mud-drawer {
+        min-height: 100vh !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow-y: auto !important;
+    }
+
+    .mud-drawer-content {
+        min-height: 100vh !important;
+        height: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    .mud-nav-menu {
+        min-height: 100vh !important;
+        flex: 1 !important;
     }
 
     .mud-nav-link:hover .mud-nav-link-expand-icon {
@@ -32,7 +52,7 @@
     <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" Href="https://github.com/MudBlazor/MudBlazor" Target="_blank" />
 </MudAppBar> *@
 <MudDrawer @bind-Open="@_open" ClipMode="DrawerClipMode.Never" Breakpoint="Breakpoint.None" Elevation="1" Variant="DrawerVariant.Mini"
-            OpenMiniOnHover="false">
+           OpenMiniOnHover="false" >
 
     <MudNavMenu Rounded="true" Margin="Margin.Normal" Color="Color.Tertiary"
                 Style="background-image: linear-gradient(180deg, #107474 0%, #1cab94 70%); min-height: 100%">
@@ -100,11 +120,31 @@
                     칩 사용 대장
                 </MudNavLink>
 
-                <MudNavLink Match="NavLinkMatch.Prefix" Href="shipments" IconColor="Color.Surface"
-                            Icon="@Icons.Material.Filled.HistoryEdu" Style="font-size: 16px; font-weight:bolder; color: floralwhite; margin-left:2px"
+                <MudNavLink Match="NavLinkMatch.Prefix" Href="cyropreserveds" IconColor="Color.Surface"
+                            Icon="@Icons.Material.Filled.AcUnit" Style="font-size: 16px; font-weight:bolder; color: floralwhite; margin-left:2px"
                             Class="fw-bolder">
-                    출하 이력 관리
+                    동결세포 관리
                 </MudNavLink>
+
+                <MudNavGroup Title="동결세포 관리"
+                             IconColor="Color.Surface"
+                             Icon="@Icons.Material.Filled.Warehouse"
+                             Style="font-size: 16px; font-weight:bolder; color: floralwhite; margin-left:3px"
+                             @bind-Expanded="@_expanded2" @onclick="OnNavGroupExpand"
+                             Class="fw-bolder custom-nav-group">
+
+                    <MudNavLink Match="NavLinkMatch.Prefix" Href="cyropreserveds" 
+                                Style="font-size: 16px; font-weight:bolder; color: floralwhite;"
+                                Class="fw-bolder">
+                        동결세포 관리
+                    </MudNavLink>
+
+                    <MudNavLink Match="NavLinkMatch.Prefix" Href="histories" 
+                                Style="font-size: 16px; font-weight:bolder; color: floralwhite"
+                                Class="fw-bolder">
+                        입·출고 이력
+                    </MudNavLink>
+                </MudNavGroup>
 
                 <MudNavLink Match="NavLinkMatch.Prefix" Href="equipments" IconColor="Color.Surface"
                             Icon="@Icons.Material.Filled.Devices" Style="font-size: 16px; font-weight:bolder; color: floralwhite; margin-left:2px"
@@ -112,16 +152,16 @@
                     장비·기기 관리
                 </MudNavLink>
 
-                <MudNavLink Match="NavLinkMatch.Prefix" Href="cyropreserveds" IconColor="Color.Surface"
-                            Icon="@Icons.Material.Filled.AcUnit" Style="font-size: 16px; font-weight:bolder; color: floralwhite; margin-left:2px"
-                            Class="fw-bolder">
-                    동결세포 관리
-                </MudNavLink>
-
                 <MudNavLink Match="NavLinkMatch.Prefix" Href="reagents" IconColor="Color.Surface"
                             Icon="@Icons.Custom.Uncategorized.BioHazard" Style="font-size: 16px; font-weight:bolder; color: floralwhite; margin-left:2px"
                             Class="fw-bolder">
                     연구용 시약 관리
+                </MudNavLink>
+
+                <MudNavLink Match="NavLinkMatch.Prefix" Href="shipments" IconColor="Color.Surface"
+                            Icon="@Icons.Material.Filled.HistoryEdu" Style="font-size: 16px; font-weight:bolder; color: floralwhite; margin-left:2px"
+                            Class="fw-bolder">
+                    출하 이력 관리
                 </MudNavLink>
 
                 <MudDivider Class="my-1" />
@@ -144,11 +184,21 @@
 
         <AuthorizeView Roles="Admin">
             <Authorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="todo">
-                        <span class="oi oi-list-rich" aria-hidden="true"></span> Todo
-                    </NavLink>
-                </div>
+                <MudNavGroup Title="관리자 메뉴"
+                                IconColor="Color.Surface"
+                                Icon="@Icons.Material.Filled.AdminPanelSettings"
+                                Style="font-size: 16px; font-weight:bolder; color: floralwhite; margin-left:3px"
+                                @bind-Expanded="@_expanded3" @onclick="OnNavGroupExpand"
+                                Class="fw-bolder custom-nav-group">
+                    <MudNavLink Match="NavLinkMatch.Prefix" Href="roles" Style="font-size: 16px; font-weight:bolder; color: floralwhite"
+                                Class="fw-bolder">
+                        역할 관리
+                    </MudNavLink>
+                    <MudNavLink Match="NavLinkMatch.Prefix" Href="user-roles" Style="font-size: 16px; font-weight:bolder; color: floralwhite"
+                                Class="fw-bolder">
+                        사용자 역할 관리
+                    </MudNavLink>
+                </MudNavGroup>
             </Authorized>
         </AuthorizeView>
     </MudNavMenu>
@@ -162,6 +212,8 @@
 @code {
     private bool _open = false;
     private bool _expanded = false;
+    private bool _expanded2 = false;
+    private bool _expanded3 = false;
     private string? currentUrl;
 
     private void ToggleDrawer()
@@ -171,8 +223,11 @@
         if (_open == false)
         {
             _expanded = false;
+            _expanded2 = false;
+            _expanded3 = false;
         }
     }
+
     private void OnNavGroupExpand()
     {
         if (!_open)

@@ -45,10 +45,10 @@
                 <MudText Typo="Typo.h6">Chip 종류</MudText>
                 &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
                 <MudMenu Label="@SelectedChip" Variant="Variant.Outlined" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Default">
-                    <MudMenuItem Label="A01_Small chip" @onclick="@(() => SelectChip("A01_Small"))" />
-                    <MudMenuItem Label="A01_Large chip" @onclick="@(() => SelectChip("A01_Large"))" />
                     <MudMenuItem Label="B01_Small chip" @onclick="@(() => SelectChip("B01_Small"))" />
                     <MudMenuItem Label="B01_Large chip" @onclick="@(() => SelectChip("B01_Large"))" />
+                    <MudMenuItem Label="A01_Small chip" @onclick="@(() => SelectChip("A01_Small"))" />
+                    <MudMenuItem Label="A01_Large chip" @onclick="@(() => SelectChip("A01_Large"))" />
                 </MudMenu>
                 &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
                 <MudGrid Spacing="5">
@@ -64,6 +64,10 @@
                     </MudItem>
 
                     <MudItem>
+                        <MudText Typo="Typo.body2" Class="mt-3 ms-2">총 항목 수: @FilteredData.Count()</MudText>
+                    </MudItem>
+
+                    @* <MudItem>
                         <MudFileUpload Class="mt-1" T="IBrowserFile" Accept=".xlsx, .csv" @ref="excelUpload" FilesChanged="UploadFile">
                             <ActivatorContent>
                                 <MudButton Disabled="@importing" Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Custom.FileFormats.FileExcel">
@@ -93,14 +97,14 @@
                                 <MudText>Export</MudText>
                             }
                         </MudButton>
-                    </MudItem>
+                    </MudItem> *@
                 </MudGrid>
 
 
                 <MudGrid Spacing="5" Class="mt-1">
                     <MudMenu Label="@SearchField" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Secondary">
-                        <MudMenuItem Label="날짜" @onclick="@(() => SelectSearchField("날짜"))" />
                         <MudMenuItem Label="웨이퍼 정보" @onclick="@(() => SelectSearchField("웨이퍼 정보"))" />
+                        <MudMenuItem Label="날짜" @onclick="@(() => SelectSearchField("날짜"))" />
                         <MudMenuItem Label="납품일시" @onclick="@(() => SelectSearchField("납품일시"))" />
                         <MudMenuItem Label="사용부서" @onclick="@(() => SelectSearchField("사용부서"))" />
                     </MudMenu>
@@ -126,7 +130,8 @@
                 <PropertyColumn Property="x => x.Operator" Title="사용부서" sortable="true" />
                 <PropertyColumn Property="x => x.Available" Title="수량" sortable="false" />
                 <PropertyColumn Property="x => x.Production" Title="생산" sortable="false" />
-                <PropertyColumn Property="x => x.Left" Title="잔여" sortable="false" />
+                <PropertyColumn Property="x => x.Left" Title="잔여" sortable="false" 
+                                CellStyleFunc="@_cellStyleFunc3"/>
                 <PropertyColumn Property="x => x.Lot" Title="Lot" sortable="false" />
                 <PropertyColumn Property="x => x.Note" Title="비고" sortable="false" />
 
@@ -155,7 +160,7 @@
                                     <MudDatePicker @bind-Date="x.Item.TestDate" DateFormat="yyyy-MM-dd" PickerClosed="@(() => CommittedItemChanges(x.Item))" />
                                 </EditTemplate>
                             </TemplateColumn>
-                            <PropertyColumn Property="x => x.WaferInfo" Title="웨이퍼 패턴" Editable="false"/>
+                            <PropertyColumn Property="x => x.WaferInfo" Title="웨이퍼 정보" Editable="false"/>
                             <PropertyColumn Property="x => x.Number" Title="Origin No." />
                             <PropertyColumn Property="x => x.TestNum" Title="Test No." />
                             <PropertyColumn Property="x => x.Pressure" Title="Pressure (mbar)"/>
@@ -183,6 +188,7 @@
                         <MudButton OnClick="@(() => AddPressureData(context.Item))" Variant="Variant.Filled" Color="@Color.Success" StartIcon="@Icons.Material.Filled.Add"
                                    Class="add-item-btn">Add Item</MudButton>
                     </div>
+                    <br/>
                 }
             </ChildRowContent>
 
@@ -197,9 +203,9 @@
             <MudSpacer />
             <MudSpacer />
             <MudMenu Label="@PresSearchField" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Secondary">
+                <MudMenuItem Label="웨이퍼 정보" @onclick="@(() => SelectPresSearchField("웨이퍼 패턴"))" />
                 <MudMenuItem Label="제작 날짜" @onclick="@(() => SelectPresSearchField("제작 날짜"))" />
                 <MudMenuItem Label="테스트 날짜" @onclick="@(() => SelectPresSearchField("테스트 날짜"))" />
-                <MudMenuItem Label="웨이퍼 패턴" @onclick="@(() => SelectPresSearchField("웨이퍼 패턴"))" />
             </MudMenu>
             &nbsp&nbsp&nbsp&nbsp
             <MudTextField @bind-Value="_presSearchFilter" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
@@ -224,7 +230,7 @@
                             <MudDatePicker @bind-Date="x.Item.TestDate" DateFormat="yyyy-MM-dd" PickerClosed="@(() => CommittedItemChanges(x.Item))"/>
                         </EditTemplate>
                     </TemplateColumn>
-                    <PropertyColumn Property="x => x.WaferInfo" Title="웨이퍼 패턴" Editable="false"/>
+                    <PropertyColumn Property="x => x.WaferInfo" Title="웨이퍼 정보" />
                     <PropertyColumn Property="x => x.Number" Title="Origin No." />
                     <PropertyColumn Property="x => x.TestNum" Title="Test No." />
                     <PropertyColumn Property="x => x.Pressure" Title="Pressure (mbar)" />
@@ -249,8 +255,8 @@
                 </Columns>
             </MudDataGrid>
             <div class="d-flex justify-end pa-2 me-2">
-                <MudButton OnClick="@(() => AddPressureData())" Variant="Variant.Filled" Color="@Color.Success" StartIcon="@Icons.Material.Filled.Add"
-                           Class="add-item-btn">Add Item</MudButton>
+                @* <MudButton OnClick="@(() => AddPressureData())" Variant="Variant.Filled" Color="@Color.Success" StartIcon="@Icons.Material.Filled.Add"
+                           Class="add-item-btn">Add Item</MudButton> *@
             </div>
         }
     </MudTabPanel>
@@ -377,13 +383,13 @@
                         return true;
                     break;
 
-				case "웨이퍼 패턴":
+                case "웨이퍼 패턴":
                     if (x.WaferInfo.Contains(_presSearchFilter, StringComparison.OrdinalIgnoreCase))
                         return true;
                     break;
 
                 default:
-					break;
+                    break;
             }
 
         }
@@ -395,7 +401,8 @@
     {
         var parameters = new DialogParameters<Edit>
         {
-            { x => x.action, UIActionEnum.Insert }
+            { x => x.action, UIActionEnum.Insert },
+            { x => x.chipType, SelectedChip }
         };
 
         var options = new DialogOptions { MaxWidth = MaxWidth.Large };
@@ -468,11 +475,9 @@
             return Enumerable.Empty<ChipPressure>();
         }
 
-        string[] waferPattern = chipUsage.WaferInfo.Split("_");
-
         using var context = DbFactory.CreateDbContext();
         return context.ChipPressure
-            .Where(cp => cp.ProduceDate == chipUsage.UseDate && cp.WaferInfo == waferPattern[0])
+            .Where(cp => cp.ProduceDate == chipUsage.UseDate && cp.WaferInfo == chipUsage.WaferInfo)
             .ToList();
     }
 
@@ -484,12 +489,10 @@
             return;
         }
 
-        string[] waferPattern = chipUsage.WaferInfo.Split("_");
-
         using var context = DbFactory.CreateDbContext();
 
         ChipPressure temp = context.ChipPressure
-            .Where(cp => cp.ProduceDate == chipUsage.UseDate && cp.WaferInfo == waferPattern[0])
+            .Where(cp => cp.ProduceDate == chipUsage.UseDate && cp.WaferInfo == chipUsage.WaferInfo)
             .OrderByDescending(cp => cp.Id)
             .FirstOrDefault()!;
 
@@ -500,7 +503,7 @@
             {
                 ProduceDate = chipUsage.UseDate,
                 TestDate = chipUsage.UseDate,
-                WaferInfo = waferPattern[0],
+                WaferInfo = chipUsage.WaferInfo,
                 Number = 1,
 				TestNum = 100,
 				passFail = "PASS"
@@ -750,9 +753,9 @@
         _filteredResults = context.ChipUsage.ToList();
         FilteredPresData = context.ChipPressure.ToList();
 
-        SearchField = "날짜";
-        PresSearchField = "테스트 날짜";
-        SelectedChip = "A01_Small";
+        SearchField = "웨이퍼 정보";
+        PresSearchField = "웨이퍼 정보";
+        SelectedChip = "B01_Small";
     }
 
     private void OnTabChanged(int index)
@@ -789,11 +792,54 @@
 
         return style;
     };
+
     private Func<ChipPressure, string> _cellStyleFunc2 => x =>
     {
         string style = "";
         if (x.passFail == "FAIL")
             style += "background-color:#f8766b";
+        return style;
+    };
+
+    private Func<ChipUsage, string> _cellStyleFunc3 => x =>
+    {
+        string style = "";
+
+        if (x is null) 
+            return style;
+
+        if (string.IsNullOrWhiteSpace(x.WaferInfo))
+            return style;
+
+        if (x.Division == "소진")
+            return style;
+
+        try
+        {
+            // _filteredResults 가 null 일 수 있으므로 안전하게 처리
+            var candidates = _filteredResults?
+                .Where(c => !string.IsNullOrWhiteSpace(c.WaferInfo)
+                            && c.WaferInfo.Equals(x.WaferInfo, StringComparison.OrdinalIgnoreCase)
+                            && c.UseDate != default) // UseDate가 기본값이 아닌 항목만
+                .Select(c => c.UseDate)
+                .Where(d => d != null)
+                .Select(d => d!.Value) // nullable DateTime -> DateTime
+                .ToList();
+
+            if (candidates == null || candidates.Count == 0)
+                return style;
+
+            var latest = candidates.Max();
+
+            if (x.UseDate != null && x.UseDate == latest)
+                style += "background-color:#D9EAD3";
+        }
+        catch
+        {
+            // 예외 발생 시 스타일 적용 안함 (안전하게 무시)
+            return style;
+        }
+
         return style;
     };
 

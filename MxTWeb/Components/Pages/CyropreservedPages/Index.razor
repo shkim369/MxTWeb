@@ -44,7 +44,7 @@
 <MudDataGrid T="Cyropreserved" Class="custom-grid" @ref="_dataGrid" Items="FilteredData" 
              SortMode="SortMode.Single" Dense="true" Hover="true" Bordered="true" Striped="true"
              RowsPerPage="25" SelectOnRowClick="false" MultiSelection="false"
-             @bind-SelectedItem="selectedItem" QuickFilter="@_quickFilter" FixedHeader="true">
+             @bind-SelectedItem="selectedItem" QuickFilter="@_quickFilter" FixedHeader="true" >
     <ToolBarContent>
 
         <MudToggleGroup T="string" SelectionMode="SelectionMode.ToggleSelection" @bind-Value="SelectedDivision" Color="Color.Info"
@@ -90,7 +90,7 @@
     <Columns>
         <HierarchyColumn T="Cyropreserved" EnableHeaderToggle="true" />
 
-        <SelectColumn T="Cyropreserved" />
+        <SelectColumn T="Cyropreserved" ShowInHeader="false"/>
         <PropertyColumn Property="x => x.Name" Title="🧫세포" Sortable="true"/>
         <PropertyColumn Property="x => x.Recipient" Title="반입자" Sortable="true"/>
         <PropertyColumn Property="x => x.ReceiptDate" Title="반입 날짜" Format="yyyy-MM-dd" Sortable="true"
@@ -176,7 +176,7 @@
 
     private async Task DeleteData()
     {
-        var parameters = new DialogParameters<Edit>
+        var parameters = new DialogParameters<Delete>
         {
             { x => x.Cyropreserved, selectedItem } // 선택된 row의 데이터를 직접 전달
         };
