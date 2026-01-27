@@ -1,105 +1,126 @@
-﻿@page "/reagents/edit"
+@page "/reagents/edit"
 @using Microsoft.EntityFrameworkCore
 @using MxTWeb.Models
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize]
 @inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
 @inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
 
-<PageTitle>Edit</PageTitle>
+<EditForm method="post" Model="Reagent" OnValidSubmit="OnValidSubmit" FormName="edit" Enhance>
+    <MudDialog>
+        <DialogContent>
+            <DataAnnotationsValidator />
 
-<h1>Edit</h1>
+            <MudTextField Class="mb-5" Variant="Variant.Outlined"
+                          Label="코드"
+                          @bind-Value="Reagent.Code" Required="true" Immediate="true"/>
 
-<h2>Reagent</h2>
-<hr />
-@if (Reagent is null)
-{
-    <p><em>Loading...</em></p>
-}
-else
-{
-    <div class="row">
-        <div class="col-md-4">
-            <EditForm method="post" Model="Reagent" OnValidSubmit="UpdateReagent" FormName="edit" Enhance>
-                <DataAnnotationsValidator />
-                <ValidationSummary role="alert"/>
-                <input type="hidden" name="Reagent.Id" value="@Reagent.Id" />
-                <div class="mb-3">
-                    <label for="code" class="form-label">Code:</label>
-                    <InputText id="code" @bind-Value="Reagent.Code" class="form-control" aria-required="true"/>
-                    <ValidationMessage For="() => Reagent.Code" class="text-danger" />
-                </div>
-                <div class="mb-3">
-                    <label for="name" class="form-label">Name:</label>
-                    <InputText id="name" @bind-Value="Reagent.Name" class="form-control" aria-required="true"/>
-                    <ValidationMessage For="() => Reagent.Name" class="text-danger" />
-                </div>
-                <div class="mb-3">
-                    <label for="manufacturer" class="form-label">Manufacturer:</label>
-                    <InputText id="manufacturer" @bind-Value="Reagent.Manufacturer" class="form-control" aria-required="true"/>
-                    <ValidationMessage For="() => Reagent.Manufacturer" class="text-danger" />
-                </div>
-                <div class="mb-3">
-                    <label for="amount" class="form-label">Amount:</label>
-                    <InputText id="amount" @bind-Value="Reagent.Amount" class="form-control" />
-                    <ValidationMessage For="() => Reagent.Amount" class="text-danger" />
-                </div>
-                <div class="mb-3">
-                    <label for="cat" class="form-label">Cat:</label>
-                    <InputText id="cat" @bind-Value="Reagent.Cat" class="form-control" />
-                    <ValidationMessage For="() => Reagent.Cat" class="text-danger" />
-                </div>
-                <div class="mb-3">
-                    <label for="receiptdate" class="form-label">ReceiptDate:</label>
-                    <InputDate id="receiptdate" @bind-Value="Reagent.ReceiptDate" class="form-control" />
-                    <ValidationMessage For="() => Reagent.ReceiptDate" class="text-danger" />
-                </div>
-                <div class="mb-3">
-                    <label for="quantity" class="form-label">Quantity:</label>
-                    <InputNumber id="quantity" @bind-Value="Reagent.Quantity" class="form-control" />
-                    <ValidationMessage For="() => Reagent.Quantity" class="text-danger" />
-                </div>
-                <div class="mb-3">
-                    <label for="lot" class="form-label">Lot:</label>
-                    <InputNumber id="lot" @bind-Value="Reagent.Lot" class="form-control" />
-                    <ValidationMessage For="() => Reagent.Lot" class="text-danger" />
-                </div>
-                <div class="mb-3">
-                    <label for="location" class="form-label">Location:</label>
-                    <InputText id="location" @bind-Value="Reagent.Location" class="form-control" />
-                    <ValidationMessage For="() => Reagent.Location" class="text-danger" />
-                </div>
-                <button type="submit" class="btn btn-primary">Save</button>
-            </EditForm>
-        </div>
-    </div>
-}
+            <MudTextField Class="mb-5" Variant="Variant.Outlined"
+                          Label="시약명"
+                          @bind-Value="Reagent.Name" Required="true" Immediate="true"/>
 
-<div>
-    <a href="/reagents">Back to List</a>
-</div>
+            <MudTextField Class="mb-5" Variant="Variant.Outlined"
+                          Label="제조사"
+                          @bind-Value="Reagent.Manufacturer" Required="true" Immediate="true"/>
+
+            <MudGrid Class="mb-5">
+                <MudItem xs="6">
+                    <MudTextField Variant="Variant.Outlined"
+                                  Label="용량"
+                                  @bind-Value="Reagent.Amount" />
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudTextField Variant="Variant.Outlined"
+                                  Label="Cat"
+                                  @bind-Value="Reagent.Cat" />
+                </MudItem>
+            </MudGrid>
+
+            <MudGrid Class="mb-5">
+                <MudItem xs="6">
+                    <MudDatePicker Variant="Variant.Outlined"
+                                   Label="입고일"
+                                   @bind-Date="ReceiptDateNullable"
+                                   DateFormat="yyyy-MM-dd" />
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudNumericField Variant="Variant.Outlined"
+                                     Label="수량"
+                                     @bind-Value="Reagent.Quantity" />
+                </MudItem>
+            </MudGrid>
+
+            <MudGrid Class="mb-5">
+                <MudItem xs="6">
+                    <MudNumericField Variant="Variant.Outlined"
+                                     Label="Lot"
+                                     @bind-Value="Reagent.Lot" />
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudTextField Variant="Variant.Outlined"
+                                  Label="보관장소"
+                                  @bind-Value="Reagent.Location" />
+                </MudItem>
+            </MudGrid>
+
+        </DialogContent>
+        <DialogActions>
+            <MudButton Class="mb-5 me-5" ButtonType="ButtonType.Submit" Variant="Variant.Filled"
+                       StartIcon="@(action == UIActionEnum.Update ? Icons.Material.Filled.Edit : Icons.Material.Filled.Add)" Color="Color.Info">
+                @(action == UIActionEnum.Update ? "Edit" : "ADD")
+            </MudButton>
+            <MudButton Class="mb-5 me-5" Variant="Variant.Filled" Color="Color.Secondary" OnClick="() => MudDialog.Cancel()">Cancel</MudButton>
+        </DialogActions>
+    </MudDialog>
+</EditForm>
 
 @code {
+    [Parameter]
+    public UIActionEnum action { get; set; } = UIActionEnum.Insert;
+
     [SupplyParameterFromQuery]
     private int Id { get; set; }
 
-    [SupplyParameterFromForm]
-    private Reagent? Reagent { get; set; }
+    [Parameter]
+    public Reagent? Reagent { get; set; } = new();
 
-    protected override async Task OnInitializedAsync()
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; }
+
+    // DateOnly와 DateTime?를 변환하기 위한 헬퍼 프로퍼티
+    private DateTime? ReceiptDateNullable
     {
-        using var context = DbFactory.CreateDbContext();
-        Reagent ??= await context.Reagent.FirstOrDefaultAsync(m => m.Id == Id);
+        get => Reagent?.ReceiptDate == default ? null : Reagent.ReceiptDate.ToDateTime(TimeOnly.MinValue);
+        set => Reagent!.ReceiptDate = value.HasValue ? DateOnly.FromDateTime(value.Value) : default;
+    }
 
-        if (Reagent is null)
+    private async Task OnValidSubmit()
+    {
+        if (action == UIActionEnum.Insert)
         {
-            NavigationManager.NavigateTo("notfound");
+            await AddComponent();
+        }
+        else if (action == UIActionEnum.Update)
+        {
+            await UpdateComponent();
         }
     }
 
-    // To protect from overposting attacks, enable the specific properties you want to bind to.
-    // For more information, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
-    private async Task UpdateReagent()
+    private async Task AddComponent()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Reagent.Add(Reagent);
+        await context.SaveChangesAsync();
+
+        Snackbar.Add("성공적으로 추가되었습니다.", Severity.Success);
+        MudDialog.Close();
+    }
+
+    private async Task UpdateComponent()
     {
         using var context = DbFactory.CreateDbContext();
         context.Attach(Reagent!).State = EntityState.Modified;
@@ -110,7 +131,7 @@ else
         }
         catch (DbUpdateConcurrencyException)
         {
-            if (!ReagentExists(Reagent!.Id))
+            if (!ComponentExists(Reagent!.Id))
             {
                 NavigationManager.NavigateTo("notfound");
             }
@@ -120,12 +141,33 @@ else
             }
         }
 
-        NavigationManager.NavigateTo("/reagents");
+        Snackbar.Add("성공적으로 수정되었습니다.", Severity.Success);
+        MudDialog.Close();
     }
 
-    private bool ReagentExists(int id)
+    private bool ComponentExists(int id)
     {
         using var context = DbFactory.CreateDbContext();
         return context.Reagent.Any(e => e.Id == id);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (action == UIActionEnum.Insert)
+        {
+            Reagent.ReceiptDate = DateOnly.FromDateTime(DateTime.Today);
+        }
+        else if (action == UIActionEnum.Update)
+        {
+            using var context = DbFactory.CreateDbContext();
+            Reagent ??= await context.Reagent.FirstOrDefaultAsync(m => m.Id == Id);
+
+            if (Reagent is null)
+            {
+                NavigationManager.NavigateTo("notfound");
+            }
+        }
+
+        //await LoadAutoComplete();
     }
 }

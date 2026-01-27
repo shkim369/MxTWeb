@@ -11,7 +11,7 @@
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 
-<PageTitle>동결세포 사용 신청서</PageTitle>
+<PageTitle>동결세포 사용 신청</PageTitle>
 
 <style>
     .custom-grid .mud-table-toolbar {
@@ -39,7 +39,7 @@
 
 <MudDataGrid T="CyropreservedRequest" Class="custom-grid" @ref="_dataGrid" Items="FilteredData"
              SortMode="SortMode.Single" Dense="true" Hover="true" Bordered="true" Striped="false"
-             RowsPerPage="25" SelectOnRowClick="false" MultiSelection="false"
+             RowsPerPage="25" SelectOnRowClick="true" MultiSelection="false"
              @bind-SelectedItem="selectedItem" QuickFilter="@_quickFilter" FixedHeader="true">
     <ToolBarContent>
         <MudToggleGroup T="RequestStatusEnum?" SelectionMode="SelectionMode.ToggleSelection" @bind-Value="SelectedStatus" Color="Color.Info"
@@ -227,6 +227,7 @@
         if (result is not null && !result.Canceled)
         {
             selectedItem = null;
+            context = DbFactory.CreateDbContext();
             await LoadData();
         }
     }

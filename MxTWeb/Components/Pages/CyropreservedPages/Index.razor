@@ -11,7 +11,7 @@
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 
-<PageTitle>동결세포 관리</PageTitle>
+<PageTitle>동결세포 목록</PageTitle>
 
 <style>
     .custom-grid .mud-table-cell .column-header .column-options .mud-menu .mud-icon-button-label {
@@ -100,8 +100,8 @@
         <PropertyColumn Property="x => x.Quantity" Title="수량" Sortable="false"/>
         <PropertyColumn Property="x => x.Lot" Title="Lot" Sortable="false"/>
         <PropertyColumn Property="x => x.Density" Title="Cell density" Sortable="false"/>
-        <PropertyColumn Property="x => x.Location1" Title="보관 위치1" Sortable="true"/>
-        <PropertyColumn Property="x => x.Location2" Title="보관 위치2" Sortable="true"/>
+        <PropertyColumn Property="x => x.Location1" Title="Tank" Sortable="true"/>
+        <PropertyColumn Property="x => x.Location2" Title="Canister" Sortable="true"/>
         <PropertyColumn Property="x => x.Test" Title="Mycoplasma" Sortable="true" />
         <PropertyColumn Property="x => x.Note" Title="비고" Sortable="false"/>        
     </Columns>

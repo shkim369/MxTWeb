@@ -11,7 +11,7 @@
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 
-<PageTitle>연구용 장비·기기 관리대장</PageTitle>
+<PageTitle>연구용 장비·기기 관리</PageTitle>
 
 <style>
     .custom-grid .mud-table-cell .column-header .column-options .mud-menu .mud-icon-button-label {
@@ -38,7 +38,7 @@
     }
 </style>
 
-<h2>연구용 장비·기기 관리대장</h2>
+<h2>연구용 장비·기기 관리</h2>
 <br />
 <MudDataGrid T="Equipment" Class="custom-grid" Items="@FilteredData" @ref="_dataGrid"
              SortMode="SortMode.Single" Dense="true" Hover="true" Bordered="true" Striped="true"

@@ -1,112 +1,263 @@
-﻿@page "/reagents"
+@page "/reagents"
 @rendermode InteractiveServer
 @using Microsoft.EntityFrameworkCore
 @using MxTWeb.Models
 @using MxTWeb.Data
+@using MxTWeb.Enums
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize]
 @implements IAsyncDisposable
 @inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
 
-<PageTitle>연구용 시약 목록</PageTitle>
+<PageTitle>연구용 시약 관리</PageTitle>
 
-<h1>연구용 시약 목록</h1>
+<style>
+    .custom-grid .mud-table-cell .column-header .column-options .mud-menu .mud-icon-button-label {
+        display: none !important;
+        visibility: hidden !important;
+    }
 
+    .custom-grid .mud-table-cell .column-header .column-options .mud-menu {
+        display: none !important;
+        visibility: hidden !important;
+        width: 0px !important;
+    }
+
+    .custom-grid .mud-table-cell {
+        padding-right: 15px !important;
+    }
+
+    .custom-grid .mud-table-toolbar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background-color: var(--mud-palette-surface);
+        /* box-shadow: 0 2px 4px rgba(0,0,0,0.1); */
+    }
+</style>
+
+<h2>연구용 시약 관리</h2>
 <br />
-<div class="dropdown">
-    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-        @SearchField
-    </button>
-    <ul class="dropdown-menu">
-        <li><a class="dropdown-item" @onclick="@(() => SelectItem("제품코드"))">제품코드</a></li>
-        <li><a class="dropdown-item" @onclick="@(() => SelectItem("시약명"))">시약명</a></li>
-        <li><a class="dropdown-item" @onclick="@(() => SelectItem("제조사"))">제조사</a></li>
-    </ul>
+<MudDataGrid T="Reagent" Class="custom-grid" Items="@FilteredData" @ref="_dataGrid"
+             SortMode="SortMode.Single" Dense="true" Hover="true" Bordered="true" Striped="true"
+             EditMode="DataGridEditMode.Cell" ReadOnly="true"
+             CommittedItemChanges="@CommittedItemChanges" RowsPerPage="100" SelectOnRowClick="false"
+             MultiSelection="false" @bind-SelectedItem="selectedItem"
+             QuickFilter="@_quickFilter" FixedHeader="true"
+             Loading="@isLoading">
 
-    <input type="search" @bind="SearchFilter" @bind:event="oninput" placeholder="검색어 입력"
-           style="width:300px; margin-top:20px;" />
+    <ToolBarContent>
+        <MudGrid Spacing="5" Style="margin-top: 0px; margin-bottom: 20px">
+            <MudItem>
+                <MudButton Class="me-2" @onclick="CreateNew" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">
+                    항목 추가
+                </MudButton>
+            </MudItem>
+            <MudItem>
+                <MudButton Class="me-2" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Edit"
+                           Color="@Color.Info" OnClick="@UpdateData" Disabled="@IsEditDisabled"> Edit </MudButton>
+            </MudItem>
+            <MudItem>
+                <MudButton Class="me-2" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete"
+                           Color="@Color.Error" OnClick="@DeleteData" Disabled="@IsEditDisabled"> Delete </MudButton>
+            </MudItem>
+            <MudItem>
+                <MudText Typo="Typo.body2" Class="pa-2">총 항목 수: @FilteredData.Count()</MudText>
+            </MudItem>
 
-    <i class="bi bi-search"></i> Search
-</div>
+
+            <MudSpacer />
+            <MudMenu Class="mt-3" Label="@searchField" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Secondary">
+                <MudMenuItem Label="코드" @onclick="@(() => SelectSearchField("코드"))" />
+                <MudMenuItem Label="시약명" @onclick="@(() => SelectSearchField("시약명"))" />
+                <MudMenuItem Label="제조사" @onclick="@(() => SelectSearchField("제조사"))" />
+                <MudMenuItem Label="용량" @onclick="@(() => SelectSearchField("용량"))" />
+                <MudMenuItem Label="Cat" @onclick="@(() => SelectSearchField("Cat"))" />
+                <MudMenuItem Label="보관장소" @onclick="@(() => SelectSearchField("보관장소"))" />
+            </MudMenu>
+            &nbsp&nbsp&nbsp&nbsp
+            <MudTextField Class="mt-5 pe-5" @bind-Value="searchFilter" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" />
+        </MudGrid>
+    </ToolBarContent>
+
+    <ColGroup>
+        <col />
+        <col />
+        <col />
+        <col />
+        <col />
+        <col />
+        <col style="width: 125px"/>
+        <col />
+        <col />
+        <col />
+    </ColGroup>
+
+    <Columns>
+        <SelectColumn T="Reagent" ShowInHeader="false" />
+        <PropertyColumn Property="x => x.Code" Title="코드" sortable="true" InitialDirection="SortDirection.Ascending"/>
+        <PropertyColumn Property="x => x.Name" Title="시약명" Sortable="false" />
+        <PropertyColumn Property="x => x.Manufacturer" Title="제조사" sortable="true" Required="false" />
+        <PropertyColumn Property="x => x.Amount" Title="용량" sortable="false" Required="false" />
+        <PropertyColumn Property="x => x.Cat" Title="Cat" sortable="false" Required="false" />
+        <PropertyColumn Property="x => x.ReceiptDate" Title="입고일" sortable="true" Required="false" Format="yyyy-MM-dd" Editable="false" />
+        <PropertyColumn Property="x => x.Quantity" Title="수량" sortable="true" Required="false"/>
+        <PropertyColumn Property="x => x.Lot" Title="Lot" sortable="false" Required="false"/>
+        <PropertyColumn Property="x => x.Location" Title="보관장소" sortable="false" Required="false" />
+    </Columns>
+
+    <PagerContent>
+        <MudDataGridPager />
+    </PagerContent>
+</MudDataGrid>
+
+<MudScrollToTop>
+    <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.ArrowCircleUp" />
+</MudScrollToTop>
 <br />
-
-<p>
-    <a href="reagents/create" class="btn btn-outline-secondary">Create New</a>
-</p>
-
-<div>
-     <MudDataGrid Class="table table-bordered table-sm" Items="FilteredData.AsQueryable()" Pagination="pagination">
-        <PropertyColumn Property="reagent => reagent.Code" Title="관리번호" Sortable="true"/>
-        <PropertyColumn Property="reagent => reagent.Name" Title="🧪시약명" Sortable="true"/>
-        <PropertyColumn Property="reagent => reagent.Manufacturer" Title="제조사" Sortable="true"/>
-        <PropertyColumn Property="reagent => reagent.Amount" Title="용량"/>
-        <PropertyColumn Property="reagent => reagent.Cat" Title="Cat.No."/>
-        <PropertyColumn Property="reagent => reagent.ReceiptDate" Title="입고일" Sortable="true"/>
-        <PropertyColumn Property="reagent => reagent.Quantity" Title="수량"/>
-        <PropertyColumn Property="reagent => reagent.Lot" Title="Lot.number"/>
-        <PropertyColumn Property="reagent => reagent.Location" Title="보관위치" Sortable="true"/>
-    </MudDataGrid>
-</div>
 
 @code {
     private MxTWebContext context = default!;
 
-    private readonly SemaphoreSlim _searchSemaphore = new(1, 1);
-    private CancellationTokenSource? _searchCts;
-    private List<Reagent> _filteredResults = new();
+    private string searchField = "코드";
+    private string searchFilter;
 
-    private string SearchField = "시약명"; // 기본 검색 항목
-    private string _searchFilter = "";
-    private string SearchFilter
+    private IEnumerable<Reagent> FilteredData = new List<Reagent>();
+    private Reagent selectedItem = new();
+    private bool IsEditDisabled => selectedItem == null || selectedItem.Id == 0;
+
+    private bool isProcessing = false;
+    private bool isLoading = true;
+
+    private MudDataGrid<Reagent> _dataGrid = null!;
+
+    private async Task CreateNew()
     {
-        get => _searchFilter;
-        set
+        var parameters = new DialogParameters<Edit>
         {
-            _searchFilter = value;
-            _ = PerformSearchAsync();
+            { x => x.action, UIActionEnum.Insert }
+        };
+
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var dialog = await DialogService.ShowAsync<Edit>("Add New Reagent", parameters, options);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
+        {
+            FilteredData = context.Reagent.ToList();
+            StateHasChanged();
         }
     }
-    private IEnumerable<Reagent> FilteredData => _filteredResults;
 
-    private async Task PerformSearchAsync()
+    private async Task UpdateData()
     {
-        // 동시 실행 방지 // available semaphore가 없으면 바로 return
-        if (!await _searchSemaphore.WaitAsync(0)) return;
-
-        try
+        var parameters = new DialogParameters<Edit>
         {
-            _searchCts?.Cancel();
-            _searchCts = new CancellationTokenSource();
+            { x => x.action, UIActionEnum.Update },
+            { x => x.Reagent, selectedItem } // 선택된 row의 데이터를 직접 전달
+        };
 
-            using var context = DbFactory.CreateDbContext();
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var dialog = await DialogService.ShowAsync<Edit>("Edit Data", parameters, options);
+        var result = await dialog.Result;
 
-            var query = SearchField switch
+        if (result is not null && !result.Canceled)
+        {
+            FilteredData = context.Reagent.ToList();
+            StateHasChanged();
+        }
+    }
+
+    private async Task DeleteData()
+    {
+        var parameters = new DialogParameters<Delete>
+        {
+            { x => x.reagent, selectedItem } // 선택된 row의 데이터를 직접 전달
+        };
+
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var dialog = await DialogService.ShowAsync<Delete>("Delete Data", parameters, options);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
+        {
+            selectedItem = new();
+            FilteredData = context.Reagent.ToList();
+            StateHasChanged();
+        }
+    }
+
+    private Func<Reagent, bool> _quickFilter => x =>
+    {
+        if (string.IsNullOrWhiteSpace(searchFilter))
+            return true;
+
+        else
+        {
+            switch (searchField)
             {
-                "제품코드" => context.Reagent.Where(m => m.Code!.Contains(SearchFilter)),
-                "시약명" => context.Reagent.Where(m => m.Name!.ToString().Contains(SearchFilter)),
-                "제조사" => context.Reagent.Where(m => m.Manufacturer!.Contains(SearchFilter)),
-                _ => context.Reagent.Where(m => m.Name!.ToString().Contains(SearchFilter))
-            };
+                case "코드":
+                    if (x.Code.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    break;
 
-            _filteredResults = await query.ToListAsync(_searchCts.Token);
-            await InvokeAsync(StateHasChanged);
+                case "시약명":
+                    if (x.Name.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    break;
+
+                case "제조사":
+                    if (x.Manufacturer.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    break;
+
+                case "용량":
+                    if (x.Amount?.Contains(searchFilter, StringComparison.OrdinalIgnoreCase) == true)
+                        return true;
+                    break;
+
+                case "Cat":
+                    if (x.Cat?.Contains(searchFilter, StringComparison.OrdinalIgnoreCase) == true)
+                        return true;
+                    break;
+
+                case "보관장소":
+                    if (x.Location?.Contains(searchFilter, StringComparison.OrdinalIgnoreCase) == true)
+                        return true;
+                    break;
+
+                default:
+                    break;
+            }
+
         }
-        catch (OperationCanceledException) { }
-        finally
-        {
-            _searchSemaphore.Release();
-        }
+
+        return false;
+    };
+
+    private async Task CommittedItemChanges(Reagent item)
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Attach(item!).State = EntityState.Modified;
+        await context.SaveChangesAsync();
     }
 
-    private void SelectItem(string item)
+    protected override async Task OnInitializedAsync()
     {
-        SearchField = item;
-    }
+        isLoading = true;
 
-    protected override void OnInitialized()
-    {
         context = DbFactory.CreateDbContext();
-        _filteredResults = context.Reagent.ToList();
+        FilteredData = await context.Reagent.ToListAsync();
+
+        isLoading = false;
+    }
+
+    private void SelectSearchField(string item)
+    {
+        searchField = item;
     }
 
     public async ValueTask DisposeAsync() => await context.DisposeAsync();

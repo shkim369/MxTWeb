@@ -55,23 +55,44 @@
         <br />
 
         <MudPaper Elevation="0" Class="stat-container mb-4">
+            <MudGrid Spacing="5">
+                @if (chipRequestVisibility)
+                {
+                    <AuthorizeView Roles="칩관리" Context="T">                    
+                        <MudItem xs="12" sm="6" md="2">  
+                            <MudLink Href="chipusagerequests">
+                                <MudPaper Elevation="2" Class="stat-card-modern pa-4" Style="cursor: pointer">
+                                    <MudStack Spacing="1" AlignItems="AlignItems.Center">
+                                        <MudIcon Icon="@Icons.Material.Filled.DeveloperBoard" Color="Color.Primary" Size="Size.Medium" />
+                                        <MudText Typo="Typo.h4" Class="stat-value-modern">@chipRequestCount</MudText>
+                                        <MudText Typo="Typo.body2" Color="Color.Primary">칩 제작 신청</MudText>
+                                    </MudStack>
+                                </MudPaper>
+                            </MudLink>
+                        </MudItem>                    
+                    </AuthorizeView>                    
+                }
 
-            <AuthorizeView Roles="동결세포" Context="T">
-                <MudGrid Spacing="3">
-                    <MudItem xs="12" sm="6" md="2">
-                        <MudPaper Elevation="2" Class="stat-card-modern pa-4">
-                            <MudStack Spacing="1" AlignItems="AlignItems.Center">
-                                <MudIcon Icon="@Icons.Material.Filled.AcUnit" Color="Color.Primary" Size="Size.Medium" />
-                                <MudText Typo="Typo.h4" Class="stat-value-modern">@weeklyReceiptCount</MudText>
-                                <MudText Typo="Typo.body2" Color="Color.Primary">동결세포 사용 신청</MudText>
-                            </MudStack>
-                        </MudPaper>
-                    </MudItem>
-                </MudGrid>
-                <br/>
-            </AuthorizeView>
+                @if (cyropreservedRequestVisibility)
+                {
+                    <AuthorizeView Roles="동결세포" Context="T">
+                        <MudItem xs="12" sm="6" md="2">
+                            <MudLink Href="cyropreservedrequests">
+                                <MudPaper Elevation="2" Class="stat-card-modern pa-4" Style="cursor: pointer">
+                                    <MudStack Spacing="1" AlignItems="AlignItems.Center">
+                                        <MudIcon Icon="@Icons.Material.Filled.AcUnit" Color="Color.Primary" Size="Size.Medium" />
+                                        <MudText Typo="Typo.h4" Class="stat-value-modern">@cyropreservedRequestCount</MudText>
+                                        <MudText Typo="Typo.body2" Color="Color.Primary">동결세포 사용 신청</MudText>
+                                    </MudStack>
+                                </MudPaper>
+                            </MudLink>
+                        </MudItem>
+                    </AuthorizeView>
+                }
+            </MudGrid>
+            <br/>
 
-            <MudGrid Spacing="3">
+            <MudGrid Spacing="5">
                 <MudItem xs="12" sm="6" md="2">
                     <MudPaper Elevation="2" Class="stat-card-modern stat-card-success pa-4">
                         <MudStack Spacing="1" AlignItems="AlignItems.Center">
@@ -193,6 +214,26 @@
             </MudItem>
 
             <MudItem xs="4">
+                <MudTable Items="cyropreservedData" Bordered="true" Dense="true" Class="pb-1">
+                    <ToolBarContent>
+                        <MudText Typo="Typo.h6">동결세포 목록</MudText>
+                        <MudSpacer />
+                        <MudLink Href="cyropreserveds" Typo="Typo.h6">더 보기</MudLink>
+                    </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh>🧫세포</MudTh>
+                        <MudTh>반입 날짜</MudTh>
+                        <MudTh>반입처</MudTh>
+                    </HeaderContent>
+                    <RowTemplate Context="x">
+                        <MudTd DataLabel="🧫세포" Style="height: 45px">@x.Name</MudTd>
+                        <MudTd DataLabel="반입 날짜r">@x.ReceiptDate</MudTd>
+                        <MudTd DataLabel="반입처">@x.Recipient</MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudItem>
+
+            <MudItem xs="4">
                 <MudTable Items="equipmentData" Bordered="true" Dense="true" Class="pb-1">
                     <ToolBarContent>
                         <MudText Typo="Typo.h6">장비·기기 관리</MudText>
@@ -212,25 +253,6 @@
                 </MudTable>
             </MudItem>
 
-            <MudItem xs="4">
-                <MudTable Items="cyropreservedData" Bordered="true" Dense="true" Class="pb-1">
-                    <ToolBarContent>
-                        <MudText Typo="Typo.h6">동결세포 관리</MudText>
-                        <MudSpacer />
-                        <MudLink Href="cyropreserveds" Typo="Typo.h6">더 보기</MudLink>
-                    </ToolBarContent>
-                    <HeaderContent>
-                        <MudTh>🧫세포</MudTh>
-                        <MudTh>반입 날짜</MudTh>
-                        <MudTh>반입처</MudTh>
-                    </HeaderContent>
-                    <RowTemplate Context="x">
-                        <MudTd DataLabel="🧫세포" Style="height: 45px">@x.Name</MudTd>
-                        <MudTd DataLabel="반입 날짜r">@x.ReceiptDate</MudTd>
-                        <MudTd DataLabel="반입처">@x.Recipient</MudTd>
-                    </RowTemplate>
-                </MudTable>
-            </MudItem>
             <MudItem xs="4">
                 <MudTable Items="reagentData" Bordered="true" Dense="true" Class="pb-1">
                     <ToolBarContent>
@@ -278,6 +300,10 @@
     private int shortageCount = 0;   
 
     private int cyropreservedRequestCount = 0;
+    private int chipRequestCount = 0;
+
+    private bool cyropreservedRequestVisibility = false;
+    private bool chipRequestVisibility = false;
 
     protected override void OnInitialized()
     {
@@ -313,6 +339,16 @@
 
         cyropreservedRequestCount = webContext.CyropreservedRequest
             .Where(x => x.Status == RequestStatusEnum.Pending).Count();
+
+        chipRequestCount = webContext.ChipUsageRequest
+            .Where(x => x.Status == RequestStatusEnum.Pending).Count();
+
+        if (cyropreservedRequestCount > 0)        
+            cyropreservedRequestVisibility = true;
+        
+        if (chipRequestCount > 0)        
+            chipRequestVisibility = true;
+        
     }
 
     private string GetStateColor(string state)

@@ -11,7 +11,7 @@
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 
-<PageTitle>칩 사용 신청서</PageTitle>
+<PageTitle>칩 제작 신청</PageTitle>
 
 <style>
     .custom-grid .mud-table-toolbar {
@@ -34,12 +34,12 @@
     }
 </style>
 
-<h2 style="margin-left: 10px">칩 사용 신청서</h2>
+<h2 style="margin-left: 10px">칩 제작 신청</h2>
 <br />
 
 <MudDataGrid T="ChipusageRequest" Class="custom-grid" @ref="_dataGrid" Items="FilteredData"
              SortMode="SortMode.Single" Dense="true" Hover="true" Bordered="true" Striped="false"
-             RowsPerPage="25" SelectOnRowClick="false" MultiSelection="false"
+             RowsPerPage="25" SelectOnRowClick="true" MultiSelection="false"
              @bind-SelectedItem="selectedItem" QuickFilter="@_quickFilter" FixedHeader="true">
     <ToolBarContent>
         <MudToggleGroup T="RequestStatusEnum?" SelectionMode="SelectionMode.ToggleSelection" @bind-Value="SelectedStatus" Color="Color.Info"
@@ -239,6 +239,7 @@
         if (result is not null && !result.Canceled)
         {
             selectedItem = null;
+            context = DbFactory.CreateDbContext();
             await LoadData();
         }
     }
