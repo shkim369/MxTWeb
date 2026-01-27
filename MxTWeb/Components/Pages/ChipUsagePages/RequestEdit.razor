@@ -1,0 +1,134 @@
+@page "/chipusagerequests/edit"
+@using Microsoft.EntityFrameworkCore
+@using MxTWeb.Models
+@using MxTWeb.Enums
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>칩 사용 신청서 작성</PageTitle>
+
+<EditForm method="post" Model="Request" OnValidSubmit="OnValidSubmit" FormName="chipRequestEdit" Enhance>
+    <MudDialog>
+        <DialogContent>
+            <DataAnnotationsValidator />
+
+            <MudSelect T="int" Label="칩 타입" @bind-Value="Request!.ChipType"
+                       Variant="Variant.Outlined" Required="true" Class="mb-5">
+                <MudSelectItem Value="0">B01_Small</MudSelectItem>
+                <MudSelectItem Value="1">B01_Large</MudSelectItem>
+                <MudSelectItem Value="2">A01_Small</MudSelectItem>
+                <MudSelectItem Value="3">A01_Large</MudSelectItem>
+            </MudSelect>
+
+            <MudGrid Class="mb-5">
+                <MudItem xs="6">
+                    <MudTextField Variant="Variant.Outlined"
+                                  Label="신청자"
+                                  @bind-Value="Request.Applicant"
+                                  For="@(() => Request.Applicant)"
+                                  Required="true" Immediate/>
+                </MudItem>
+                <MudItem xs="6">
+                    <MudDatePicker Variant="Variant.Outlined"
+                                   Label="신청일"
+                                   @bind-Date="Request.ApplicationDate"
+                                   For="@(() => Request.ApplicationDate)"
+                                   Required="true"
+                                   DateFormat="yyyy-MM-dd" />
+                </MudItem>
+            </MudGrid>
+
+            <MudNumericField Variant="Variant.Outlined"
+                             Label="신청 수량"
+                             @bind-Value="Request.RequestedQuantity"
+                             For="@(() => Request.RequestedQuantity)"
+                             Required="true" Min="1" Class="mb-5" />
+
+            <MudTextField Class="mb-5" Variant="Variant.Outlined"
+                          Label="사용 목적"
+                          @bind-Value="Request.Purpose"
+                          Lines="3" />
+
+            <MudTextField Class="mb-5" Variant="Variant.Outlined"
+                          Label="비고"
+                          @bind-Value="Request.Note"
+                          Lines="2" />
+
+        </DialogContent>
+        <DialogActions>
+            <MudButton Class="mb-5 me-5" ButtonType="ButtonType.Submit" Variant="Variant.Filled"
+                       StartIcon="@Icons.Material.Filled.Save" Color="Color.Info">저장</MudButton>
+            <MudButton Class="mb-5 me-5" Variant="Variant.Filled" Color="Color.Secondary"
+                       OnClick="() => MudDialog.Cancel()">취소</MudButton>
+        </DialogActions>
+    </MudDialog>
+</EditForm>
+
+@code {
+    [Parameter]
+    public UIActionEnum Action { get; set; } = UIActionEnum.Insert;
+
+    [Parameter]
+    public ChipusageRequest? Request { get; set; } = new();
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    protected override void OnInitialized()
+    {
+        if (Action == UIActionEnum.Insert)
+        {
+            Request = new ChipusageRequest
+            {
+                ApplicationDate = DateTime.Today,
+                ChipType = 0
+            };
+        }
+    }
+
+    private async Task OnValidSubmit()
+    {
+        if (Action == UIActionEnum.Insert)
+        {
+            await AddRequest();
+        }
+        else if (Action == UIActionEnum.Update)
+        {
+            await UpdateRequest();
+        }
+    }
+
+    private async Task AddRequest()
+    {
+        using var context = DbFactory.CreateDbContext();
+        Request!.Status = RequestStatusEnum.Pending;
+        Request.CreatedDate = DateTime.Now;
+        context.ChipUsageRequest.Add(Request);
+        await context.SaveChangesAsync();
+
+        Snackbar.Add("신청서가 등록되었습니다.", Severity.Success);
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    private async Task UpdateRequest()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Attach(Request!).State = EntityState.Modified;
+
+        try
+        {
+            await context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            Snackbar.Add("수정 중 오류가 발생했습니다.", Severity.Error);
+            return;
+        }
+
+        Snackbar.Add("신청서가 수정되었습니다.", Severity.Success);
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+}
