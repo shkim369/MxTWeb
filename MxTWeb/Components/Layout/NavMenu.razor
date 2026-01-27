@@ -1,8 +1,12 @@
 @implements IDisposable
 @rendermode InteractiveServer
 @inject IJSRuntime JSRuntime
-
 @inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject UserManager<ApplicationUser> UserManager
+
+@using Microsoft.AspNetCore.Identity
+@using MxTWeb.Data
 
 <style>
     .mud-drawer.mud-drawer-mini {
@@ -197,6 +201,7 @@
                 </MudNavLink>
 
                 <MudDivider Class="my-1" />
+
                 <MudNavLink Match="NavLinkMatch.Prefix" Href="Account/Manage" IconColor="Color.Surface"
                             Icon="@Icons.Material.Filled.Person" Style="font-size: 16px; font-weight:bolder; color: floralwhite"
                             Class="fw-bolder">
@@ -249,6 +254,7 @@
     private bool _expanded4 = false;
     private string? currentUrl;
     private DotNetObjectReference<NavMenu>? _dotNetRef;
+    private string? displayName;
 
     private void ToggleDrawer()
     {
@@ -271,10 +277,20 @@
         }
     }
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
         NavigationManager.LocationChanged += OnLocationChanged;
+
+        // DisplayName 가져오기
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            var appUser = await UserManager.GetUserAsync(user);
+            displayName = appUser?.DisplayName ?? user.Identity?.Name;
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
