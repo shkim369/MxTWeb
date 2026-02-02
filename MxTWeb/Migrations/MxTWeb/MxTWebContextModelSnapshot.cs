@@ -320,6 +320,9 @@ namespace MxTWeb.Migrations.MxTWeb
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Code")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Density")
                         .HasColumnType("nvarchar(max)");
 
@@ -346,6 +349,12 @@ namespace MxTWeb.Migrations.MxTWeb
                     b.Property<string>("Note")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Origin")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Parent")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
 
@@ -360,6 +369,9 @@ namespace MxTWeb.Migrations.MxTWeb
 
                     b.Property<string>("Test")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("level")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -537,6 +549,10 @@ namespace MxTWeb.Migrations.MxTWeb
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("LotNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Quantity")

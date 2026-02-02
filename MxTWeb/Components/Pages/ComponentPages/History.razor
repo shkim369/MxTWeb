@@ -243,7 +243,8 @@
             .OrderByDescending(x => x.Date)
             .ToList();
 
-        totalPrice = FilteredData2.Where(x => x.state == "출고").Sum(x => x.Component.Price * x.Quantity);
+        totalPrice = FilteredData2.Where(x => x.state == "출고").Sum(x => x.Component.Price * x.Quantity)
+            + FilteredData2.Where(x => x.state == "폐기").Sum(x => x.Component.Price * x.Quantity);
     }
 
     private async Task CommittedItemChanges(Component item)
@@ -272,6 +273,8 @@
             style += "background-color:#D9EAD3";
         else if (x.state == "출고")
             style += "background-color:#F9CB9C";
+        else if (x.state == "폐기")
+            style += "background-color:#f8766b";
 
         return style;
     };

@@ -14,19 +14,24 @@
         <DialogContent>
             <DataAnnotationsValidator />
 
-            <MudTextField Class="mb-5" Variant="Variant.Outlined"
-                            Label="구분"
-                            id="cell" @bind-Value="Shipment.Division"
-                            For="@(() => Shipment.Division)"
-                            Required="true" Immediate="true" />
+            <MudSelect Class="mb-5" @bind-Value="Shipment.Division" Variant="Variant.Outlined"
+                       Required="true" Label="구분">
+                <MudSelectItem Value="@("Chip")">Chip</MudSelectItem>
+                <MudSelectItem Value="@("RUO")">RUO</MudSelectItem>
+            </MudSelect>
+
+            <MudTextField Class="mb-5" Variant="Variant.Outlined" Label="품명"
+                          @bind-Value="Shipment.Name"
+                          For="@(() => Shipment.Name)"
+                          Required="true" Immediate="true" />
 
             <MudGrid Class="mb-5">
                 <MudItem xs="6">
                     <MudTextField Variant="Variant.Outlined"
-                                    Label="납품처"
-                                    @bind-Value="Shipment.Destination"
+                                  Label="납품처"
+                                  @bind-Value="Shipment.Destination"
                                   For="@(() => Shipment.Destination)"
-                                    Required="true" Immediate="true" />
+                                  Required="true" Immediate="true" />
                 </MudItem>
 
                 <MudItem xs="6">
@@ -39,13 +44,48 @@
                 </MudItem>
             </MudGrid>
 
-            <MudGrid Class="mb-5">
-                <MudItem xs="6">
-                    <MudTextField Variant="Variant.Outlined"
-                                  Label="Serial Number"
-                                  @bind-Value="Shipment.SerialNumber"/>
-                </MudItem>
-            </MudGrid>
+            @if (Shipment.Division == "Chip")
+            {
+                <MudTextField Class="mb-5" Variant="Variant.Outlined"
+                              Label="Lot"
+                              @bind-Value="Shipment.LotNumber" />
+
+                <MudGrid Class="mb-5">
+                    <MudItem xs="6">
+                        <MudTextField Variant="Variant.Outlined"
+                                      Label="칩 종류"
+                                      @bind-Value="Shipment.Chip" />
+                    </MudItem>
+                    <MudItem xs="6">
+                        <MudTextField Variant="Variant.Outlined"
+                                      Label="수량"
+                                      @bind-Value="Shipment.Quantity" />
+                    </MudItem>
+                </MudGrid>
+            }
+            else
+            {
+                <MudTextField Class="mb-5" Variant="Variant.Outlined"
+                              Label="Serial Number"
+                              @bind-Value="Shipment.SerialNumber" />
+
+                <MudGrid Class="mb-5">
+                    <MudItem xs="6">
+                        <MudTextField Variant="Variant.Outlined"
+                                      Label="S/W Version"
+                                      @bind-Value="Shipment.SWVersion" />
+                    </MudItem>
+                    <MudItem xs="6">
+                        <MudTextField Variant="Variant.Outlined"
+                                      Label="H/W Version"
+                                      @bind-Value="Shipment.HWVersion" />
+                    </MudItem>
+                </MudGrid>
+            }
+
+            <MudTextField Class="mb-5" Variant="Variant.Outlined"
+                          Label="비고"
+                          @bind-Value="Shipment.Comments" />
 
         </DialogContent>
         <DialogActions>
@@ -85,7 +125,7 @@
     {
         if (action == UIActionEnum.Insert)
         {
-
+            Shipment.Division = "Chip";
         }
         else if (action == UIActionEnum.Update)
         {

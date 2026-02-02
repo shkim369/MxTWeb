@@ -46,6 +46,12 @@
              RowsPerPage="25" SelectOnRowClick="false" MultiSelection="false"
              @bind-SelectedItem="selectedItem" QuickFilter="@_quickFilter" FixedHeader="true">
     <ToolBarContent>
+        <MudToggleGroup T="string" SelectionMode="SelectionMode.SingleSelection" @bind-Value="SelectedDivision" Color="Color.Info"
+                        Style="width: 300px" Vertical="false">
+            <MudToggleItem Value="@("Chip")" Text="Chip" />
+            <MudToggleItem Value="@("RUO")" Text="RUO" />
+        </MudToggleGroup>
+        &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
         <MudGrid Spacing="5" Style="margin-top: 0px; margin-bottom: 20px">
             <MudItem>
                 <MudButton Class="me-2" @onclick="CreateNew" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">
@@ -65,33 +71,39 @@
             </MudItem>
 
 
-            <MudSpacer />
+            @* <MudSpacer />
             <MudMenu Class="mt-3" Label="@searchField" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Secondary">
                 <MudMenuItem Label="세포명" @onclick="@(() => SelectSearchField("세포명"))" />
-                <MudMenuItem Label="반입자" @onclick="@(() => SelectSearchField("반입자"))" />
-                <MudMenuItem Label="반입처" @onclick="@(() => SelectSearchField("반입처"))" />
-                <MudMenuItem Label="보관위치1" @onclick="@(() => SelectSearchField("보관위치1"))" />
-                <MudMenuItem Label="보관위치2" @onclick="@(() => SelectSearchField("보관위치2"))" />
+
             </MudMenu>
             &nbsp&nbsp&nbsp&nbsp
             <MudTextField Class="mt-5 pe-5" @bind-Value="searchFilter" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
-                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" />
+                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" /> *@
         </MudGrid>
     </ToolBarContent>
 
     <Columns>
         <SelectColumn T="Shipment" />
-        <PropertyColumn Property="x => x.Division" Title="구분" Sortable="true"/>
-        <PropertyColumn Property="x => x.Destination" Title="납품처" Sortable="true"/>
-        <PropertyColumn Property="x => x.Date" Title="납품일" Format="yyyy-MM-dd" Sortable="true"
-                        InitialDirection="SortDirection.Descending"/>
-        <PropertyColumn Property="x => x.SerialNumber" Title="Serial Number" Sortable="true"/>
-        <PropertyColumn Property="x => x.LotNumber" Title="Lot" Format="yyyy-MM-dd" Sortable="true"/>
-        <PropertyColumn Property="x => x.Quantity" Title="수량" Sortable="false"/>
-        <PropertyColumn Property="x => x.Chip" Title="칩 종류" Sortable="false"/>
-        <PropertyColumn Property="x => x.SWVersion" Title="S/W Version" Sortable="false"/>
-        <PropertyColumn Property="x => x.HWVersion" Title="H/W Version" Sortable="true"/>
-        <PropertyColumn Property="x => x.Comments" Title="비고" Sortable="true"/>
+        @if (SelectedDivision == "Chip")
+        {
+            <PropertyColumn Property="x => x.Name" Title="품명" Sortable="true" />
+            <PropertyColumn Property="x => x.Destination" Title="납품처" Sortable="true" />
+            <PropertyColumn Property="x => x.Date" Title="납품일" Format="yyyy-MM-dd" Sortable="true" />
+            <PropertyColumn Property="x => x.LotNumber" Title="Lot" Sortable="true" />
+            <PropertyColumn Property="x => x.Chip" Title="칩 종류" Sortable="false" />
+            <PropertyColumn Property="x => x.Quantity" Title="수량" Sortable="false" />
+            <PropertyColumn Property="x => x.Comments" Title="비고" Sortable="true" />
+        }
+        else
+        {
+            <PropertyColumn Property="x => x.Name" Title="품명" Sortable="true" />
+            <PropertyColumn Property="x => x.Destination" Title="납품처" Sortable="true" />
+            <PropertyColumn Property="x => x.Date" Title="납품일" Format="yyyy-MM-dd" Sortable="true" />
+            <PropertyColumn Property="x => x.SerialNumber" Title="Serial Number" Sortable="true" />
+            <PropertyColumn Property="x => x.SWVersion" Title="S/W Version" Sortable="false" />
+            <PropertyColumn Property="x => x.HWVersion" Title="H/W Version" Sortable="true" />
+            <PropertyColumn Property="x => x.Comments" Title="비고" Sortable="true" />
+        }
     </Columns>
     <PagerContent>
         <MudDataGridPager/>
@@ -105,9 +117,15 @@
     private string searchField = "세포명";
     private string searchFilter;
 
-    private IEnumerable<Shipment> FilteredData = new List<Shipment>();
-    private Shipment selectedItem = new();
     private bool IsEditDisabled => selectedItem == null || selectedItem.ShipmentId == 0;
+
+    private Shipment selectedItem = new();
+    private List<Shipment> AllData = new();
+
+    private IEnumerable<Shipment> FilteredData => AllData
+        .Where(x => SelectedDivision == null || x.Division == SelectedDivision);
+
+    private string? SelectedDivision;
 
     private async Task CreateNew()
     {
@@ -122,8 +140,7 @@
 
         if (result is not null && !result.Canceled)
         {            
-            FilteredData = context.Shipment.ToList();
-            StateHasChanged();
+            await LoadData();
         }
     }
 
@@ -141,8 +158,7 @@
 
         if (result is not null && !result.Canceled)
         {
-            FilteredData = context.Shipment.ToList();
-            StateHasChanged();
+            await LoadData();
         }
     }
 
@@ -160,8 +176,7 @@
         if (result is not null && !result.Canceled)
         {
             selectedItem = new();
-            FilteredData = context.Shipment.ToList();
-            StateHasChanged();
+            await LoadData();
         }
     }
 
@@ -195,8 +210,17 @@
 
     protected override async Task OnInitializedAsync()
     {
+        SelectedDivision = "Chip";
         context = DbFactory.CreateDbContext();
-        FilteredData = await context.Shipment.ToListAsync();
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        AllData = await context.Shipment
+            .OrderByDescending(r => r.Date)
+            .ToListAsync();
+        StateHasChanged();
     }
 
     public async ValueTask DisposeAsync() => await context.DisposeAsync();

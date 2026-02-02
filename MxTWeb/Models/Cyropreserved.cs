@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using DocumentFormat.OpenXml.Presentation;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MxTWeb.Models
@@ -7,6 +8,7 @@ namespace MxTWeb.Models
     {
         public int Id { get; set; }
         //public string? SerialNumber { get; set; }
+        public string? Code { get; set; }
         [Required]
         public string? Division { get; set; }
         [Required]
@@ -22,7 +24,9 @@ namespace MxTWeb.Models
         public string? Location1 { get; set; }
         public string? Location2 { get; set; }
         public string? Test { get; set; }
+        public string? Parent { get; set; }
+        public int level { get; set; }
+        public string? Origin { get; set; }
         public string? Note { get; set; }
-
     }
 }

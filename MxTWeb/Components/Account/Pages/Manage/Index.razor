@@ -52,8 +52,8 @@
     protected override async Task OnInitializedAsync()
     {
         user = await UserAccessor.GetRequiredUserAsync(HttpContext);
-        username = await UserManager.GetUserNameAsync(user);
-        phoneNumber = await UserManager.GetPhoneNumberAsync(user);
+        username = user.UserName;
+        phoneNumber = user.PhoneNumber;
 
         Input.PhoneNumber ??= phoneNumber;
         Input.DisplayName ??= user.DisplayName;

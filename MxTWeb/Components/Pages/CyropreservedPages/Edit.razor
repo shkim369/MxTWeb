@@ -14,11 +14,21 @@
         <DialogContent>
             <DataAnnotationsValidator />
 
-            <MudSelect Class="mb-5" @bind-Value="Cyropreserved.Division" Label="구분" 
-                       Variant="Variant.Outlined" Required="true" >
-                <MudSelectItem Value="@("Primary cell")">Primary Cell</MudSelectItem>
-                <MudSelectItem Value="@("Cell line")">Cell Line</MudSelectItem>                
-            </MudSelect>
+            <MudGrid Class="mb-5">
+                <MudItem xs="6">
+                    <MudSelect @bind-Value="Cyropreserved.Division" Label="구분" 
+                               Variant="Variant.Outlined" Required="true" >
+                        <MudSelectItem Value="@("Primary cell")">Primary Cell</MudSelectItem>
+                        <MudSelectItem Value="@("Cell line")">Cell Line</MudSelectItem>                
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudTextField Variant="Variant.Outlined"
+                                  Label="번호"
+                                  @bind-Value="Cyropreserved.Code" />
+                </MudItem>
+            </MudGrid>
 
             <MudTextField Class="mb-5" Variant="Variant.Outlined"
                           Label="세포"
@@ -100,7 +110,7 @@
                     </MudItem>
 
                     <MudItem xs="6">
-                        <MudTextField Class="mb-5" Variant="Variant.Outlined"
+                        <MudTextField Variant="Variant.Outlined"
                                       Label="비고"
                                       @bind-Value="Cyropreserved.Note" />
                     </MudItem>
@@ -108,11 +118,29 @@
                 else
                 {
                     <MudItem xs="12">
-                        <MudTextField Class="mb-5" Variant="Variant.Outlined"
+                        <MudTextField Variant="Variant.Outlined"
                                       Label="비고"
                                       @bind-Value="Cyropreserved.Note" />
                     </MudItem>
                 }
+            </MudGrid>
+
+            <MudGrid Class="mb-5">
+                <MudItem xs="4">
+                    <MudTextField Variant="Variant.Outlined"
+                                  Label="Parent"
+                                  @bind-Value="Cyropreserved.Parent" />
+                </MudItem>
+                <MudItem xs="4">
+                    <MudTextField Variant="Variant.Outlined"
+                                  Label="Generations"
+                                  @bind-Value="Cyropreserved.level" />
+                </MudItem>
+                <MudItem xs="4">
+                    <MudTextField Variant="Variant.Outlined"
+                                  Label="Origin"
+                                  @bind-Value="Cyropreserved.Origin" />
+                </MudItem>
             </MudGrid>
 
         </DialogContent>

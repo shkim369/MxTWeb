@@ -50,6 +50,7 @@
                                    Immediate="true" Required="true">
                             <MudSelectItem Value=@("입고")>입고</MudSelectItem>
                             <MudSelectItem Value=@("출고")>출고</MudSelectItem>
+                            <MudSelectItem Value=@("폐기")>폐기</MudSelectItem>
                         </MudSelect>
                     </MudItem>
 
@@ -74,6 +75,7 @@
                                    Immediate="true" Required="true">
                             <MudSelectItem Value=@("입고")>입고</MudSelectItem>
                             <MudSelectItem Value=@("출고")>출고</MudSelectItem>
+                            <MudSelectItem Value=@("폐기")>폐기</MudSelectItem>
                         </MudSelect>
                     </MudItem>
 
@@ -148,6 +150,10 @@
             component.Stock += CompHistory.Quantity;     
         }
         else if (CompHistory.state == "출고")
+        {
+            component.Stock -= CompHistory.Quantity;
+        }
+        else if (CompHistory.state == "폐기")
         {
             component.Stock -= CompHistory.Quantity;
         }

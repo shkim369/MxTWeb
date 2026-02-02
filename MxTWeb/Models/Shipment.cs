@@ -8,6 +8,8 @@ namespace MxTWeb.Models
         [Required]
         public string? Division { get; set; }
         [Required]
+        public string? Name { get; set; }
+        [Required]
         public string? Destination { get; set; }
         [Required]
         public DateTime? Date { get; set; }

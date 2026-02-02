@@ -91,6 +91,7 @@
 
     <Columns>
         <SelectColumn T="CyropreservedRequest" ShowInHeader="false" />
+        <PropertyColumn Property="x => x.Cyropreserved.Code" Title="번호" Sortable="false"/>
         <PropertyColumn Property="x => x.Cyropreserved.Name" Title="세포명" Sortable="true"/>
         <PropertyColumn Property="x => x.Cyropreserved.Division" Title="구분" Sortable="true" />
         <PropertyColumn Property="x => x.Applicant" Title="신청자" Sortable="true" />
