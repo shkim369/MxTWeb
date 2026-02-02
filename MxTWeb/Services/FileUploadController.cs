@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using System.IO;
 using MxTWeb.Services;
 
 namespace MxTWeb.Services
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class FileUploadController : ControllerBase

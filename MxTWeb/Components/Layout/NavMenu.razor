@@ -282,15 +282,15 @@
         currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
         NavigationManager.LocationChanged += OnLocationChanged;
 
-        // DisplayName 가져오기
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
+        // DisplayName 가져오기 !버그있음
+        // var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        // var user = authState.User;
 
-        if (user.Identity?.IsAuthenticated == true)
-        {
-            var appUser = await UserManager.GetUserAsync(user);
-            displayName = appUser?.DisplayName ?? user.Identity?.Name;
-        }
+        // if (user.Identity?.IsAuthenticated == true)
+        // {
+        //     var appUser = await UserManager.GetUserAsync(user);
+        //     displayName = appUser?.DisplayName ?? user.Identity?.Name;
+        // }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

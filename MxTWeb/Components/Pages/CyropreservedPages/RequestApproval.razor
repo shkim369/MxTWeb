@@ -3,10 +3,12 @@
 @using MxTWeb.Models
 @using MxTWeb.Enums
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
 @attribute [Authorize]
 @inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
 @inject ISnackbar Snackbar
 @inject AuthenticationStateProvider AuthStateProvider
+@inject UserManager<MxTWeb.Data.ApplicationUser> UserManager
 
 <PageTitle>신청서 승인/반려</PageTitle>
 
@@ -94,7 +96,8 @@
         }
 
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        CurrentUserName = authState.User?.Identity?.Name ?? "Unknown";
+        var user = await UserManager.GetUserAsync(authState.User);
+        CurrentUserName = user?.DisplayName ?? authState.User?.Identity?.Name ?? "Unknown";
     }
 
     private async Task ProcessApproval()

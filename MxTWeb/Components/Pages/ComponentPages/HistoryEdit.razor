@@ -3,11 +3,13 @@
 @using MxTWeb.Models
 @using MxTWeb.Enums
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
 @attribute [Authorize]
 @inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject UserManager<ApplicationUser> UserManager
 
 <EditForm method="post" Model="CompHistory" OnValidSubmit="OnValidSubmit" FormName="edit" Enhance>
     <MudDialog Style="min-width: 600px">
@@ -116,17 +118,12 @@
 
     private async Task OnValidSubmit()
     {
-        // 현재 로그인한 사용자 정보 가져오기
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
+        var user = await UserManager.GetUserAsync(authState.User);
+        var applicant = user?.DisplayName ?? authState.User.Identity?.Name ?? "";
 
-        if (user.Identity?.IsAuthenticated == true)
-        {
-            CompHistory.Account = user.Identity.Name ?? "Unknown";
-            // user.FindFirst(ClaimTypes.Email)?.Value;
-            // user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        }
-
+        // if (user.Identity?.IsAuthenticated == true)        
+        CompHistory.Account = applicant ?? "Unknown";
         CompHistory.EntryDate = DateTime.Now;
         CompHistory.ComponentId = Component.ComponentId;
 

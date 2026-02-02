@@ -3,10 +3,13 @@
 @using MxTWeb.Models
 @using MxTWeb.Enums
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
 @attribute [Authorize]
-@inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
+@inject IDbContextFactory<MxTWebContext> DbFactory
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject UserManager<ApplicationUser> UserManager
 
 <PageTitle>칩 사용 신청서 작성</PageTitle>
 
@@ -29,7 +32,7 @@
                                   Label="신청자"
                                   @bind-Value="Request.Applicant"
                                   For="@(() => Request.Applicant)"
-                                  Required="true" Immediate/>
+                                  Required="true" ReadOnly="true"/>
                 </MudItem>
                 <MudItem xs="6">
                     <MudDatePicker Variant="Variant.Outlined"
@@ -77,13 +80,18 @@
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; } = null!;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = await UserManager.GetUserAsync(authState.User);
+        var applicant = user?.DisplayName ?? authState.User.Identity?.Name ?? "";
+
         if (Action == UIActionEnum.Insert)
         {
             Request = new ChipusageRequest
             {
                 ApplicationDate = DateTime.Today,
+                Applicant = applicant,
                 ChipType = 0
             };
         }

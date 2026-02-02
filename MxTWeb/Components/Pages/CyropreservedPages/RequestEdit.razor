@@ -3,10 +3,13 @@
 @using MxTWeb.Models
 @using MxTWeb.Enums
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
 @attribute [Authorize]
 @inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject UserManager<MxTWeb.Data.ApplicationUser> UserManager
 
 <PageTitle>사용 신청서 작성</PageTitle>
 
@@ -44,7 +47,7 @@
                                   Label="신청자"
                                   @bind-Value="Request.Applicant"
                                   For="@(() => Request.Applicant)"
-                                  Required="true" />
+                                  Required="true" ReadOnly="true" />
                 </MudItem>
                 <MudItem xs="6">
                     <MudDatePicker Variant="Variant.Outlined"
@@ -113,11 +116,16 @@
         using var context = DbFactory.CreateDbContext();
         CyropreservedList = await context.Cyropreserved.ToListAsync();
 
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = await UserManager.GetUserAsync(authState.User);
+        var applicant = user?.DisplayName ?? authState.User.Identity?.Name ?? "";
+
         if (Action == UIActionEnum.Insert)
         {
             Request = new CyropreservedRequest
             {
-                ApplicationDate = DateTime.Today
+                ApplicationDate = DateTime.Today,
+                Applicant = applicant
             };
         }
         else if (Action == UIActionEnum.Update && Request != null)
