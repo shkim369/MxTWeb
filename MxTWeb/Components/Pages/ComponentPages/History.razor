@@ -65,7 +65,7 @@
 
 <MudDataGrid T="CompHistory" Class="custom-grid" SortMode="SortMode.Single" Items="@FilteredData2"
              Dense="true" Style="white-space: nowrap" Hover="true" Bordered="true" Striped="true"
-             RowsPerPage="25" SelectOnRowClick="false" QuickFilter="_quickFilter2">
+             RowsPerPage="25" SelectOnRowClick="true" QuickFilter="_quickFilter2">
     <Columns>
         <PropertyColumn Property="x => x.Date" Title="날짜" Sortable="true" Format="yyyy-MM-dd" />
         <PropertyColumn Property="x => x.Component.Assembly" Title="Assembly" Sortable="true" />

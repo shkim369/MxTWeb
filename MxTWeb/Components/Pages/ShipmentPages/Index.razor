@@ -43,7 +43,7 @@
 
 <MudDataGrid T="Shipment" Class="custom-grid" @ref="_dataGrid" Items="FilteredData" 
              SortMode="SortMode.Single" Dense="true" Hover="true" Bordered="true" Striped="true"
-             RowsPerPage="25" SelectOnRowClick="false" MultiSelection="false"
+             RowsPerPage="25" SelectOnRowClick="true" MultiSelection="false"
              @bind-SelectedItem="selectedItem" QuickFilter="@_quickFilter" FixedHeader="true">
     <ToolBarContent>
         <MudToggleGroup T="string" SelectionMode="SelectionMode.SingleSelection" @bind-Value="SelectedDivision" Color="Color.Info"

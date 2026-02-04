@@ -43,7 +43,7 @@
 <MudDataGrid T="Component" Class="custom-grid" Items="@FilteredData" @ref="_dataGrid"
                 SortMode="SortMode.Single" Dense="true" Hover="true" Bordered="true" Striped="true"
                 EditMode="DataGridEditMode.Cell" ReadOnly="false" Groupable="true" GroupClass="pa-3"
-                CommittedItemChanges="@CommittedItemChanges" RowsPerPage="1000" SelectOnRowClick="false"
+                CommittedItemChanges="@CommittedItemChanges" RowsPerPage="1000" SelectOnRowClick="true"
                 MultiSelection="false" @bind-SelectedItem="selectedItem"
                 QuickFilter="@_quickFilter" FixedHeader="true"
                 Loading="@isLoading">

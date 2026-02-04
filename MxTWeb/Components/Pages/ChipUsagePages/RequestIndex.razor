@@ -76,7 +76,7 @@
 
                 <MudItem>
                     <MudButton Class="ms-0" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete"
-                               Color="@Color.Error" OnClick="@DeleteData" Disabled="@IsEditDisabled">삭제</MudButton>
+                               Color="@Color.Error" OnClick="@DeleteData" Disabled="@(!CanApprove)">삭제</MudButton>
                 </MudItem>
             </AuthorizeView>
 
@@ -133,7 +133,6 @@
 
     private ChipusageRequest? selectedItem;
     private string? currentUserName;
-    private bool IsEditDisabled => selectedItem == null || selectedItem.Id == 0;
     private bool CanApprove => selectedItem != null && selectedItem.Id != 0 && selectedItem.Status == RequestStatusEnum.Pending;
     private bool CanEdit => selectedItem != null && selectedItem.Id != 0 && selectedItem.Status == RequestStatusEnum.Pending && selectedItem.Applicant == currentUserName;
 

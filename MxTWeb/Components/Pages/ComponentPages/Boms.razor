@@ -86,7 +86,7 @@
           Dense="true" Hover="true" Bordered="true" Striped="true" RowsPerPage="1000" 
           GroupBy="@_groupDefinition" GroupHeaderStyle="background-color:var(--mud-palette-background-gray)" GroupFooterClass="mb-4"
           MultiSelection="false" @bind-SelectedItems="selectedItems" FixedHeader="true" AllowUnsorted="false"
-          Filter="new Func<BomDetail,bool>(FilterFunc1)" SelectOnRowClick="false"
+          Filter="new Func<BomDetail,bool>(FilterFunc1)" SelectOnRowClick="true"
           RowEditCommit="ItemHasBeenCommitted" EditTrigger="TableEditTrigger.EditButton" EditButtonPosition="TableEditButtonPosition.End"
           RowEditPreview="BackupItem" RowEditCancel="ResetItemToOriginalValues" Loading="@isLoading">
 

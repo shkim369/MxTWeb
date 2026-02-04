@@ -43,7 +43,7 @@
 
 <MudDataGrid T="Cyropreserved" Class="custom-grid" @ref="_dataGrid" Items="FilteredData" 
              SortMode="SortMode.Single" Dense="true" Hover="true" Bordered="true" Striped="true"
-             RowsPerPage="25" SelectOnRowClick="false" MultiSelection="false"
+             RowsPerPage="25" SelectOnRowClick="true" MultiSelection="false" 
              @bind-SelectedItem="selectedItem" QuickFilter="@_quickFilter" FixedHeader="true" >
     <ToolBarContent>
 
@@ -88,14 +88,13 @@
     </ToolBarContent>
 
     <Columns>
-        <HierarchyColumn T="Cyropreserved" EnableHeaderToggle="true" />
-
+        <HierarchyColumn T="Cyropreserved" EnableHeaderToggle="true"/>
         <SelectColumn T="Cyropreserved" ShowInHeader="false"/>
         <PropertyColumn Property="x => x.Code" Title="번호" Sortable="false"/>
         <PropertyColumn Property="x => x.Name" Title="🧫세포" Sortable="true"/>
-        <PropertyColumn Property="x => x.Recipient" Title="반입자" Sortable="true"/>
         <PropertyColumn Property="x => x.ReceiptDate" Title="반입 날짜" Format="yyyy-MM-dd" Sortable="true"
-                        InitialDirection="SortDirection.Descending"/>
+                        InitialDirection="SortDirection.Descending" />
+        <PropertyColumn Property="x => x.Recipient" Title="반입자" Sortable="true"/>
         <PropertyColumn Property="x => x.Supplier" Title="반입처" Sortable="true"/>
         <PropertyColumn Property="x => x.FreezeDate" Title="동결 날짜" Format="yyyy-MM-dd" Sortable="true"/>
         <PropertyColumn Property="x => x.Quantity" Title="수량" Sortable="false"/>

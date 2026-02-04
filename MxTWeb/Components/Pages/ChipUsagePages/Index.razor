@@ -38,7 +38,7 @@
 <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" ActivePanelIndexChanged="OnTabChanged">
     <MudTabPanel Text="RUO 칩 사용 관리대장" OnClick="@(StateHasChanged)">
         <MudDataGrid T="ChipUsage" Class="custom-grid" @ref="dataGrid" Items="FilteredData.AsQueryable()" SortMode="SortMode.Single"
-                     Dense="true" Style="white-space: nowrap" Hover="true" Bordered="true" Striped="true" SelectOnRowClick="false"
+                     Dense="true" Style="white-space: nowrap" Hover="true" Bordered="true" Striped="true" SelectOnRowClick="true"
                      MultiSelection="true" SelectedItems="@selectedItems" SelectedItemsChanged="@(_ => StateHasChanged())"
                      RowsPerPage="25">
             <ToolBarContent>

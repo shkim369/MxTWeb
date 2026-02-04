@@ -43,7 +43,7 @@
 <MudDataGrid T="Reagent" Class="custom-grid" Items="@FilteredData" @ref="_dataGrid"
              SortMode="SortMode.Single" Dense="true" Hover="true" Bordered="true" Striped="true"
              EditMode="DataGridEditMode.Cell" ReadOnly="true"
-             CommittedItemChanges="@CommittedItemChanges" RowsPerPage="100" SelectOnRowClick="false"
+             CommittedItemChanges="@CommittedItemChanges" RowsPerPage="100" SelectOnRowClick="true"
              MultiSelection="false" @bind-SelectedItem="selectedItem"
              QuickFilter="@_quickFilter" FixedHeader="true"
              Loading="@isLoading">
@@ -70,7 +70,7 @@
 
             <MudSpacer />
             <MudMenu Class="mt-3" Label="@searchField" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Secondary">
-                <MudMenuItem Label="코드" @onclick="@(() => SelectSearchField("코드"))" />
+                <MudMenuItem Label="관리번호" @onclick="@(() => SelectSearchField("관리번호"))" />
                 <MudMenuItem Label="시약명" @onclick="@(() => SelectSearchField("시약명"))" />
                 <MudMenuItem Label="제조사" @onclick="@(() => SelectSearchField("제조사"))" />
                 <MudMenuItem Label="용량" @onclick="@(() => SelectSearchField("용량"))" />
@@ -98,7 +98,7 @@
 
     <Columns>
         <SelectColumn T="Reagent" ShowInHeader="false" />
-        <PropertyColumn Property="x => x.Code" Title="코드" sortable="true" InitialDirection="SortDirection.Ascending"/>
+        <PropertyColumn Property="x => x.Code" Title="관리번호" sortable="true" InitialDirection="SortDirection.Ascending"/>
         <PropertyColumn Property="x => x.Name" Title="시약명" Sortable="false" />
         <PropertyColumn Property="x => x.Manufacturer" Title="제조사" sortable="true" Required="false" />
         <PropertyColumn Property="x => x.Amount" Title="용량" sortable="false" Required="false" />
@@ -122,7 +122,7 @@
 @code {
     private MxTWebContext context = default!;
 
-    private string searchField = "코드";
+    private string searchField = "관리번호";
     private string searchFilter;
 
     private IEnumerable<Reagent> FilteredData = new List<Reagent>();
@@ -199,7 +199,7 @@
         {
             switch (searchField)
             {
-                case "코드":
+                case "관리번호":
                     if (x.Code.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
                         return true;
                     break;

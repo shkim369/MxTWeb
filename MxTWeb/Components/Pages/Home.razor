@@ -190,7 +190,7 @@
             <MudItem xs="4">
                 <MudTable Items="chipUsageData" Bordered="true" Dense="true" Class="pb-1">
                     <ToolBarContent>
-                        <MudText Typo="Typo.h6">칩 사용 대장</MudText>
+                        <MudText Typo="Typo.h6">칩 사용 관리대장</MudText>
                         <MudSpacer />
                         <MudLink Href="chipusages" Typo="Typo.h6">더 보기</MudLink>
                     </ToolBarContent>
@@ -221,14 +221,16 @@
                         <MudLink Href="cyropreserveds" Typo="Typo.h6">더 보기</MudLink>
                     </ToolBarContent>
                     <HeaderContent>
-                        <MudTh>🧫세포</MudTh>
                         <MudTh>반입 날짜</MudTh>
+                        <MudTh>🧫세포</MudTh>
+                        <MudTh>반입자</MudTh>
                         <MudTh>반입처</MudTh>
                     </HeaderContent>
                     <RowTemplate Context="x">
+                        <MudTd DataLabel="반입 날짜">@x.ReceiptDate?.ToString("yyyy-MM-dd")</MudTd>
                         <MudTd DataLabel="🧫세포" Style="height: 45px">@x.Name</MudTd>
-                        <MudTd DataLabel="반입 날짜r">@x.ReceiptDate</MudTd>
-                        <MudTd DataLabel="반입처">@x.Recipient</MudTd>
+                        <MudTd DataLabel="반입자">@x.Recipient</MudTd>
+                        <MudTd DataLabel="반입처">@x.Supplier</MudTd>                   
                     </RowTemplate>
                 </MudTable>
             </MudItem>
@@ -241,14 +243,14 @@
                         <MudLink Href="equipments" Typo="Typo.h6">더 보기</MudLink>
                     </ToolBarContent>
                     <HeaderContent>
+                        <MudTh>구입일</MudTh>
                         <MudTh>관리번호</MudTh>
                         <MudTh>품명</MudTh>
-                        <MudTh>구입일</MudTh>
                     </HeaderContent>
                     <RowTemplate Context="x">
-                        <MudTd DataLabel="관리번호" Style="height: 45px">@x.ManageCode</MudTd>
-                        <MudTd DataLabel="품명">@x.Name</MudTd>
                         <MudTd DataLabel="구입일" Style="min-width: 105px">@x.PurchaseDate?.ToString("yyyy-MM-dd")</MudTd>
+                        <MudTd DataLabel="관리번호" Style="height: 45px">@x.ManageCode</MudTd>
+                        <MudTd DataLabel="품명">@x.Name</MudTd>                        
                     </RowTemplate>
                 </MudTable>
             </MudItem>
@@ -261,14 +263,34 @@
                         <MudLink Href="reagents" Typo="Typo.h6">더 보기</MudLink>
                     </ToolBarContent>
                     <HeaderContent>
+                        <MudTh>입고일</MudTh>
                         <MudTh>관리번호</MudTh>
                         <MudTh>🧪시약명</MudTh>
-                        <MudTh>반입 날짜</MudTh>
                     </HeaderContent>
                     <RowTemplate Context="x">
+                        <MudTd DataLabel="입고일">@x.ReceiptDate</MudTd>
                         <MudTd DataLabel="관리번호" Style="height: 45px">@x.Code</MudTd>
-                        <MudTd DataLabel="🧪시약명">@x.Name</MudTd>
-                        <MudTd DataLabel="반입 날짜">@x.ReceiptDate</MudTd>
+                        <MudTd DataLabel="🧪시약명">@x.Name</MudTd>                        
+                    </RowTemplate>
+                </MudTable>
+            </MudItem>
+
+            <MudItem xs="4">
+                <MudTable Items="shipmentData" Bordered="true" Dense="true" Class="pb-1">
+                    <ToolBarContent>
+                        <MudText Typo="Typo.h6">출하 이력 관리</MudText>
+                        <MudSpacer />
+                        <MudLink Href="shipments" Typo="Typo.h6">더 보기</MudLink>
+                    </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh>납품일</MudTh>
+                        <MudTh>품명</MudTh>
+                        <MudTh>납품처</MudTh>                        
+                    </HeaderContent>
+                    <RowTemplate Context="x">
+                        <MudTd DataLabel="납품일">@x.Date?.ToString("yyyy-MM-dd")</MudTd>
+                        <MudTd DataLabel="품명" Style="height: 45px">@x.Name</MudTd>
+                        <MudTd DataLabel="납품처">@x.Destination</MudTd>
                     </RowTemplate>
                 </MudTable>
             </MudItem>
@@ -292,6 +314,7 @@
     private IQueryable<Equipment>? equipmentData;
     private IQueryable<ChipUsage>? chipUsageData;
     private IQueryable<CompHistory>? compHistoryData;
+    private IQueryable<Shipment>? shipmentData;
 
     private int weeklyShipmentCount = 0;
     private int weeklyReceiptCount = 0;
@@ -314,6 +337,7 @@
         equipmentData = webContext.Equipment.OrderByDescending(x => x.PurchaseDate).Take(10).ToList().AsQueryable();
         chipUsageData = webContext.ChipUsage.OrderByDescending(x => x.UseDate).Take(10).ToList().AsQueryable();
         compHistoryData = webContext.CompHistory.Include(x => x.Component).OrderByDescending(x => x.EntryDate).Take(10).ToList().AsQueryable();
+        shipmentData = webContext.Shipment.OrderByDescending(x => x.Date).Take(10).ToList().AsQueryable();
 
         weeklyShipmentCount = webContext.CompHistory
             .Where(x => x.state == "출고" || x.state == "폐기")
