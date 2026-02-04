@@ -37,13 +37,7 @@
                           Required="true" Immediate="true" />
 
             <MudGrid Class="mb-5">
-                <MudItem xs="6">
-                    <MudTextField Variant="Variant.Outlined"
-                                    Label="반입자"
-                                    @bind-Value="Cyropreserved.Recipient"/>
-                </MudItem>
-
-                <MudItem xs="6">
+                <MudItem xs="4">
                     <MudDatePicker Variant="Variant.Outlined"
                                    Label="반입날짜"
                                    @bind-Date="Cyropreserved.ReceiptDate"
@@ -51,31 +45,31 @@
                                    Required="true" Immediate="true" 
                                    DateFormat="yyyy-MM-dd" />
                 </MudItem>
+                <MudItem xs="4">
+                    <MudTextField Variant="Variant.Outlined"
+                                  Label="반입자"
+                                  @bind-Value="Cyropreserved.Recipient" />
+                </MudItem>
+                <MudItem xs="4">
+                    <MudTextField Variant="Variant.Outlined"
+                                  Label="반입처"
+                                  @bind-Value="Cyropreserved.Supplier" />
+                </MudItem>
             </MudGrid>
 
             <MudGrid Class="mb-5">
-                <MudItem xs="6">
-                    <MudTextField Variant="Variant.Outlined"
-                                  Label="반입처"
-                                  @bind-Value="Cyropreserved.Supplier"/>
-                </MudItem>
-
-                <MudItem xs="6">
+                <MudItem xs="4">
                     <MudDatePicker Variant="Variant.Outlined"
                                    Label="동결날짜"
                                    @bind-Date="Cyropreserved.FreezeDate"
                                    DateFormat="yyyy-MM-dd" />
                 </MudItem>
-            </MudGrid>
-
-            <MudGrid Class="mb-5">
-                <MudItem xs="6">
+                <MudItem xs="4">
                     <MudTextField Variant="Variant.Outlined"
                                   Label="수량"
-                                  @bind-Value="Cyropreserved.Quantity"/>
+                                  @bind-Value="Cyropreserved.Quantity" />
                 </MudItem>
-
-                <MudItem xs="6">
+                <MudItem xs="4">
                     <MudTextField Variant="Variant.Outlined"
                                   Label="Cell density"
                                   @bind-Value="Cyropreserved.Density" />

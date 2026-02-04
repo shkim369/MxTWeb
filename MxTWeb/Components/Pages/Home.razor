@@ -175,7 +175,7 @@
                     </HeaderContent>
                     <RowTemplate Context="x">
                         <MudTd DataLabel="날짜" Style="min-width: 115px">@x.Date?.ToString("yyyy-MM-dd")</MudTd>
-                        <MudTd DataLabel="구분">
+                        <MudTd DataLabel="구분" Style="width: 70px; padding-right: 0px; padding-left: 10px">
                             <MudChip T="string" Size="Size.Small" Style="@GetStateColor(x.state)">
                                 @x.state
                             </MudChip>
@@ -195,14 +195,14 @@
                         <MudLink Href="chipusages" Typo="Typo.h6">더 보기</MudLink>
                     </ToolBarContent>
                     <HeaderContent>
-                        <MudTh>날짜</MudTh>                        
+                        <MudTh>날짜</MudTh>
                         <MudTh>구분</MudTh>
                         <MudTh>Chip 종류</MudTh>
                         <MudTh>수량</MudTh>
                     </HeaderContent>
                     <RowTemplate Context="x">                        
                         <MudTd DataLabel="날짜">@x.UseDate?.ToString("yyyy-MM-dd")</MudTd>
-                        <MudTd DataLabel="구분">
+                        <MudTd DataLabel="구분" Style="width: 70px; padding-right: 0px; padding-left: 10px">
                             <MudChip T="string" Size="Size.Small" Style="@GetStateColor(x.Division)">
                                 @x.Division
                             </MudChip>
@@ -223,14 +223,14 @@
                     <HeaderContent>
                         <MudTh>반입 날짜</MudTh>
                         <MudTh>🧫세포</MudTh>
-                        <MudTh>반입자</MudTh>
                         <MudTh>반입처</MudTh>
+                        <MudTh>수량</MudTh>
                     </HeaderContent>
                     <RowTemplate Context="x">
-                        <MudTd DataLabel="반입 날짜">@x.ReceiptDate?.ToString("yyyy-MM-dd")</MudTd>
+                        <MudTd DataLabel="반입 날짜" Style="min-width: 115px">@x.ReceiptDate?.ToString("yyyy-MM-dd")</MudTd>
                         <MudTd DataLabel="🧫세포" Style="height: 45px">@x.Name</MudTd>
-                        <MudTd DataLabel="반입자">@x.Recipient</MudTd>
-                        <MudTd DataLabel="반입처">@x.Supplier</MudTd>                   
+                        <MudTd DataLabel="반입처">@x.Supplier</MudTd>   
+                        <MudTd DataLabel="수량" Style="min-width: 60px">@x.Quantity</MudTd>
                     </RowTemplate>
                 </MudTable>
             </MudItem>
@@ -385,8 +385,8 @@
             "출고" => "background: #fff3e0; color: #f57c00;",
             "납품" => "background: #fff3e0; color: #f57c00;",
 
-            "폐기" => "background: #ffe9e5; color: #f8766b",
-            "소진" => "background: #ffe9e5; color: #f8766b",
+            "폐기" => "background: #ffe9e5; color: #f8766b;",
+            "소진" => "background: #ffe9e5; color: #f8766b;",
             _ => "background: #9e9e9e; color: white;"
         };
     }

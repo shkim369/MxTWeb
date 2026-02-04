@@ -30,6 +30,7 @@
                         <MudItem xs="12"><MudText Typo="Typo.body1"><strong>비고:</strong> @Request.Note</MudText></MudItem>
                     }
                 </MudGrid>
+                <br/>
             </MudPaper>
 
             <MudRadioGroup @bind-Value="ApprovalAction" Class="mb-4">
@@ -42,8 +43,7 @@
                 <MudTextField Variant="Variant.Outlined"
                               Label="반려 사유"
                               @bind-Value="RejectionReason"
-                              Required="true"
-                              Lines="3"
+                              Lines="3" Immediate
                               Class="mb-4" />
             }
         }
@@ -57,8 +57,7 @@
         else if (ApprovalAction == "reject")
         {
             <MudButton Class="mb-3 me-3" Variant="Variant.Filled" Color="Color.Error"
-                       StartIcon="@Icons.Material.Filled.Close" OnClick="ProcessApproval"
-                       Disabled="@string.IsNullOrWhiteSpace(RejectionReason)">반려</MudButton>
+                       StartIcon="@Icons.Material.Filled.Close" OnClick="ProcessApproval">반려</MudButton>
         }
         <MudButton Class="mb-3 me-3" Variant="Variant.Filled" Color="Color.Secondary"
                    OnClick="() => MudDialog.Cancel()">취소</MudButton>

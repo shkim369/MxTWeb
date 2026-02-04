@@ -70,9 +70,15 @@
                 <MudItem xs="6">
                     @if (SelectedCyropreserved != null)
                     {
-                        <MudText Typo="Typo.body2" Class="mt-5 ms-1" Color="@(Request.RequestedQuantity > SelectedCyropreserved.Quantity ? Color.Error : Color.Default)">
-                            (현재 재고: @SelectedCyropreserved.Quantity)
+                        <MudText Typo="Typo.body2" Class="mt-3 ms-1" Color="@(Request.RequestedQuantity > SelectedCyropreserved.Quantity ? Color.Error : Color.Default)">
+                            (현재 재고: @SelectedCyropreserved.Quantity)            
                         </MudText>
+                        @if (Request.RequestedQuantity > SelectedCyropreserved.Quantity)
+                        {
+                            <MudText Typo="Typo.body2" Class="mt-2 ms-1" Color="Color.Error">
+                                신청 수량이 현재 재고보다 많습니다!
+                            </MudText>
+                        }
                     }
                 </MudItem>
             </MudGrid>
@@ -91,7 +97,7 @@
         <DialogActions>
             <MudButton Class="mb-5 me-5" ButtonType="ButtonType.Submit" Variant="Variant.Filled"
                        StartIcon="@Icons.Material.Filled.Save" Color="Color.Info"
-                       Disabled="@(SelectedCyropreserved == null)">저장</MudButton>
+                       Disabled="@(SelectedCyropreserved == null || Request.RequestedQuantity > SelectedCyropreserved.Quantity)">저장</MudButton>
             <MudButton Class="mb-5 me-5" Variant="Variant.Filled" Color="Color.Secondary"
                        OnClick="() => MudDialog.Cancel()">취소</MudButton>
         </DialogActions>
