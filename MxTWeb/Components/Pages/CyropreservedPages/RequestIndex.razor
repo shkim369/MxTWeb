@@ -73,12 +73,12 @@
                     <MudButton Class="ms-0" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.CheckCircle"
                                Color="@Color.Success" OnClick="@ApproveData" Disabled="@(!CanApprove)">승인/반려</MudButton>
                 </MudItem>
-
-                <MudItem>
-                    <MudButton Class="ms-0" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete"
-                               Color="@Color.Error" OnClick="@DeleteData" Disabled="@(!CanApprove)">삭제</MudButton>
-                </MudItem>
             </AuthorizeView>
+            
+            <MudItem>
+                <MudButton Class="ms-0" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete"
+                           Color="@Color.Error" OnClick="@DeleteData" Disabled="@(!CanEdit)">삭제</MudButton>
+            </MudItem>
 
             <MudItem>
                 <MudText Typo="Typo.body2" Class="pa-2">총 @FilteredData.Count()건</MudText>
@@ -131,8 +131,10 @@
 
     private CyropreservedRequest? selectedItem;
     private string? currentUserName;
-    private bool CanApprove => selectedItem != null && selectedItem.CyropreservedRequestId != 0 && selectedItem.Status == RequestStatusEnum.Pending;
-    private bool CanEdit => selectedItem != null && selectedItem.CyropreservedRequestId != 0 && selectedItem.Status == RequestStatusEnum.Pending && selectedItem.Applicant == currentUserName;
+    private string? currentUserRole;
+    private bool CanApprove => (selectedItem != null && selectedItem.CyropreservedId != 0 && selectedItem.Status == RequestStatusEnum.Pending) || (currentUserRole == "Admin");
+    private bool CanEdit => (selectedItem != null && selectedItem.CyropreservedId != 0 && selectedItem.Status == RequestStatusEnum.Pending && selectedItem.Applicant == currentUserName) || (currentUserRole == "Admin");
+    private bool CanDelete => (selectedItem != null && selectedItem.CyropreservedId != 0 && selectedItem.Applicant == currentUserName) || (currentUserRole == "Admin") || (currentUserRole == "동결세포");
 
     private RequestStatusEnum? _selectedStatus;
     public RequestStatusEnum? SelectedStatus
@@ -269,6 +271,7 @@
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         var user = await UserManager.GetUserAsync(authState.User);
+        currentUserRole = (await UserManager.GetRolesAsync(user)).FirstOrDefault();
         currentUserName = user?.DisplayName ?? authState.User?.Identity?.Name;
 
         context = DbFactory.CreateDbContext();
