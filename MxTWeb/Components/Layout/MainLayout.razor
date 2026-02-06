@@ -1,6 +1,14 @@
 ﻿@inherits LayoutComponentBase
+@implements IDisposable
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
+@inject MxTWeb.Services.ActiveUserService ActiveUserService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IHttpContextAccessor HttpContextAccessor
+
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Identity
+@using MxTWeb.Data
 
 <MudThemeProvider />
 <MudPopoverProvider />
@@ -35,6 +43,39 @@
 @code {
     private string appBarClass = "";
     private int Deleted = 0;
+    private string? _circuitId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            _circuitId = Guid.NewGuid().ToString();
+            var ipAddress = HttpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
+
+            ActiveUserService.AddUser(_circuitId, new MxTWeb.Services.ActiveUserInfo
+            {
+                UserId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "",
+                Email = user.Identity.Name ?? "",
+                DisplayName = user.FindFirst("DisplayName")?.Value,
+                ConnectedAt = DateTime.Now,
+                LastActivity = DateTime.Now,
+                IpAddress = ipAddress
+            });
+
+            NavigationManager.LocationChanged += OnLocationChanged;
+        }
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        if (_circuitId != null)
+        {
+            ActiveUserService.UpdateActivity(_circuitId);
+        }
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -61,5 +102,14 @@
         var currentUrl = NavigationManager.Uri;
         return currentUrl.Contains("/Login") ||
                currentUrl.Contains("/Register");
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+        if (_circuitId != null)
+        {
+            ActiveUserService.RemoveUser(_circuitId);
+        }
     }
 }

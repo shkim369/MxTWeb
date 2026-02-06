@@ -9,6 +9,7 @@
 @inject ILogger<Login> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
+@inject ApplicationDbContext DbContext
 
 <PageTitle>Log in</PageTitle>
 
@@ -116,6 +117,18 @@
         }
         else
         {
+            // 로그인 실패 기록 저장
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
+            DbContext.LoginFailureRecords.Add(new LoginFailureRecord
+            {
+                AttemptedEmail = Input.Email,
+                AttemptedAt = DateTime.Now,
+                IpAddress = ipAddress,
+                UserAgent = userAgent
+            });
+            await DbContext.SaveChangesAsync();
+
             errorMessage = "Error: Invalid login attempt.";
         }
     }

@@ -87,14 +87,17 @@
 
     <ColGroup>
         <col />
-        <col />
+        <col style="width: 145px"/>
         <col />
         <col />
         <col />
         <col style="width: 105px"/>
         <col />
-        <col />
+        <col style="width: 115px" />
         <col style="width: 125px"/>
+        <col style="width: 100px"/>
+        <col style="width: 100px" />
+        <col style="width: 80px" />
     </ColGroup>
 
     <Columns>
@@ -109,7 +112,15 @@
         <PropertyColumn Property="x => x.Management" Title="관리부서" sortable="false" Required="false"/>
         <PropertyColumn Property="x => x.Manager_Main" Title="관리자(정)" sortable="false" Required="false"/>
         <PropertyColumn Property="x => x.Manager_Sub" Title="관리자(부)" sortable="false" Required="false" />
-        <PropertyColumn Property="x => x.Note" Title="비고" sortable="false" Required="false" />
+        <TemplateColumn Title="비고" Sortable="false">
+            <CellTemplate>
+                <MudTooltip Text="@context.Item.Note" Placement="Placement.Start">
+                    <div style="max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" class="pt-1">
+                        @context.Item.Note
+                    </div>
+                </MudTooltip>
+            </CellTemplate>
+        </TemplateColumn>
     </Columns>
 
     <PagerContent>

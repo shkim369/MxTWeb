@@ -91,17 +91,17 @@
 
     <ColGroup>
         <col style="width: 0;" />
-        <col style="width: 11%;" />
-        <col style="width: 9%;" />
-        <col style="width: 20%;" />
-        <col style="width: 5%;" />
-        <col style="width: 10%;" />
-        <col style="width: 5%;" />
-        <col style="width: 8%;" />
-        <col style="width: 6%;" />
-        <col style="width: 6%;" />
+        <col style="width: 160px;" />
+        <col style="width: 65px;" />
         <col />
-        <col style="width: 0;" />
+        <col />
+        <col />
+        <col />
+        <col />
+        <col />
+        <col />
+        <col style="width: 40px" />
+        <col />
     </ColGroup>
     <Columns>
         <SelectColumn T="Component" ShowInHeader="false" />
@@ -120,7 +120,16 @@
         <PropertyColumn Property="x => x.Quantity" Title="필요" sortable="false" />
         <PropertyColumn Property="x => x.Stock" Title="재고" sortable="false" 
                         CellStyleFunc="@_cellStyleFunc" />  
-        <PropertyColumn Property="x => x.Note" Title="Comment" sortable="false" Required="false" />
+
+        <TemplateColumn Title="비고" Sortable="false" Editable="false">
+            <CellTemplate>
+                <MudTooltip Text="@context.Item.Note" Placement="Placement.Start">
+                    <div style="max-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" class="pt-1">
+                        @context.Item.Note
+                    </div>
+                </MudTooltip>
+            </CellTemplate>
+        </TemplateColumn>
 
         <TemplateColumn Context="x" Resizable="false" Editable="false" Sortable="false" Title="➕">
             <CellTemplate>

@@ -132,9 +132,12 @@
     private CyropreservedRequest? selectedItem;
     private string? currentUserName;
     private string? currentUserRole;
-    private bool CanApprove => (selectedItem != null && selectedItem.CyropreservedId != 0 && selectedItem.Status == RequestStatusEnum.Pending) || (currentUserRole == "Admin");
-    private bool CanEdit => (selectedItem != null && selectedItem.CyropreservedId != 0 && selectedItem.Status == RequestStatusEnum.Pending && selectedItem.Applicant == currentUserName) || (currentUserRole == "Admin");
-    private bool CanDelete => (selectedItem != null && selectedItem.CyropreservedId != 0 && selectedItem.Applicant == currentUserName) || (currentUserRole == "Admin") || (currentUserRole == "동결세포");
+    private bool CanApprove => selectedItem != null && selectedItem.CyropreservedId != 0 && 
+                              (selectedItem.Status == RequestStatusEnum.Pending && currentUserRole == "Admin" || currentUserRole == "동결세포");
+    private bool CanEdit => selectedItem != null && selectedItem.CyropreservedId != 0 && 
+                           (selectedItem.Status == RequestStatusEnum.Pending && selectedItem.Applicant == currentUserName);
+    private bool CanDelete => selectedItem != null && selectedItem.CyropreservedId != 0 && 
+                             (selectedItem.Applicant == currentUserName || currentUserRole == "Admin" || currentUserRole == "동결세포");
 
     private RequestStatusEnum? _selectedStatus;
     public RequestStatusEnum? SelectedStatus

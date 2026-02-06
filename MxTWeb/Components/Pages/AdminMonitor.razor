@@ -1,0 +1,202 @@
+@page "/admin-monitor"
+@rendermode InteractiveServer
+@implements IDisposable
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using MxTWeb.Data
+@using MxTWeb.Services
+@attribute [Authorize(Roles = "Admin")]
+
+@inject ActiveUserService ActiveUserService
+@inject IServiceScopeFactory ServiceScopeFactory
+@inject ISnackbar Snackbar
+
+<PageTitle>접속 모니터</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-4">접속 모니터</MudText>
+
+    @* 현재 접속자 목록 *@
+    <MudPaper Elevation="2" Class="pa-4 mb-4">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-3">
+            <MudText Typo="Typo.h6">현재 접속자</MudText>
+            <MudChip T="string" Color="Color.Success" Size="Size.Small">@_activeUsers.Count 명</MudChip>
+            <MudSpacer />
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh"
+                          Color="Color.Primary"
+                          OnClick="RefreshActiveUsers"
+                          Title="새로고침" />
+        </MudStack>
+
+        @if (!_activeUsers.Any())
+        {
+            <MudText Color="Color.Secondary">현재 접속 중인 사용자가 없습니다.</MudText>
+        }
+        else
+        {
+            <MudTable Items="_activeUsers" Hover="true" Dense="true" Striped="true">
+                <HeaderContent>
+                    <MudTh>이메일</MudTh>
+                    <MudTh>표시 이름</MudTh>
+                    <MudTh>접속 시간</MudTh>
+                    <MudTh>마지막 활동</MudTh>
+                    <MudTh>IP 주소</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="이메일">@context.Email</MudTd>
+                    <MudTd DataLabel="표시 이름">@(context.DisplayName ?? "-")</MudTd>
+                    <MudTd DataLabel="접속 시간">@context.ConnectedAt.ToString("yyyy-MM-dd HH:mm:ss")</MudTd>
+                    <MudTd DataLabel="마지막 활동">@context.LastActivity.ToString("yyyy-MM-dd HH:mm:ss")</MudTd>
+                    <MudTd DataLabel="IP 주소">@(context.IpAddress ?? "-")</MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudPaper>
+
+    <MudDivider Class="my-4" />
+
+    @* 로그인 실패 기록 *@
+    <MudPaper Elevation="2" Class="pa-4">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-3">
+            <MudText Typo="Typo.h6">로그인 실패 기록</MudText>
+            <MudSpacer />
+            <MudDateRangePicker @bind-DateRange="_dateRange"
+                               @bind-DateRange:after="OnDateRangeChanged"
+                               Label="기간 필터"
+                               Variant="Variant.Outlined"
+                               Style="max-width: 300px;" />
+        </MudStack>
+
+        @if (_failureRecords == null)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+        }
+        else if (!_failureRecords.Any())
+        {
+            <MudText Color="Color.Secondary">로그인 실패 기록이 없습니다.</MudText>
+        }
+        else
+        {
+            <MudTable Items="_failureRecords" Hover="true" Dense="true" Striped="true"
+                     ServerData="LoadFailureRecords"
+                     @ref="_table"
+                     RowsPerPage="15">
+                <HeaderContent>
+                    <MudTh>시도한 이메일</MudTh>
+                    <MudTh>시도 시간</MudTh>
+                    <MudTh>IP 주소</MudTh>
+                    <MudTh>브라우저</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="시도한 이메일">@context.AttemptedEmail</MudTd>
+                    <MudTd DataLabel="시도 시간">@context.AttemptedAt.ToString("yyyy-MM-dd HH:mm:ss")</MudTd>
+                    <MudTd DataLabel="IP 주소">@(context.IpAddress ?? "-")</MudTd>
+                    <MudTd DataLabel="브라우저">
+                        <MudTooltip Text="@(context.UserAgent ?? "-")">
+                            <MudText Typo="Typo.body2" Style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                @(ShortenUserAgent(context.UserAgent))
+                            </MudText>
+                        </MudTooltip>
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <MudTablePager PageSizeOptions="new int[] { 15, 30, 50 }" />
+                </PagerContent>
+            </MudTable>
+        }
+
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2">
+            * 30일이 지난 기록은 자동으로 삭제됩니다.
+        </MudText>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<ActiveUserInfo> _activeUsers = new();
+    private List<LoginFailureRecord>? _failureRecords = new();
+    private MudTable<LoginFailureRecord>? _table;
+    private DateRange? _dateRange;
+    private System.Threading.Timer? _refreshTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        RefreshActiveUsers();
+        await LoadFailureRecordsSimple();
+
+        // 30초마다 접속자 목록 자동 새로고침
+        _refreshTimer = new System.Threading.Timer(async _ =>
+        {
+            RefreshActiveUsers();
+            await InvokeAsync(StateHasChanged);
+        }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+    }
+
+    private void RefreshActiveUsers()
+    {
+        _activeUsers = ActiveUserService.GetActiveUsers();
+    }
+
+    private async Task LoadFailureRecordsSimple()
+    {
+        using var scope = ServiceScopeFactory.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        var query = dbContext.LoginFailureRecords.AsQueryable();
+
+        if (_dateRange?.Start != null)
+            query = query.Where(r => r.AttemptedAt >= _dateRange.Start.Value);
+        if (_dateRange?.End != null)
+            query = query.Where(r => r.AttemptedAt <= _dateRange.End.Value.AddDays(1));
+
+        _failureRecords = await query
+            .OrderByDescending(r => r.AttemptedAt)
+            .ToListAsync();
+    }
+
+    private async Task<TableData<LoginFailureRecord>> LoadFailureRecords(TableState state, CancellationToken ct)
+    {
+        using var scope = ServiceScopeFactory.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        var query = dbContext.LoginFailureRecords.AsQueryable();
+
+        if (_dateRange?.Start != null)
+            query = query.Where(r => r.AttemptedAt >= _dateRange.Start.Value);
+        if (_dateRange?.End != null)
+            query = query.Where(r => r.AttemptedAt <= _dateRange.End.Value.AddDays(1));
+
+        var totalItems = await query.CountAsync(ct);
+
+        var items = await query
+            .OrderByDescending(r => r.AttemptedAt)
+            .Skip(state.Page * state.PageSize)
+            .Take(state.PageSize)
+            .ToListAsync(ct);
+
+        return new TableData<LoginFailureRecord>
+        {
+            TotalItems = totalItems,
+            Items = items
+        };
+    }
+
+    private async Task OnDateRangeChanged()
+    {
+        if (_table != null)
+            await _table.ReloadServerData();
+        else
+            await LoadFailureRecordsSimple();
+    }
+
+    private string ShortenUserAgent(string? userAgent)
+    {
+        if (string.IsNullOrEmpty(userAgent)) return "-";
+        if (userAgent.Length <= 50) return userAgent;
+        return userAgent[..50] + "...";
+    }
+
+    public void Dispose()
+    {
+        _refreshTimer?.Dispose();
+    }
+}

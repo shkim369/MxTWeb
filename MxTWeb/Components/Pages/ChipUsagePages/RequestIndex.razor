@@ -134,10 +134,12 @@
     private ChipusageRequest? selectedItem;
     private string? currentUserName;
     private string? currentUserRole;
-    private bool CanApprove => (selectedItem != null && selectedItem.Id != 0 && selectedItem.Status == RequestStatusEnum.Pending) || (currentUserRole == "Admin");
-    private bool CanEdit => (selectedItem != null && selectedItem.Id != 0 && selectedItem.Status == RequestStatusEnum.Pending && selectedItem.Applicant == currentUserName) || (currentUserRole == "Admin");
-    private bool CanDelete => (selectedItem != null && selectedItem.Id != 0 && selectedItem.Applicant == currentUserName) || (currentUserRole == "Admin") || (currentUserRole == "칩관리");
-
+    private bool CanApprove => selectedItem != null && selectedItem.Id != 0 && 
+                              (selectedItem.Status == RequestStatusEnum.Pending && currentUserRole == "Admin" || currentUserRole == "칩관리");
+    private bool CanEdit => selectedItem != null && selectedItem.Id != 0 && 
+                           (selectedItem.Status == RequestStatusEnum.Pending && selectedItem.Applicant == currentUserName);
+    private bool CanDelete => selectedItem != null && selectedItem.Id != 0 && 
+                             (selectedItem.Applicant == currentUserName || currentUserRole == "Admin" || currentUserRole == "칩관리");
     private RequestStatusEnum? _selectedStatus;
     public RequestStatusEnum? SelectedStatus
     {

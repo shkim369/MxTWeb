@@ -88,6 +88,9 @@ builder.Services.AddAuthorization(options =>
 });
 
 builder.Services.AddHttpClient();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<ActiveUserService>();
+builder.Services.AddHostedService<LoginFailureCleanupService>();
 
 var app = builder.Build();
 
