@@ -107,32 +107,39 @@
     
     <ChildRowContent Context="x">
         <MudTr>
-            <td colspan="100" style="padding: 12px 80px; background-color: var(--mud-palette-background-grey);">
-                <MudGrid Spacing="3">
-                    <MudItem xs="12" sm="3">
-                        <MudPaper Class="pa-3" Style="width: 250px" Elevation="1">
+            <td colspan="100" style="padding: 10px 80px; background-color: var(--mud-palette-background-grey);">
+                <MudGrid Spacing="12">
+                    <MudItem xs="12" sm="2">
+                        <MudPaper Class="pa-3" Style="width: 220px" Elevation="1">
                             <MudText Typo="Typo.caption" Color="Color.Primary"><b>Passage / Donor / Lot</b></MudText>
                             <MudText Typo="Typo.body1">@(string.IsNullOrEmpty(x.Item.Lot) ? "-" : x.Item.Lot)</MudText>
                         </MudPaper>
                     </MudItem>
-                    <MudItem xs="12" sm="3">
-                        <MudPaper Class="pa-3" Style="width: 250px" Elevation="1">
+                    <MudItem xs="12" sm="2">
+                        <MudPaper Class="pa-3" Style="width: 220px" Elevation="1">
                             <MudText Typo="Typo.caption" Color="Color.Primary"><b>비고</b></MudText>
                             <MudText Typo="Typo.body1">@(string.IsNullOrEmpty(x.Item.Note) ? "-" : x.Item.Note)</MudText>
                         </MudPaper>
                     </MudItem>
-                    <MudItem xs="12" sm="3">
-                        <MudPaper Class="pa-3" Style="width: 250px" Elevation="1">
+                    <MudItem xs="12" sm="2">
+                        <MudPaper Class="pa-3" Style="width: 220px" Elevation="1">
                             <MudText Typo="Typo.caption" Color="Color.Primary"><b>Parent</b></MudText>
                             <MudText Typo="Typo.body1">@(string.IsNullOrEmpty(x.Item.Parent) ? "-" : x.Item.Parent)</MudText>
                         </MudPaper>
                     </MudItem>
-                    <MudItem xs="12" sm="3">
-                        <MudPaper Class="pa-3" Style="width: 250px"  Elevation="1">
+                    <MudItem xs="12" sm="2">
+                        <MudPaper Class="pa-3" Style="width: 220px" Elevation="1">
+                            <MudText Typo="Typo.caption" Color="Color.Primary"><b>Generation</b></MudText>
+                            <MudText Typo="Typo.body1">@(string.IsNullOrEmpty(x.Item.Note) ? "-" : x.Item.Generation)</MudText>
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="12" sm="2">
+                        <MudPaper Class="pa-3" Style="width: 220px"  Elevation="1">
                             <MudText Typo="Typo.caption" Color="Color.Primary"><b>Origin</b></MudText>
                             <MudText Typo="Typo.body1">@(string.IsNullOrEmpty(x.Item.Origin) ? "-" : x.Item.Origin)</MudText>
                         </MudPaper>
                     </MudItem>
+                    <MudItem xs="12" sm="2"/>
                 </MudGrid>
             </td>
         </MudTr>

@@ -1,0 +1,76 @@
+﻿@page "/regents/import"
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using MxTWeb.Models
+@using MxTWeb.Data
+@using Microsoft.AspNetCore.Authorization
+@using ClosedXML.Excel;
+@attribute [Authorize]
+@inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+	<DialogContent>
+        <MudDataGrid T="Reagent" Items="@reagents" SortMode="SortMode.None" MultiSelection="true">
+		    <Columns>
+                <SelectColumn T="Reagent" />
+                <PropertyColumn Property="x => x.Code" Title="관리번호" />
+                <PropertyColumn Property="x => x.Name" Title="시약명" />
+                <PropertyColumn Property="x => x.Manufacturer" Title="제조사" />
+                <PropertyColumn Property="x => x.Amount" Title="용량" />
+                <PropertyColumn Property="x => x.Cat" Title="Cat.No." />
+                <PropertyColumn Property="x => x.ReceiptDate" Title="입고일" Format="yyyy-MM-dd"/>
+                <PropertyColumn Property="x => x.Quantity" Title="수량" />
+                <PropertyColumn Property="x => x.Lot" Title="Lot.number"/>
+                <PropertyColumn Property="x => x.Location" Title="보관위치" />
+                <PropertyColumn Property="x => x.Comment" Title="비고" />
+
+            </Columns>
+        </MudDataGrid>
+	</DialogContent>
+
+    <DialogActions>
+        <MudButton Class="mb-5 me-5" ButtonType="ButtonType.Submit" Variant="Variant.Filled" 
+                   @onclick="Submit" StartIcon="@Icons.Material.Filled.Save" Color="Color.Info">Import</MudButton>
+        <MudButton Class="mb-5 me-5" Variant="Variant.Filled" Color="Color.Secondary" OnClick="() => MudDialog.Cancel()">Cancel</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter]
+    public List<Reagent> reagents { get; set; } = new();
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; }
+
+    private async Task Submit()
+    {
+        bool result = await ImportData(reagents);
+        if (result)
+        {
+            Snackbar.Add("성공적으로 데이터를 추가했습니다.", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else
+        {
+            Snackbar.Add("데이터 추가에 실패했습니다.", Severity.Error);
+		}
+    }
+
+    private async Task<bool> ImportData(List<Reagent> dataList)
+    {
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+            context.Reagent.AddRange(dataList);
+            await context.SaveChangesAsync();
+
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+}

@@ -10,7 +10,6 @@ namespace MxTWeb.Models
         public string? Code { get; set; }
 
         [Required]
-        [StringLength(60, MinimumLength = 2)]
         public string? Name { get; set; }
 
         [Required]
@@ -20,12 +19,14 @@ namespace MxTWeb.Models
 
         public string? Cat { get; set; }
 
-        public DateOnly ReceiptDate { get; set; }
+        public DateTime? ReceiptDate { get; set; }
 
         public int Quantity { get; set; }
 
-        public int Lot { get; set; }
+        public string? Lot { get; set; }
 
         public string? Location { get; set; }
+
+        public string? Comment { get; set; }    
     }
 }

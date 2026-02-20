@@ -37,14 +37,12 @@
             <MudTable Items="_activeUsers" Hover="true" Dense="true" Striped="true">
                 <HeaderContent>
                     <MudTh>이메일</MudTh>
-                    <MudTh>표시 이름</MudTh>
                     <MudTh>접속 시간</MudTh>
                     <MudTh>마지막 활동</MudTh>
                     <MudTh>IP 주소</MudTh>
                 </HeaderContent>
                 <RowTemplate>
                     <MudTd DataLabel="이메일">@context.Email</MudTd>
-                    <MudTd DataLabel="표시 이름">@(context.DisplayName ?? "-")</MudTd>
                     <MudTd DataLabel="접속 시간">@context.ConnectedAt.ToString("yyyy-MM-dd HH:mm:ss")</MudTd>
                     <MudTd DataLabel="마지막 활동">@context.LastActivity.ToString("yyyy-MM-dd HH:mm:ss")</MudTd>
                     <MudTd DataLabel="IP 주소">@(context.IpAddress ?? "-")</MudTd>
@@ -93,7 +91,7 @@
                     <MudTd DataLabel="IP 주소">@(context.IpAddress ?? "-")</MudTd>
                     <MudTd DataLabel="브라우저">
                         <MudTooltip Text="@(context.UserAgent ?? "-")">
-                            <MudText Typo="Typo.body2" Style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            <MudText Typo="Typo.body2" Style="min-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                                 @(ShortenUserAgent(context.UserAgent))
                             </MudText>
                         </MudTooltip>

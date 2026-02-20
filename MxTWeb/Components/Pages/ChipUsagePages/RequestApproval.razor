@@ -38,14 +38,11 @@
                 <MudRadio Value="@("reject")" Color="Color.Error">반려</MudRadio>
             </MudRadioGroup>
 
-            @if (ApprovalAction == "reject")
-            {
-                <MudTextField Variant="Variant.Outlined"
-                              Label="반려 사유"
-                              @bind-Value="RejectionReason"
-                              Lines="3" Immediate
-                              Class="mb-4" />
-            }
+            <MudTextField Variant="Variant.Outlined"
+                            Label="사유"
+                            @bind-Value="RejectionReason"
+                            Lines="3" Immediate
+                            Class="mb-4" />            
         }
     </DialogContent>
     <DialogActions>

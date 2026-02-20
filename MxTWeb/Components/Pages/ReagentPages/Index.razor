@@ -5,11 +5,14 @@
 @using MxTWeb.Data
 @using MxTWeb.Enums
 @using Microsoft.AspNetCore.Authorization
+@using ClosedXML.Excel;
 @attribute [Authorize]
 @implements IAsyncDisposable
 @inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject IJSRuntime JS
+@using System.Linq
 
 <PageTitle>연구용 시약 관리</PageTitle>
 
@@ -63,10 +66,42 @@
                 <MudButton Class="me-2" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete"
                            Color="@Color.Error" OnClick="@DeleteData" Disabled="@IsEditDisabled"> Delete </MudButton>
             </MudItem>
+
+            <MudItem>
+                <MudFileUpload Class="me-2" T="IBrowserFile" Accept=".xlsx, .csv" @ref="excelUpload" FilesChanged="UploadFile">
+                    <ActivatorContent>
+                        <MudButton Disabled="@importing" Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Custom.FileFormats.FileExcel">
+                            @if (importing)
+                            {
+                                <MudProgressCircular Indeterminate="true" Color="Color.Info" Size="Size.Small" Class="me-2" />
+                                <MudText Class="ms-2">Processing...</MudText>
+                            }
+                            else
+                            {
+                                <MudText>Import</MudText>
+                            }
+                        </MudButton>
+                    </ActivatorContent>
+                </MudFileUpload>
+            </MudItem>
+
+            <MudItem>
+                <MudButton Class="me-2" Disabled="@exporting" @onclick="ExportToExcel" Variant="Variant.Filled" Color="Color.Info" StartIcon="@Icons.Custom.FileFormats.FileExcel">
+                    @if (exporting)
+                    {
+                        <MudProgressCircular Indeterminate="true" Color="Color.Info" Size="Size.Small" Class="me-2" />
+                        <MudText Class="ms-2">Processing...</MudText>
+                    }
+                    else
+                    {
+                        <MudText>Export</MudText>
+                    }
+                </MudButton>
+            </MudItem>
+
             <MudItem>
                 <MudText Typo="Typo.body2" Class="pa-2">총 항목 수: @FilteredData.Count()</MudText>
             </MudItem>
-
 
             <MudSpacer />
             <MudMenu Class="mt-3" Label="@searchField" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Secondary">
@@ -103,9 +138,9 @@
         <PropertyColumn Property="x => x.Manufacturer" Title="제조사" sortable="true" Required="false" />
         <PropertyColumn Property="x => x.Amount" Title="용량" sortable="false" Required="false" />
         <PropertyColumn Property="x => x.Cat" Title="Cat" sortable="false" Required="false" />
-        <PropertyColumn Property="x => x.ReceiptDate" Title="입고일" sortable="true" Required="false" Format="yyyy-MM-dd" Editable="false" />
+        @* <PropertyColumn Property="x => x.ReceiptDate" Title="입고일" sortable="true" Required="false" Format="yyyy-MM-dd" Editable="false" />
         <PropertyColumn Property="x => x.Quantity" Title="수량" sortable="true" Required="false"/>
-        <PropertyColumn Property="x => x.Lot" Title="Lot" sortable="false" Required="false"/>
+        <PropertyColumn Property="x => x.Lot" Title="Lot" sortable="false" Required="false"/> *@
         <PropertyColumn Property="x => x.Location" Title="보관장소" sortable="false" Required="false" />
     </Columns>
 
@@ -133,6 +168,10 @@
     private bool isLoading = true;
 
     private MudDataGrid<Reagent> _dataGrid = null!;
+
+    private MudFileUpload<IBrowserFile> excelUpload;
+    private bool importing = false;
+    private bool exporting = false;
 
     private async Task CreateNew()
     {
@@ -237,6 +276,171 @@
 
         return false;
     };
+
+    private async Task UploadFile(IBrowserFile file)
+    {
+        if (file is null) return;
+        importing = true;
+
+        try
+        {
+            using var stream = new MemoryStream();
+            await file.OpenReadStream().CopyToAsync(stream);
+
+            stream.Position = 0;
+
+            using var workbook = new XLWorkbook(stream);
+            var worksheet = workbook.Worksheets.First();
+
+            var rows = worksheet.RowsUsed().Skip(1);
+
+            List<Reagent> reagents = new();
+            foreach (var row in rows)
+            {
+                try
+                {
+                    Reagent reagent = new Reagent
+                    {
+                        Code = row.Cell(2).Value.ToString(),
+                        Name = row.Cell(3).Value.ToString(),
+                        Manufacturer = row.Cell(4).Value.ToString(),
+                        Amount = row.Cell(5).Value.ToString(),
+                        Cat = row.Cell(6).Value.ToString(),
+                        ReceiptDate = ParseDateTime(row.Cell(7)),
+                        Quantity = int.Parse(row.Cell(8).Value.ToString()),
+                        Lot = row.Cell(9).Value.ToString(),
+                        Location = row.Cell(10).Value.ToString(),
+                        Comment = row.Cell(11).Value.ToString(),                        
+                    };
+                    reagents.Add(reagent);
+                }
+                catch (Exception ex)
+                {
+                    continue;
+                }
+            }
+
+            var parameters = new DialogParameters<Import>
+            {
+                { x => x.reagents, reagents}
+            };
+
+            var options = new DialogOptions { MaxWidth = MaxWidth.ExtraLarge };
+
+            var dialog = await DialogService.ShowAsync<Import>($"Ready to Import {reagents.Count()} Items", parameters, options);
+            var result = await dialog.Result;
+
+            if (result != null && !result.Canceled)
+            {
+                FilteredData = context.Reagent.ToList();
+                StateHasChanged();
+            }
+
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"파일 업로드 중 오류가 발생했습니다: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            await excelUpload.ClearAsync();
+            importing = false;
+        }
+    }
+
+    private async Task ExportToExcel()
+    {
+        var excelBytes = await ExportData();
+
+        await JS.InvokeVoidAsync("downloadFileFromBytes", "Reagents.xlsx", excelBytes);
+    }
+
+    static DateTime ParseDateTime(IXLCell cell)
+    {
+        try
+        {
+            if (cell.DataType == XLDataType.DateTime)
+            {
+                return cell.GetDateTime();
+            }
+
+            string dateString = cell.GetString();
+
+            if (dateString.Contains('.'))
+            {
+                dateString = dateString.Replace('.', '-');
+            }
+
+            if (DateTime.TryParse(dateString, out DateTime result))
+            {
+                return result;
+            }
+
+            string originalString = cell.GetString();
+            throw new FormatException($"Cannot parse date: {originalString}");
+        }
+        catch (Exception ex)
+        {
+            throw new FormatException($"Error parsing date from cell: {ex.Message}");
+        }
+    }
+
+    private async Task<Byte[]> ExportData()
+    {
+        exporting = true; // Set exporting to true at the beginning of the method
+        try
+        {
+            var datas = FilteredData;
+
+            using (var workbook = new XLWorkbook())
+            {
+                var worksheet = workbook.Worksheets.Add("Reagents");
+
+                worksheet.Cell(1, 1).Value = "번호";
+                worksheet.Cell(1, 2).Value = "관리번호";
+                worksheet.Cell(1, 3).Value = "시약명";
+                worksheet.Cell(1, 4).Value = "제조사";
+                worksheet.Cell(1, 5).Value = "용량";
+                worksheet.Cell(1, 6).Value = "Cat.No.";
+                worksheet.Cell(1, 7).Value = "입고일";
+                worksheet.Cell(1, 8).Value = "수량";
+                worksheet.Cell(1, 9).Value = "Lot.number";
+                worksheet.Cell(1, 10).Value = "보관위치";
+                worksheet.Cell(1, 11).Value = "비고";
+
+                for (int i = 0; i < datas.Count(); i++)
+                {
+                    var data = datas.ElementAt(i); // System.Linq 네임스페이스 필요
+                    worksheet.Cell(i + 2, 1).Value = i + 1;
+                    worksheet.Cell(i + 2, 2).Value = data.Code;
+                    worksheet.Cell(i + 2, 3).Value = data.Name;
+                    worksheet.Cell(i + 2, 4).Value = data.Manufacturer;
+                    worksheet.Cell(i + 2, 5).Value = data.Amount;
+                    worksheet.Cell(i + 2, 6).Value = data.Cat;
+                    worksheet.Cell(i + 2, 7).Value = data.ReceiptDate?.ToString("yyyy-MM-dd");
+                    worksheet.Cell(i + 2, 8).Value = data.Quantity;
+                    worksheet.Cell(i + 2, 9).Value = data.Lot;
+                    worksheet.Cell(i + 2, 10).Value = data.Location;
+                    worksheet.Cell(i + 2, 11).Value = data.Comment;
+                }
+
+                using (var stream = new MemoryStream())
+                {
+                    workbook.SaveAs(stream);
+                    return stream.ToArray();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"데이터 내보내기 중 오류가 발생했습니다: {ex.Message}", Severity.Error);
+            return Array.Empty<byte>();
+        }
+        finally
+        {
+            exporting = false;
+        }
+    }
 
     private async Task CommittedItemChanges(Reagent item)
     {

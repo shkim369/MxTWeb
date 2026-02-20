@@ -333,6 +333,9 @@ namespace MxTWeb.Migrations.MxTWeb
                     b.Property<DateTime?>("FreezeDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Generation")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Location1")
                         .HasColumnType("nvarchar(max)");
 
@@ -369,9 +372,6 @@ namespace MxTWeb.Migrations.MxTWeb
 
                     b.Property<string>("Test")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("level")
-                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -494,11 +494,14 @@ namespace MxTWeb.Migrations.MxTWeb
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Comment")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Location")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("Lot")
-                        .HasColumnType("int");
+                    b.Property<string>("Lot")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Manufacturer")
                         .IsRequired()
@@ -506,14 +509,13 @@ namespace MxTWeb.Migrations.MxTWeb
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(60)
-                        .HasColumnType("nvarchar(60)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
 
-                    b.Property<DateOnly>("ReceiptDate")
-                        .HasColumnType("date");
+                    b.Property<DateTime?>("ReceiptDate")
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 

@@ -76,10 +76,6 @@
                 </MudItem>
             </MudGrid>
 
-            <MudTextField Class="mb-5" Variant="Variant.Outlined"
-                          Label="Passage / Donor / Lot"
-                          @bind-Value="Cyropreserved.Lot" />
-
             <MudGrid Class="mb-5">
                 <MudItem xs="6">
                     <MudTextField Variant="Variant.Outlined"
@@ -93,6 +89,10 @@
                                   @bind-Value="Cyropreserved.Location2" />
                 </MudItem>
             </MudGrid>
+
+            <MudTextField Class="mb-5" Variant="Variant.Outlined"
+                          Label="Passage / Donor / Lot"
+                          @bind-Value="Cyropreserved.Lot" />
 
             <MudGrid Class="mb-5">
                 @if (Cyropreserved.Division == "Cell line")
@@ -128,7 +128,7 @@
                 <MudItem xs="4">
                     <MudTextField Variant="Variant.Outlined"
                                   Label="Generations"
-                                  @bind-Value="Cyropreserved.level" />
+                                  @bind-Value="Cyropreserved.Generation" />
                 </MudItem>
                 <MudItem xs="4">
                     <MudTextField Variant="Variant.Outlined"

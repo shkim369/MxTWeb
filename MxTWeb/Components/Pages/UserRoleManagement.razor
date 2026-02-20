@@ -86,7 +86,7 @@
                 </HeaderContent>
                 <RowTemplate>
                     <MudTd DataLabel="이메일">@context.Email</MudTd>
-                    <MudTd DataLabel="사용자명">@context.UserName</MudTd>
+                    <MudTd DataLabel="사용자명">@context.DisplayName</MudTd>
                     <MudTd>
                         <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="@(() => SelectUser(context))">선택</MudButton>
                     </MudTd>

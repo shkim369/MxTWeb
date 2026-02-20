@@ -39,7 +39,7 @@
     <MudTabPanel Text="RUO 칩 사용 관리대장" OnClick="@(StateHasChanged)">
         <MudDataGrid T="ChipUsage" Class="custom-grid" @ref="dataGrid" Items="FilteredData.AsQueryable()" SortMode="SortMode.Single"
                      Dense="true" Style="white-space: nowrap" Hover="true" Bordered="true" Striped="true" SelectOnRowClick="true"
-                     MultiSelection="true" SelectedItems="@selectedItems" SelectedItemsChanged="@(_ => StateHasChanged())"
+                     MultiSelection="false" @bind-SelectedItem="selectedItem"
                      RowsPerPage="25">
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Chip 종류</MudText>
@@ -50,17 +50,22 @@
                     <MudMenuItem Label="A01_Small chip" @onclick="@(() => SelectChip("A01_Small"))" />
                     <MudMenuItem Label="A01_Large chip" @onclick="@(() => SelectChip("A01_Large"))" />
                 </MudMenu>
-                &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
-                <MudGrid Spacing="5">
+                &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
+                <MudGrid Spacing="3">
                     <MudItem>
-                        <MudButton Class="mt-1" @onclick="CreateNew" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">
+                        <MudButton Class="me-2" @onclick="CreateNew" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">
                             Add New
                         </MudButton>
                     </MudItem>
 
                     <MudItem>
-                        <MudButton Class="mt-1" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete"
-                                   Color="@Color.Error" Disabled="@IsDeleteDisabled" OnClick="@DeleteData"> Delete </MudButton>
+                        <MudButton Class="me-2" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Edit"
+                                   Color="@Color.Info" OnClick="@UpdateData" Disabled="@IsEditDisabled"> Edit </MudButton>
+                    </MudItem>
+
+                    <MudItem>
+                        <MudButton Class="me-2" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete"
+                                   Color="@Color.Error" Disabled="@IsEditDisabled" OnClick="@DeleteData"> Delete </MudButton>
                     </MudItem>
 
                     <MudItem>
@@ -134,13 +139,6 @@
                                 CellStyleFunc="@_cellStyleFunc3"/>
                 <PropertyColumn Property="x => x.Lot" Title="Lot" sortable="false" />
                 <PropertyColumn Property="x => x.Note" Title="비고" sortable="false" />
-
-                <TemplateColumn Context="x" StickyRight="true">
-                    <CellTemplate>
-                        <MudIconButton Size="@Size.Small" Variant="Variant.Filled" Icon="@Icons.Material.Filled.Edit"
-                                       Color="@Color.Info" OnClick="@(() => this.UpdateData(x))" />
-                    </CellTemplate>
-                </TemplateColumn>
             </Columns>
             <ChildRowContent>
                 @if (pressureLoading)
@@ -261,6 +259,7 @@
         }
     </MudTabPanel>
 </MudTabs>
+<br/>
 
 @code {
     private MxTWebContext context = default!;
@@ -271,8 +270,9 @@
     private readonly SemaphoreSlim _deleteSemaphore = new(1, 1);
     private CancellationTokenSource? _searchCts;
     private List<ChipUsage> _filteredResults = new();
-    private HashSet<ChipUsage> selectedItems = new();
-    private bool IsDeleteDisabled => selectedItems.Count == 0;
+    private ChipUsage selectedItem = new();
+    private bool IsEditDisabled => selectedItem == null || selectedItem.Id == 0;
+
 
     private IEnumerable<ChipUsage> FilteredData => _filteredResults;
     private IEnumerable<ChipPressure> FilteredPresData = new List<ChipPressure>();
@@ -415,12 +415,12 @@
         }
     }
 
-    private async Task UpdateData(CellContext<ChipUsage> data)
+    private async Task UpdateData()
     {
         var parameters = new DialogParameters<Edit>
         {
             { x => x.action, UIActionEnum.Update },
-            { x => x.ChipUsage, data.Item } // 선택된 row의 데이터를 직접 전달
+            { x => x.ChipUsage, selectedItem } // 선택된 row의 데이터를 직접 전달
         };
 
         var options = new DialogOptions { MaxWidth = MaxWidth.Large };
@@ -437,7 +437,7 @@
     {
         var parameters = new DialogParameters<Delete>
         {
-            { x => x.chipUsage, selectedItems.ToList() } // 선택된 row의 데이터를 직접 전달
+            { x => x.chipUsage, selectedItem } // 선택된 row의 데이터를 직접 전달
         };
 
         var options = new DialogOptions { MaxWidth = MaxWidth.Large };
@@ -447,7 +447,7 @@
         if (result is not null && !result.Canceled)
         {
             await PerformSearchAsync();
-            selectedItems.Clear();
+            selectedItem = new();
         }
     }
 
@@ -781,7 +781,7 @@
 
     private Func<ChipUsage, string> _cellStyleFunc => x =>
     {
-        string style = "";
+        string style = "height:45px; ";
 
         if (x.Division == "납품")
             style += "background-color:#F9CB9C";

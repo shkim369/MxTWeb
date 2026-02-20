@@ -25,7 +25,7 @@ namespace MxTWeb.Models
         public string? Location2 { get; set; }
         public string? Test { get; set; }
         public string? Parent { get; set; }
-        public int level { get; set; }
+        public string? Generation { get; set; }
         public string? Origin { get; set; }
         public string? Note { get; set; }
     }

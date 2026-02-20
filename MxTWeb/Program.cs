@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
@@ -89,6 +90,14 @@ builder.Services.AddAuthorization(options =>
 
 builder.Services.AddHttpClient();
 builder.Services.AddHttpContextAccessor();
+
+// Docker 리버스 프록시 환경에서 실제 클라이언트 IP를 받기 위한 설정
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 builder.Services.AddSingleton<ActiveUserService>();
 builder.Services.AddHostedService<LoginFailureCleanupService>();
 
@@ -134,6 +143,7 @@ else
     app.UseMigrationsEndPoint();
 }
 
+app.UseForwardedHeaders();
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();

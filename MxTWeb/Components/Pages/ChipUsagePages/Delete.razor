@@ -25,7 +25,7 @@
 
 @code {
     [Parameter]
-    public List<ChipUsage> chipUsage { get; set; } = new();
+    public ChipUsage chipUsage { get; set; } = new();
 
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; }
@@ -37,12 +37,8 @@
 
     private async Task DeleteChipUsage()
     {
-        using var context = DbFactory.CreateDbContext();
-
-        foreach (var item in chipUsage)
-        {
-            context.ChipUsage.Remove(item!);
-        }
+        using var context = DbFactory.CreateDbContext();       
+        context.ChipUsage.Remove(chipUsage!);       
 
         await context.SaveChangesAsync();
         NavigationManager.NavigateTo("/chipusages");
