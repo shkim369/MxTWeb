@@ -40,7 +40,7 @@
         <MudDataGrid T="ChipUsage" Class="custom-grid" @ref="dataGrid" Items="FilteredData.AsQueryable()" SortMode="SortMode.Single"
                      Dense="true" Style="white-space: nowrap" Hover="true" Bordered="true" Striped="true" SelectOnRowClick="true"
                      MultiSelection="false" @bind-SelectedItem="selectedItem"
-                     RowsPerPage="25">
+                     RowsPerPage="100">
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Chip 종류</MudText>
                 &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
@@ -259,7 +259,14 @@
         }
     </MudTabPanel>
 </MudTabs>
-<br/>
+
+<MudScrollToTop>
+    <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.ArrowCircleUp" />
+</MudScrollToTop>
+<br />
+<br />
+<br />
+<br />
 
 @code {
     private MxTWebContext context = default!;
@@ -405,7 +412,7 @@
             { x => x.chipType, SelectedChip }
         };
 
-        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<Edit>("Add New Chip", parameters, options);
         var result = await dialog.Result;
 
@@ -423,7 +430,7 @@
             { x => x.ChipUsage, selectedItem } // 선택된 row의 데이터를 직접 전달
         };
 
-        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<Edit>("Edit Chip", parameters, options);
         var result = await dialog.Result;
 
@@ -440,7 +447,7 @@
             { x => x.chipUsage, selectedItem } // 선택된 row의 데이터를 직접 전달
         };
 
-        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<Delete>("Delete Data", parameters, options);
         var result = await dialog.Result;
 
@@ -616,7 +623,7 @@
                 { x => x.chipUsages, chipUsages}
             };
 
-            var options = new DialogOptions { MaxWidth = MaxWidth.ExtraLarge };
+            var options = new DialogOptions { MaxWidth = MaxWidth.ExtraLarge, BackdropClick = false, CloseOnEscapeKey = true };
 
             var dialog = await DialogService.ShowAsync<Import>($"Ready to Import {chipUsages.Count()} Items", parameters, options);
             var result = await dialog.Result;

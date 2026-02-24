@@ -43,7 +43,7 @@
 
 <MudDataGrid T="Shipment" Class="custom-grid" @ref="_dataGrid" Items="FilteredData" 
              SortMode="SortMode.Single" Dense="true" Hover="true" Bordered="true" Striped="true"
-             RowsPerPage="25" SelectOnRowClickㅍ="true" MultiSelection="false"
+             RowsPerPage="100" SelectOnRowClickㅍ="true" MultiSelection="false"
              @bind-SelectedItem="selectedItem" QuickFilter="@_quickFilter" FixedHeader="true">
     <ToolBarContent>
         <MudToggleGroup T="string" SelectionMode="SelectionMode.SingleSelection" @bind-Value="SelectedDivision" Color="Color.Info"
@@ -110,6 +110,14 @@
     </PagerContent>
 </MudDataGrid>
 
+<MudScrollToTop>
+    <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.ArrowCircleUp" />
+</MudScrollToTop>
+<br />
+<br />
+<br />
+<br />
+
 @code {
     private MxTWebContext context = default!;
     private MudDataGrid<Shipment> _dataGrid = null!;
@@ -134,7 +142,7 @@
             { x => x.action, UIActionEnum.Insert }
         };
 
-        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<Edit>("Add New Shipping history", parameters, options);
         var result = await dialog.Result;
 
@@ -152,7 +160,7 @@
             { x => x.Shipment, selectedItem } 
         };
 
-        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<Edit>("Edit Shipping History", parameters, options);
         var result = await dialog.Result;
 
@@ -169,7 +177,7 @@
             { x => x.Shipment, selectedItem } // 선택된 row의 데이터를 직접 전달
         };
 
-        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<Delete>("Delete Data", parameters, options);
         var result = await dialog.Result;
 

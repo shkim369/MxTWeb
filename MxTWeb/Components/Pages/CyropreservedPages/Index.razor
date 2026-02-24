@@ -43,7 +43,7 @@
 
 <MudDataGrid T="Cyropreserved" Class="custom-grid" @ref="_dataGrid" Items="FilteredData" 
              SortMode="SortMode.Single" Dense="true" Hover="true" Bordered="true" Striped="true"
-             RowsPerPage="25" SelectOnRowClick="true" MultiSelection="false" 
+             RowsPerPage="100" SelectOnRowClick="true" MultiSelection="false" 
              @bind-SelectedItem="selectedItem" QuickFilter="@_quickFilter" FixedHeader="true" >
     <ToolBarContent>
 
@@ -76,11 +76,11 @@
 
             <MudSpacer />
             <MudMenu Class="mt-3" Label="@searchField" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Secondary">
-                <MudMenuItem Label="세포명" @onclick="@(() => SelectSearchField("세포명"))" />
+                <MudMenuItem Label="세포" @onclick="@(() => SelectSearchField("세포"))" />
                 <MudMenuItem Label="반입자" @onclick="@(() => SelectSearchField("반입자"))" />
                 <MudMenuItem Label="반입처" @onclick="@(() => SelectSearchField("반입처"))" />
-                <MudMenuItem Label="보관위치1" @onclick="@(() => SelectSearchField("보관위치1"))" />
-                <MudMenuItem Label="보관위치2" @onclick="@(() => SelectSearchField("보관위치2"))" />
+                <MudMenuItem Label="Tank" @onclick="@(() => SelectSearchField("Tank"))" />
+                <MudMenuItem Label="Canister" @onclick="@(() => SelectSearchField("Canister"))" />
             </MudMenu>
             &nbsp&nbsp&nbsp&nbsp
             <MudTextField Class="mt-5 pe-5" @bind-Value="searchFilter" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
@@ -91,10 +91,10 @@
     <Columns>
         <HierarchyColumn T="Cyropreserved" EnableHeaderToggle="true"/>
         <SelectColumn T="Cyropreserved" ShowInHeader="false"/>
-        <PropertyColumn Property="x => x.Code" Title="번호" Sortable="false"/>
+        <PropertyColumn Property="x => x.Code" Title="번호" Sortable="true" 
+                        InitialDirection="SortDirection.Ascending" SortBy="@(x => int.TryParse(x.Code, out var n) ? n : int.MaxValue)" />
         <PropertyColumn Property="x => x.Name" Title="🧫세포" Sortable="true"/>
-        <PropertyColumn Property="x => x.ReceiptDate" Title="반입 날짜" Format="yyyy-MM-dd" Sortable="true"
-                        InitialDirection="SortDirection.Descending" />
+        <PropertyColumn Property="x => x.ReceiptDate" Title="반입 날짜" Format="yyyy-MM-dd" Sortable="true" />
         <PropertyColumn Property="x => x.Recipient" Title="반입자" Sortable="true"/>
         <PropertyColumn Property="x => x.Supplier" Title="반입처" Sortable="true"/>
         <PropertyColumn Property="x => x.FreezeDate" Title="동결 날짜" Format="yyyy-MM-dd" Sortable="true"/>
@@ -149,6 +149,14 @@
     </PagerContent>
 </MudDataGrid>
 
+<MudScrollToTop>
+    <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.ArrowCircleUp" />
+</MudScrollToTop>
+<br />
+<br />
+<br />
+<br />
+
 @code {
     private MxTWebContext context = default!;
     private MudDataGrid<Cyropreserved> _dataGrid = null!;
@@ -182,7 +190,7 @@
             { x => x.action, UIActionEnum.Insert }
         };
 
-        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, BackdropClick = false, CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<Edit>("Add New Cyropreserved", parameters, options);
         var result = await dialog.Result;
 
@@ -201,7 +209,7 @@
             { x => x.Cyropreserved, selectedItem } 
         };
 
-        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, BackdropClick = false, CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<Edit>("Edit Cyropreserved", parameters, options);
         var result = await dialog.Result;
 
@@ -219,7 +227,7 @@
             { x => x.Cyropreserved, selectedItem } // 선택된 row의 데이터를 직접 전달
         };
 
-        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<Delete>("Delete Data", parameters, options);
         var result = await dialog.Result;
 
@@ -240,7 +248,7 @@
         {
             switch (searchField)
             {
-                case "세포명":
+                case "세포":
                     if (x.Name.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
                         return true;
                     break;
@@ -255,12 +263,12 @@
                         return true;
                     break;
 
-                case "보관위치1":
+                case "Tank":
                     if (x.Location1.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
                         return true;
                     break;
 
-                case "보관위치2":
+                case "Canister":
                     if (x.Location2.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
                         return true;
                     break;

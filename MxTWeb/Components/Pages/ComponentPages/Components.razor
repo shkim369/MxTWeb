@@ -144,6 +144,9 @@
     <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.ArrowCircleUp" />
 </MudScrollToTop>
 <br />
+<br />
+<br />
+<br />
 
 @code {
     private MxTWebContext context = default!;
@@ -169,7 +172,7 @@
             { x => x.action, UIActionEnum.Insert }
         };
 
-        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<Edit>("Add New Component", parameters, options);
         var result = await dialog.Result;
 
@@ -188,7 +191,7 @@
             { x => x.Component, data.Item }
         };
 
-        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<HistoryEdit>("Add New History", parameters, options);
         var result = await dialog.Result;
 
@@ -208,7 +211,7 @@
             { x => x.Component, selectedItem } // 선택된 row의 데이터를 직접 전달
         };
 
-        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<Edit>("Edit Component", parameters, options);
         var result = await dialog.Result;
 
@@ -226,7 +229,7 @@
             { x => x.component, selectedItem } // 선택된 row의 데이터를 직접 전달
         };
 
-        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<Delete>("Delete Data", parameters, options);
         var result = await dialog.Result;
 

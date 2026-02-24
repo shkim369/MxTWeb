@@ -139,7 +139,7 @@
             { x => x._roleToDelete, _roleToDelete } // 선택된 row의 데이터를 직접 전달
         };
 
-        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<RoleManagementConfirm>("Delete Data", parameters, options);
         var result = await dialog.Result;
 

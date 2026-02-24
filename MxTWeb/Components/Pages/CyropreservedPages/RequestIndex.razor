@@ -190,7 +190,7 @@
             { x => x.Action, UIActionEnum.Insert }
         };
 
-        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, BackdropClick = false, CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<RequestEdit>("신청서 작성", parameters, options);
         var result = await dialog.Result;
 
@@ -210,7 +210,7 @@
             { x => x.Request, selectedItem }
         };
 
-        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, BackdropClick = false, CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<RequestEdit>("신청서 수정", parameters, options);
         var result = await dialog.Result;
 
@@ -229,7 +229,7 @@
             { x => x.Request, selectedItem }
         };
 
-        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, BackdropClick = false, CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<RequestApproval>("신청서 승인/반려", parameters, options);
         var result = await dialog.Result;
 
@@ -250,7 +250,7 @@
             { x => x.Request, selectedItem }
         };
 
-        var options = new DialogOptions { MaxWidth = MaxWidth.Small };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, BackdropClick = false, CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<RequestDelete>("신청서 삭제", parameters, options);
         var result = await dialog.Result;
 

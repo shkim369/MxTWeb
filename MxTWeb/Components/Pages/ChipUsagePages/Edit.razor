@@ -14,45 +14,53 @@
             <DataAnnotationsValidator />
 
             <MudGrid Class="mb-5">
-                <MudItem xs="2">
-                    <MudText Typo="Typo.h6">Chip 종류</MudText>
+                <MudItem xs="6">
+                    <MudAutocomplete Variant="Variant.Outlined"
+                                     Label="Chip 종류"
+                                     @bind-Value="ChipUsage.Chip"
+                                     For="@(() => ChipUsage.Chip)"
+                                     Immediate="true" Required="true" Clearable="true"
+                                     SearchFunc="@(async (value, token) => await SearchAutoComplete(value, token, "Chip"))" />
                 </MudItem>
                 <MudItem xs="6">
-                    <MudMenu Class="me-5 ms-1" Label="@ChipUsage.Chip" Variant="Variant.Outlined" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Default">
-                        <MudMenuItem Label="B01_Small" @onclick="@(() => SelectChip("B01_Small"))" />
-                        <MudMenuItem Label="B01_Large" @onclick="@(() => SelectChip("B01_Large"))" />
-                        <MudMenuItem Label="A01_Small" @onclick="@(() => SelectChip("A01_Small"))" />
-                        <MudMenuItem Label="A01_Large" @onclick="@(() => SelectChip("A01_Large"))" />
-                    </MudMenu>
+                    <MudAutocomplete Variant="Variant.Outlined"
+                                     Label="구분"
+                                     @bind-Value="ChipUsage.Division"
+                                     For="@(() => ChipUsage.Division)"
+                                     Immediate="true" Required="true" Clearable="true"
+                                     SearchFunc="@(async (value, token) => await SearchAutoComplete(value, token, "Division"))" />
                 </MudItem>
             </MudGrid>
 
-            <MudAutocomplete Class="mb-5" Variant="Variant.Outlined"
-                             Label="구분" 
-                             @bind-Value="ChipUsage.Division"
-                             For="@(() => ChipUsage.Division)"                          
-							 Immediate="true" Required="true" Clearable="true"
-                             SearchFunc="@(async(value,token) => await SearchAutoComplete(value, token, "Division"))" />
+            <MudGrid Class="mb-5">
+                <MudItem xs="6">
+                    <MudDatePicker Variant="Variant.Outlined"
+                                   Label="날짜"
+                                   @bind-Date="ChipUsage.UseDate"
+                                   DateFormat="yyyy-MM-dd" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudAutocomplete Variant="Variant.Outlined"
+                                     Label="작업자"
+                                     @bind-Value="ChipUsage.Producer" Clearable="true" CoerceValue="true"
+                                     SearchFunc="@(async (value, token) => await SearchAutoComplete(value, token, "Producer"))" />
+                </MudItem>
+            </MudGrid>
 
-            <MudDatePicker Class="mb-5" Variant="Variant.Outlined"
-                           Label="사용 일자"
-                           @bind-Date="ChipUsage.UseDate"
-                           DateFormat="yyyy-MM-dd"/>
-
-            <MudAutocomplete Class="mb-5" Variant="Variant.Outlined"
-                             Label="작업자"
-                             @bind-Value="ChipUsage.Producer" Clearable="true" CoerceValue="true"
-                             SearchFunc="@(async (value, token) => await SearchAutoComplete(value, token, "Producer"))" />
-
-            <MudAutocomplete Class="mb-5" Variant="Variant.Outlined"
-                             Label="웨이퍼"
-                             @bind-Value="ChipUsage.Wafer" Clearable="true" CoerceValue="true"
-                             SearchFunc="@(async (value, token) => await SearchAutoComplete(value, token, "Wafer"))" />
-
-            <MudAutocomplete Class="mb-5" Variant="Variant.Outlined"
-                             Label="웨이퍼 정보"
-                             @bind-Value="ChipUsage.WaferInfo" Clearable="true" CoerceValue="true"
-                             SearchFunc="@(async (value, token) => await SearchAutoComplete(value, token, "WaferInfo"))" />
+            <MudGrid Class="mb-5">
+                <MudItem xs="6">
+                    <MudAutocomplete Variant="Variant.Outlined"
+                                     Label="웨이퍼"
+                                     @bind-Value="ChipUsage.Wafer" Clearable="true" CoerceValue="true"
+                                     SearchFunc="@(async (value, token) => await SearchAutoComplete(value, token, "Wafer"))" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudAutocomplete Variant="Variant.Outlined"
+                                     Label="웨이퍼 정보"
+                                     @bind-Value="ChipUsage.WaferInfo" Clearable="true" CoerceValue="true"
+                                     SearchFunc="@(async (value, token) => await SearchAutoComplete(value, token, "WaferInfo"))" />
+                </MudItem>
+            </MudGrid>
 
             <MudDatePicker Class="mb-5" Variant="Variant.Outlined"
                            Label="납품일시"
@@ -119,6 +127,7 @@
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; }
 
+    private string?[] _chipStates = Array.Empty<string>();
     private string?[] _divisionStates = Array.Empty<string>();
     private string?[] _producerStates = Array.Empty<string>();
     private string?[] _waferStates = Array.Empty<string>();
@@ -227,6 +236,7 @@
 
         string?[] _states = column switch
         {
+            "Chip" => _chipStates,
             "Division" => _divisionStates,
             "Producer" => _producerStates,
             "Wafer" => _waferStates,
@@ -248,6 +258,12 @@
     {
         using var context = DbFactory.CreateDbContext();
 
+        _chipStates = await context.ChipUsage
+            .Select(x => x.Chip)
+            .Distinct()
+            .Where(x => !string.IsNullOrEmpty(x) && x != "-")
+            .OrderBy(x => x)
+            .ToArrayAsync(); 
         _divisionStates = await context.ChipUsage
             .Select(x => x.Division)
             .Distinct()

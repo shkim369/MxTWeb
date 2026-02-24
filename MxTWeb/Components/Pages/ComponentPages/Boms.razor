@@ -222,16 +222,16 @@
     </FooterContent>
 </MudTable>
 
-<MudScrollToTop>
-    <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.ArrowCircleUp" />
-</MudScrollToTop>
-
 @if (FilteredData.Count() == 0)
 {
     <br/>
     <MudText Typo="Typo.h4" Align="Align.Center">결과가 없습니다.</MudText>
 }
 
+<MudScrollToTop>
+    <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.ArrowCircleUp" />
+</MudScrollToTop>
+<br />
 <br />
 <br />
 <br />
@@ -265,7 +265,7 @@
             { x => x.SelectedBomId, _selectedBomId }
         };
 
-        var options = new DialogOptions { MaxWidth = MaxWidth.ExtraExtraLarge, CloseButton = true };
+        var options = new DialogOptions { MaxWidth = MaxWidth.ExtraExtraLarge, CloseButton = true, BackdropClick = false, CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<BomDetailEdit>("Bom Edit", parameters, options);
         var result = await dialog.Result;
 
@@ -279,7 +279,7 @@
 
     private async Task AddNew2()  // Edit BOM
     {
-        var options = new DialogOptions { MaxWidth = MaxWidth.Large, CloseButton = true };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, CloseButton = true, BackdropClick = false, CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<BomEdit>("Edit BOM", options);
         var result = await dialog.Result;
 
@@ -361,7 +361,7 @@
             { x => x.bomDetails, selectedItems.ToList() }
         };
 
-        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<BomDetailDelete>("Delete Data", parameters, options);
         var result = await dialog.Result;
 

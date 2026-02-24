@@ -65,7 +65,7 @@
 
 <MudDataGrid T="CompHistory" Class="custom-grid" SortMode="SortMode.Single" Items="@FilteredData2"
              Dense="true" Style="white-space: nowrap" Hover="true" Bordered="true" Striped="true"
-             RowsPerPage="25" SelectOnRowClick="true" QuickFilter="_quickFilter2">
+             RowsPerPage="100" SelectOnRowClick="true" QuickFilter="_quickFilter2">
     <Columns>
         <PropertyColumn Property="x => x.Date" Title="날짜" Sortable="true" Format="yyyy-MM-dd" />
         <PropertyColumn Property="x => x.Component.Assembly" Title="Assembly" Sortable="true" />
@@ -105,6 +105,15 @@
         <MudDataGridPager />
     </PagerContent>
 </MudDataGrid>
+
+<MudScrollToTop>
+    <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.ArrowCircleUp" />
+</MudScrollToTop>
+<br />
+<br />
+<br />
+<br />
+
 @code {
     private MxTWebContext context = default!;
 
@@ -126,7 +135,7 @@
             { x => x.action, UIActionEnum.Insert }
         };
 
-        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<HistoryEdit>("Add New History", parameters, options);
         var result = await dialog.Result;
 
@@ -146,7 +155,7 @@
             { x => x.CompHistory, data.Item }
         };
 
-        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<HistoryEdit>("Edit History", parameters, options);
         var result = await dialog.Result;
 
@@ -180,7 +189,7 @@
 
     private async Task StockComsumption()
     {
-        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<Consume>("Info", options);
         var result = await dialog.Result;
 

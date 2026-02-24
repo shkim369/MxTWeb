@@ -153,6 +153,9 @@
     <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.ArrowCircleUp" />
 </MudScrollToTop>
 <br />
+<br />
+<br />
+<br />
 
 @code {
     private MxTWebContext context = default!;
@@ -180,7 +183,7 @@
             { x => x.action, UIActionEnum.Insert }
         };
 
-        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<Edit>("Add New Reagent", parameters, options);
         var result = await dialog.Result;
 
@@ -199,7 +202,7 @@
             { x => x.Reagent, selectedItem } // 선택된 row의 데이터를 직접 전달
         };
 
-        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<Edit>("Edit Data", parameters, options);
         var result = await dialog.Result;
 
@@ -217,7 +220,7 @@
             { x => x.reagent, selectedItem } // 선택된 row의 데이터를 직접 전달
         };
 
-        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<Delete>("Delete Data", parameters, options);
         var result = await dialog.Result;
 
@@ -325,7 +328,7 @@
                 { x => x.reagents, reagents}
             };
 
-            var options = new DialogOptions { MaxWidth = MaxWidth.ExtraLarge };
+            var options = new DialogOptions { MaxWidth = MaxWidth.ExtraLarge, BackdropClick = false, CloseOnEscapeKey = true };
 
             var dialog = await DialogService.ShowAsync<Import>($"Ready to Import {reagents.Count()} Items", parameters, options);
             var result = await dialog.Result;

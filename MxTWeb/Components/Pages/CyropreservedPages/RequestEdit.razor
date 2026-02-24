@@ -146,7 +146,9 @@
             return CyropreservedList;
 
         return CyropreservedList
-            .Where(c => c.Name != null && c.Name.Contains(value, StringComparison.OrdinalIgnoreCase))
+            .Where(c => c.Name != null && 
+                   c.Name.Contains(value, StringComparison.OrdinalIgnoreCase) && 
+                   c.Quantity > 0)
             .ToList();
     }
 

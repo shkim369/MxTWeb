@@ -105,7 +105,7 @@
             { x => x.bom, bom },
         };
 
-        var options = new DialogOptions { MaxWidth = MaxWidth.Large };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<BomDelete>("Delete Data", parameters, options);
         var result = await dialog.Result;
 
