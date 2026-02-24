@@ -38,7 +38,7 @@
             이력 추가
         </MudButton>
     </MudItem>
-    <MudItem>
+    @* <MudItem>
         <MudButton Class="me-2" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Build"
                    Color="@Color.Tertiary" OnClick="@StockComsumption">
             @if (isProcessing)
@@ -51,7 +51,7 @@
                 <MudText>일괄 소진</MudText>
             }
         </MudButton>
-    </MudItem>
+    </MudItem> *@
 
     <MudSpacer />
 
@@ -140,9 +140,19 @@
         var result = await dialog.Result;
 
         if (result is not null && !result.Canceled)
-        {
+        {            
+            var start = _dateRange.Start.Value.Date;
+            var end = _dateRange.End.Value.Date.AddDays(1).AddTicks(-1);
+
             context = DbFactory.CreateDbContext();
-            FilteredData2 = await context.CompHistory.Include(c => c.Component).ToListAsync();
+            FilteredData2 = context.CompHistory.Include(c => c.Component)
+                .Where(x => x.Date >= start && x.Date <= end)
+                .OrderByDescending(x => x.Date)
+                .ToList();
+
+            totalPrice = FilteredData2.Where(x => x.state == "출고").Sum(x => x.Component.Price * x.Quantity)
+                + FilteredData2.Where(x => x.state == "폐기").Sum(x => x.Component.Price * x.Quantity);
+
             StateHasChanged();
         }
     }
@@ -161,8 +171,18 @@
 
         if (result is not null && !result.Canceled)
         {
+            var start = _dateRange.Start.Value.Date;
+            var end = _dateRange.End.Value.Date.AddDays(1).AddTicks(-1);
+
             context = DbFactory.CreateDbContext();
-            FilteredData2 = await context.CompHistory.Include(c => c.Component).ToListAsync();
+            FilteredData2 = context.CompHistory.Include(c => c.Component)
+                .Where(x => x.Date >= start && x.Date <= end)
+                .OrderByDescending(x => x.Date)
+                .ToList();
+
+            totalPrice = FilteredData2.Where(x => x.state == "출고").Sum(x => x.Component.Price * x.Quantity)
+                + FilteredData2.Where(x => x.state == "폐기").Sum(x => x.Component.Price * x.Quantity);
+
             StateHasChanged();
         }
     }
@@ -177,7 +197,17 @@
             await context.SaveChangesAsync();
             await transaction.CommitAsync();
 
-            FilteredData2 = await context.CompHistory.Include(c => c.Component).ToListAsync();
+            var start = _dateRange.Start.Value.Date;
+            var end = _dateRange.End.Value.Date.AddDays(1).AddTicks(-1);
+
+            FilteredData2 = context.CompHistory.Include(c => c.Component)
+                .Where(x => x.Date >= start && x.Date <= end)
+                .OrderByDescending(x => x.Date)
+                .ToList();
+
+            totalPrice = FilteredData2.Where(x => x.state == "출고").Sum(x => x.Component.Price * x.Quantity)
+                + FilteredData2.Where(x => x.state == "폐기").Sum(x => x.Component.Price * x.Quantity);
+
             StateHasChanged();
         }
         catch
@@ -269,7 +299,7 @@
 
         context = DbFactory.CreateDbContext();
         FilteredData2 = await context.CompHistory.Include(c => c.Component).ToListAsync();
-        _dateRange = new DateRange(DateTime.Today.AddMonths(-1), DateTime.Today);
+        _dateRange = new DateRange(DateTime.Today.AddMonths(-3), DateTime.Today);
 
         isLoading = false;
     }

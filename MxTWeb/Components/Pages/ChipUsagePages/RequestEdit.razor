@@ -63,7 +63,8 @@
         </DialogContent>
         <DialogActions>
             <MudButton Class="mb-5 me-5" ButtonType="ButtonType.Submit" Variant="Variant.Filled"
-                       StartIcon="@Icons.Material.Filled.Save" Color="Color.Info">저장</MudButton>
+                       Disabled="@_isProcessing"
+                       StartIcon="@(_isProcessing ? Icons.Material.Filled.HourglassEmpty : Icons.Material.Filled.Save)" Color="Color.Info">저장</MudButton>
             <MudButton Class="mb-5 me-5" Variant="Variant.Filled" Color="Color.Secondary"
                        OnClick="() => MudDialog.Cancel()">취소</MudButton>
         </DialogActions>
@@ -79,6 +80,8 @@
 
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    private bool _isProcessing = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -99,13 +102,23 @@
 
     private async Task OnValidSubmit()
     {
-        if (Action == UIActionEnum.Insert)
+        if (_isProcessing) return;
+        _isProcessing = true;
+
+        try
         {
-            await AddRequest();
+            if (Action == UIActionEnum.Insert)
+            {
+                await AddRequest();
+            }
+            else if (Action == UIActionEnum.Update)
+            {
+                await UpdateRequest();
+            }
         }
-        else if (Action == UIActionEnum.Update)
+        finally
         {
-            await UpdateRequest();
+            _isProcessing = false;
         }
     }
 

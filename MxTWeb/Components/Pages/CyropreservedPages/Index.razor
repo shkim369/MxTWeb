@@ -47,11 +47,11 @@
              @bind-SelectedItem="selectedItem" QuickFilter="@_quickFilter" FixedHeader="true" >
     <ToolBarContent>
 
-        <MudToggleGroup T="string" SelectionMode="SelectionMode.ToggleSelection" @bind-Value="SelectedDivision" Color="Color.Info"
+        <MudToggleGroup T="string" SelectionMode="SelectionMode.SingleSelection" @bind-Value="SelectedDivision" Color="Color.Info"
                         Style="width: 450px" Vertical="false">
             <MudToggleItem Value="@("")" Text="전체" />
-            <MudToggleItem Value="@("Primary Cell")" Text="Primary Cell" />
-            <MudToggleItem Value="@("Cell Line")" Text="Cell Line" />
+            <MudToggleItem Value="@("Primary cell")" Text="Primary Cell" />
+            <MudToggleItem Value="@("Cell line")" Text="Cell Line" />
         </MudToggleGroup>
 
         &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
@@ -130,7 +130,7 @@
                     <MudItem xs="12" sm="2">
                         <MudPaper Class="pa-3" Style="width: 220px" Elevation="1">
                             <MudText Typo="Typo.caption" Color="Color.Primary"><b>Generation</b></MudText>
-                            <MudText Typo="Typo.body1">@(string.IsNullOrEmpty(x.Item.Note) ? "-" : x.Item.Generation)</MudText>
+                            <MudText Typo="Typo.body1">@(string.IsNullOrEmpty(x.Item.Generation) ? "-" : x.Item.Generation)</MudText>
                         </MudPaper>
                     </MudItem>
                     <MudItem xs="12" sm="2">
@@ -163,9 +163,12 @@
     private string searchField = "세포명";
     private string searchFilter;
 
-    private IEnumerable<Cyropreserved> FilteredData = new List<Cyropreserved>();
+    private List<Cyropreserved> AllData = new List<Cyropreserved>();
+    private IEnumerable<Cyropreserved> FilteredData => AllData
+        .Where(x => string.IsNullOrEmpty(_selectedDivision) || x.Division == _selectedDivision);
     private Cyropreserved selectedItem = new();
     private bool IsEditDisabled => selectedItem == null || selectedItem.Id == 0;
+
     private string _selectedDivision = "";
     public string SelectedDivision
     {
@@ -175,9 +178,6 @@
             if (_selectedDivision != value)
             {
                 _selectedDivision = value;
-                FilteredData = context.Cyropreserved
-                    .Where(x => string.IsNullOrEmpty(_selectedDivision) || x.Division == _selectedDivision)
-                    .ToList();
                 StateHasChanged();
             }
         }
@@ -190,14 +190,13 @@
             { x => x.action, UIActionEnum.Insert }
         };
 
-        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, BackdropClick = false, CloseOnEscapeKey = true };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<Edit>("Add New Cyropreserved", parameters, options);
         var result = await dialog.Result;
 
         if (result is not null && !result.Canceled)
         {            
-            FilteredData = context.Cyropreserved.ToList();
-            StateHasChanged();
+            await LoadData();
         }
     }
 
@@ -209,14 +208,13 @@
             { x => x.Cyropreserved, selectedItem } 
         };
 
-        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, BackdropClick = false, CloseOnEscapeKey = true };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<Edit>("Edit Cyropreserved", parameters, options);
         var result = await dialog.Result;
 
         if (result is not null && !result.Canceled)
         {
-            FilteredData = context.Cyropreserved.ToList();
-            StateHasChanged();
+            await LoadData();
         }
     }
 
@@ -234,8 +232,7 @@
         if (result is not null && !result.Canceled)
         {
             selectedItem = new();
-            FilteredData = context.Cyropreserved.ToList();
-            StateHasChanged();
+            await LoadData();
         }
     }
 
@@ -282,6 +279,14 @@
         return false;
     };
 
+    private async Task LoadData()
+    {
+        AllData = await context.Cyropreserved
+            .OrderBy(c => c.Code)
+            .ToListAsync();
+        StateHasChanged();
+    }
+
     private void SelectSearchField(string item)
     {
         searchField = item;
@@ -295,7 +300,7 @@
     protected override async Task OnInitializedAsync()
     {
         context = DbFactory.CreateDbContext();
-        FilteredData = await context.Cyropreserved.ToListAsync();
+        await LoadData();
     }
 
     public async ValueTask DisposeAsync() => await context.DisposeAsync();

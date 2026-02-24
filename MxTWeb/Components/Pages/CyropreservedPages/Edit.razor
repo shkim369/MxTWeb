@@ -70,9 +70,15 @@
                                   @bind-Value="Cyropreserved.Quantity" />
                 </MudItem>
                 <MudItem xs="4">
-                    <MudTextField Variant="Variant.Outlined"
-                                  Label="Cell density"
-                                  @bind-Value="Cyropreserved.Density" />
+                    <MudText Typo="Typo.caption" Class="ms-1 mb-1" Style="color: var(--mud-palette-text-secondary)">Cell density</MudText>
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                        <MudNumericField T="int?" Variant="Variant.Outlined" Style="width: 70px"
+                                         @bind-Value="_densityCoefficient" Min="1" Max="9" />
+                        <MudText Typo="Typo.body1">×10</MudText>
+                        <MudNumericField T="int?" Variant="Variant.Outlined" Style="width: 70px"
+                                         @bind-Value="_densityExponent" Min="0" Max="15" />
+                        <MudText Typo="Typo.body1" Style="white-space: nowrap">cells/mL</MudText>
+                    </div>
                 </MudItem>
             </MudGrid>
 
@@ -139,7 +145,9 @@
 
         </DialogContent>
         <DialogActions>
-            <MudButton Class="mb-5 me-5" ButtonType="ButtonType.Submit" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save" Color="Color.Info">SAVE</MudButton>
+            <MudButton Class="mb-5 me-5" ButtonType="ButtonType.Submit" Variant="Variant.Filled"
+                       Disabled="@_isProcessing"
+                       StartIcon="@(_isProcessing ? Icons.Material.Filled.HourglassEmpty : Icons.Material.Filled.Save)" Color="Color.Info">SAVE</MudButton>
             <MudButton Class="mb-5 me-5" Variant="Variant.Filled" Color="Color.Secondary" OnClick="() => MudDialog.Cancel()">Cancel</MudButton>
         </DialogActions>
     </MudDialog>
@@ -159,15 +167,75 @@
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; }
 
+    private bool _isProcessing = false;
+    private int? _densityCoefficient;
+    private int? _densityExponent;
+
+    private void ParseDensity()
+    {
+        if (string.IsNullOrWhiteSpace(Cyropreserved?.Density))
+        {
+            _densityCoefficient = null;
+            _densityExponent = null;
+            return;
+        }
+
+        var superscriptMap = new Dictionary<char, char>
+        {
+            {'⁰','0'},{'¹','1'},{'²','2'},{'³','3'},{'⁴','4'},
+            {'⁵','5'},{'⁶','6'},{'⁷','7'},{'⁸','8'},{'⁹','9'}
+        };
+
+        var text = Cyropreserved.Density.Trim();
+
+        // "3 × 10⁷ cells/mL" 형식 파싱
+        var match = System.Text.RegularExpressions.Regex.Match(text, @"^(\d+)\s*[×xX]\s*10(.+?)\s*cells/mL$");
+        if (match.Success)
+        {
+            if (int.TryParse(match.Groups[1].Value, out var coeff))
+                _densityCoefficient = coeff;
+
+            var expStr = new string(match.Groups[2].Value.Select(c => superscriptMap.ContainsKey(c) ? superscriptMap[c] : c).ToArray());
+            if (int.TryParse(expStr, out var exp))
+                _densityExponent = exp;
+        }
+    }
+
+    private void BuildDensity()
+    {
+        if (_densityCoefficient.HasValue && _densityExponent.HasValue)
+        {
+            var superscripts = "⁰¹²³⁴⁵⁶⁷⁸⁹";
+            var expStr = string.Concat(_densityExponent.Value.ToString().Select(c => superscripts[c - '0']));
+            Cyropreserved!.Density = $"{_densityCoefficient} × 10{expStr} cells/mL";
+        }
+        else
+        {
+            Cyropreserved!.Density = null;
+        }
+    }
+
     private async Task OnValidSubmit()
     {
-        if (action == UIActionEnum.Insert)
+        if (_isProcessing) return;
+        _isProcessing = true;
+
+        try
         {
-            await AddComponent();
+            BuildDensity();
+
+            if (action == UIActionEnum.Insert)
+            {
+                await AddComponent();
+            }
+            else if (action == UIActionEnum.Update)
+            {
+                await UpdateCyropreserved();
+            }
         }
-        else if (action == UIActionEnum.Update)
+        finally
         {
-            await UpdateCyropreserved();
+            _isProcessing = false;
         }
     }
 
@@ -187,6 +255,8 @@
                 NavigationManager.NavigateTo("notfound");
             }
         }
+
+        ParseDensity();
     }
 
     private async Task AddComponent()

@@ -89,7 +89,9 @@
 
         </DialogContent>
         <DialogActions>
-            <MudButton Class="mb-5 me-5" ButtonType="ButtonType.Submit" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save" Color="Color.Info">SAVE</MudButton>
+            <MudButton Class="mb-5 me-5" ButtonType="ButtonType.Submit" Variant="Variant.Filled"
+                       Disabled="@_isProcessing"
+                       StartIcon="@(_isProcessing ? Icons.Material.Filled.HourglassEmpty : Icons.Material.Filled.Save)" Color="Color.Info">SAVE</MudButton>
             <MudButton Class="mb-5 me-5" Variant="Variant.Filled" Color="Color.Secondary" OnClick="() => MudDialog.Cancel()">Cancel</MudButton>
         </DialogActions>
     </MudDialog>
@@ -109,15 +111,27 @@
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; }
 
+    private bool _isProcessing = false;
+
     private async Task OnValidSubmit()
     {
-        if (action == UIActionEnum.Insert)
+        if (_isProcessing) return;
+        _isProcessing = true;
+
+        try
         {
-            await AddComponent();
+            if (action == UIActionEnum.Insert)
+            {
+                await AddComponent();
+            }
+            else if (action == UIActionEnum.Update)
+            {
+                await UpdateData();
+            }
         }
-        else if (action == UIActionEnum.Update)
+        finally
         {
-            await UpdateData();
+            _isProcessing = false;
         }
     }
 

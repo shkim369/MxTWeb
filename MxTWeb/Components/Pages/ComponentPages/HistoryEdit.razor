@@ -91,7 +91,8 @@
         </DialogContent>
         <DialogActions>
             <MudButton Class="mb-5 me-5" ButtonType="ButtonType.Submit" Variant="Variant.Filled"
-                       StartIcon="@(action == UIActionEnum.Update ? Icons.Material.Filled.Edit : Icons.Material.Filled.Add)" Color="Color.Info">
+                       Disabled="@_isProcessing"
+                       StartIcon="@(_isProcessing ? Icons.Material.Filled.HourglassEmpty : (action == UIActionEnum.Update ? Icons.Material.Filled.Edit : Icons.Material.Filled.Add))" Color="Color.Info">
                 @(action == UIActionEnum.Update ? "Edit" : "ADD")
             </MudButton>
             <MudButton Class="mb-5 me-5" Variant="Variant.Filled" Color="Color.Secondary" OnClick="() => MudDialog.Cancel()">Cancel</MudButton>
@@ -114,26 +115,36 @@
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; }
 
+    private bool _isProcessing = false;
     private string?[] _partNumberStates = Array.Empty<string>();
 
     private async Task OnValidSubmit()
     {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = await UserManager.GetUserAsync(authState.User);
-        var applicant = user?.DisplayName ?? authState.User.Identity?.Name ?? "";
+        if (_isProcessing) return;
+        _isProcessing = true;
 
-        // if (user.Identity?.IsAuthenticated == true)        
-        CompHistory.Account = applicant ?? "Unknown";
-        CompHistory.EntryDate = DateTime.Now;
-        CompHistory.ComponentId = Component.ComponentId;
-
-        if (action == UIActionEnum.Insert)
+        try
         {
-            await AddCompHistory();
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = await UserManager.GetUserAsync(authState.User);
+            var applicant = user?.DisplayName ?? authState.User.Identity?.Name ?? "";
+
+            CompHistory.Account = applicant ?? "Unknown";
+            CompHistory.EntryDate = DateTime.Now;
+            CompHistory.ComponentId = Component.ComponentId;
+
+            if (action == UIActionEnum.Insert)
+            {
+                await AddCompHistory();
+            }
+            else if (action == UIActionEnum.Update)
+            {
+                await UpdateCompHistory();
+            }
         }
-        else if (action == UIActionEnum.Update)
+        finally
         {
-            await UpdateCompHistory();
+            _isProcessing = false;
         }
     }
 
@@ -171,7 +182,7 @@
         CompHistory.Component = null;
 
         context.Update(Component);  // 밑줄과 같음
-        context.Attach(CompHistory!).State = EntityState.Modified;
+        //context.Attach(CompHistory!).State = EntityState.Modified;
 
         try
         {
@@ -204,8 +215,9 @@
         {
             using var context = DbFactory.CreateDbContext();
             CompHistory ??= await context.CompHistory.FirstOrDefaultAsync(m => m.CompHistoryId == Id);
+            Component = await context.Component.FirstOrDefaultAsync(c => c.ComponentId == CompHistory.ComponentId);
 
-            if (CompHistory is null)
+            if (CompHistory is null || Component is null)
             {
                 NavigationManager.NavigateTo("notfound");
             }

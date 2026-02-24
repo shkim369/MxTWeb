@@ -21,7 +21,8 @@
             <MudAutocomplete T="Cyropreserved" Label="동결세포 선택" @bind-Value="SelectedCyropreserved"
                              SearchFunc="@SearchCyropreserved" ToStringFunc="@(c => c?.Name ?? "")"
                              Variant="Variant.Outlined" Required="true" Class="mb-5"
-                             ShowProgressIndicator="true" DebounceInterval="300">
+                             ShowProgressIndicator="true" DebounceInterval="300"
+                             MaxItems=null>
                 <ItemTemplate Context="item">
                     <MudText>@item.Code . @item.Name (@item.Division) - 재고: @item.Quantity</MudText>
                 </ItemTemplate>
@@ -96,8 +97,8 @@
         </DialogContent>
         <DialogActions>
             <MudButton Class="mb-5 me-5" ButtonType="ButtonType.Submit" Variant="Variant.Filled"
-                       StartIcon="@Icons.Material.Filled.Save" Color="Color.Info"
-                       Disabled="@(SelectedCyropreserved == null || Request.RequestedQuantity > SelectedCyropreserved.Quantity)">저장</MudButton>
+                       StartIcon="@(_isProcessing ? Icons.Material.Filled.HourglassEmpty : Icons.Material.Filled.Save)" Color="Color.Info"
+                       Disabled="@(_isProcessing || SelectedCyropreserved == null || Request.RequestedQuantity > SelectedCyropreserved.Quantity)">저장</MudButton>
             <MudButton Class="mb-5 me-5" Variant="Variant.Filled" Color="Color.Secondary"
                        OnClick="() => MudDialog.Cancel()">취소</MudButton>
         </DialogActions>
@@ -114,13 +115,14 @@
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; } = null!;
 
+    private bool _isProcessing = false;
     private Cyropreserved? SelectedCyropreserved { get; set; }
     private List<Cyropreserved> CyropreservedList { get; set; } = new();
 
     protected override async Task OnInitializedAsync()
     {
         using var context = DbFactory.CreateDbContext();
-        CyropreservedList = await context.Cyropreserved.ToListAsync();
+        CyropreservedList = await context.Cyropreserved.Where(c => c.Quantity > 0).ToListAsync();
 
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = await UserManager.GetUserAsync(authState.User);
@@ -154,21 +156,32 @@
 
     private async Task OnValidSubmit()
     {
+        if (_isProcessing) return;
+
         if (SelectedCyropreserved == null)
         {
             Snackbar.Add("동결세포를 선택해주세요.", Severity.Warning);
             return;
         }
 
-        Request!.CyropreservedId = SelectedCyropreserved.Id;
+        _isProcessing = true;
 
-        if (Action == UIActionEnum.Insert)
+        try
         {
-            await AddRequest();
+            Request!.CyropreservedId = SelectedCyropreserved.Id;
+
+            if (Action == UIActionEnum.Insert)
+            {
+                await AddRequest();
+            }
+            else if (Action == UIActionEnum.Update)
+            {
+                await UpdateRequest();
+            }
         }
-        else if (Action == UIActionEnum.Update)
+        finally
         {
-            await UpdateRequest();
+            _isProcessing = false;
         }
     }
 
