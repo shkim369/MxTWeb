@@ -11,17 +11,16 @@ namespace MxTWeb.Models
         public int Number { get; set; }
 
         [Required]
-        public int TestNum { get; set; }
-
-        [Required]
-        public string? WaferInfo { get; set; }
-        // waferPattern to link to ChipUsage
-
-        [Required]
-        public DateTime? ProduceDate { get; set; }
+        public string? Lot { get; set; }
 
         [Required]
         public DateTime? TestDate { get; set; }
+
+        public DateTime? ProduceDate { get; set; }
+
+        public int TestNum { get; set; }
+
+        public string? WaferInfo { get; set; }
 
         public int Pressure { get; set; }
 

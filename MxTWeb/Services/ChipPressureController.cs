@@ -34,11 +34,10 @@ namespace MxTWeb.Services
             // JSON 데이터가 자동으로 매핑
             var pressureData = new ChipPressure
             {
-                Number = data.Number,
-                TestNum = data.TestNum,
-                WaferInfo = data.WaferInfo,
-                ProduceDate = data.ProduceDate,
                 TestDate = data.TestDate,
+                WaferInfo = data.WaferInfo,
+                Lot = data.Lot,
+                Number = data.Number,
                 Pressure = data.Pressure
             };
 

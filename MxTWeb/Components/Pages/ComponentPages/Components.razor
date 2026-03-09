@@ -5,11 +5,13 @@
 @using MxTWeb.Data
 @using MxTWeb.Enums
 @using Microsoft.AspNetCore.Authorization
+@using ClosedXML.Excel;
 @attribute [Authorize]
 @implements IAsyncDisposable
 @inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject IJSRuntime JS
 
 <PageTitle>부품 재고 현황</PageTitle>
 
@@ -44,7 +46,7 @@
                 SortMode="SortMode.Single" Dense="true" Hover="true" Bordered="true" Striped="true"
                 EditMode="DataGridEditMode.Cell" ReadOnly="false" Groupable="true" GroupClass="pa-3"
                 CommittedItemChanges="@CommittedItemChanges" RowsPerPage="1000" SelectOnRowClick="true"
-                MultiSelection="false" @bind-SelectedItem="selectedItem"
+                MultiSelection="true" @bind-SelectedItems="selectedItems"
                 QuickFilter="@_quickFilter" FixedHeader="true"
                 Loading="@isLoading">
 
@@ -68,8 +70,23 @@
             </MudItem>
             <MudItem>
                 <MudButton Class="me-2" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete"
-                           Color="@Color.Error" OnClick="@DeleteData" Disabled="@IsEditDisabled"> Delete </MudButton>
+                           Color="@Color.Error" OnClick="@DeleteData" Disabled="@IsDeleteDisabled"> Delete </MudButton>
             </MudItem>
+
+            <MudItem>
+                <MudButton Class="me-2" Disabled="@exporting" @onclick="ExportToExcel" Variant="Variant.Filled" Color="Color.Info" StartIcon="@Icons.Custom.FileFormats.FileExcel">
+                    @if (exporting)
+                    {
+                        <MudProgressCircular Indeterminate="true" Color="Color.Info" Size="Size.Small" Class="me-2" />
+                        <MudText Class="ms-2">Processing...</MudText>
+                    }
+                    else
+                    {
+                        <MudText>Export</MudText>
+                    }
+                </MudButton>
+            </MudItem>
+
             <MudItem>
                 <MudText Typo="Typo.body2" Class="pa-2">총 부품 수: @FilteredData.Count()</MudText>
             </MudItem>
@@ -79,7 +96,9 @@
                 <MudMenuItem Label="Assembly" @onclick="@(() => SelectSearchField("Assembly"))" />
                 <MudMenuItem Label="Part Number" @onclick="@(() => SelectSearchField("Part Number"))" />
                 <MudMenuItem Label="Description" @onclick="@(() => SelectSearchField("Description"))" />
+                <MudMenuItem Label="Category" @onclick="@(() => SelectSearchField("Category"))" />
                 <MudMenuItem Label="Seller" @onclick="@(() => SelectSearchField("Seller"))" />
+                <MudMenuItem Label="비고" @onclick="@(() => SelectSearchField("비고"))" />
             </MudMenu>
             &nbsp&nbsp&nbsp&nbsp
             <MudTextField Class="mt-5 pe-5" @bind-Value="searchFilter" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
@@ -113,8 +132,8 @@
         </PropertyColumn>
         <PropertyColumn Property="x => x.PartNumber" Title="Part Number" sortable="true" InitialDirection="SortDirection.Ascending" Editable="false" />
         <PropertyColumn Property="x => x.Description" Title="Description" Sortable="false" Required="false" Editable="false" />
-        <PropertyColumn Property="x => x.Category" Title="Category" sortable="false" Required="false" Editable="false" />
-        <PropertyColumn Property="x => x.Seller" Title="Seller" sortable="false" Required="false" Editable="false" />
+        <PropertyColumn Property="x => x.Category" Title="Category" sortable="true" Required="false" Editable="false" />
+        <PropertyColumn Property="x => x.Seller" Title="Seller" sortable="true" Required="false" Editable="false" />
         <PropertyColumn Property="x => x.LeadTime" Title="Lead" sortable="false" Required="false" Editable="false" />
         <PropertyColumn Property="x => x.Price" Title="단가" sortable="false" Format="N0" Editable="false" />
         <PropertyColumn Property="x => x.Quantity" Title="필요" sortable="false" />
@@ -155,11 +174,13 @@
     private string searchFilter;
 
     private IEnumerable<Component> FilteredData = new List<Component>();
-    private Component selectedItem = new();
-    private bool IsEditDisabled => selectedItem == null || selectedItem.ComponentId == 0;
+    private HashSet<Component> selectedItems = new();
+    private bool IsEditDisabled => selectedItems.Count != 1 || selectedItems.First().ComponentId == 0;
+    private bool IsDeleteDisabled => selectedItems.Count == 0;
 
     private bool isProcessing = false;
     private bool isLoading = true;
+    private bool exporting = false;
 
     private MudDataGrid<Component> _dataGrid = null!;
 
@@ -208,7 +229,7 @@
         var parameters = new DialogParameters<Edit>
         {
             { x => x.action, UIActionEnum.Update },
-            { x => x.Component, selectedItem } // 선택된 row의 데이터를 직접 전달
+            { x => x.Component, selectedItems.FirstOrDefault() } // 선택된 row의 데이터를 직접 전달
         };
 
         var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, CloseOnEscapeKey = true };
@@ -226,7 +247,7 @@
     {
         var parameters = new DialogParameters<Delete>
         {
-            { x => x.component, selectedItem } // 선택된 row의 데이터를 직접 전달
+            { x => x.components, selectedItems } // 선택된 row의 데이터를 직접 전달
         };
 
         var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, CloseOnEscapeKey = true };
@@ -235,9 +256,78 @@
 
         if (result is not null && !result.Canceled)
         {
-            selectedItem = new();
+            selectedItems = new();
             FilteredData = context.Component.ToList();
             StateHasChanged();
+        }
+    }
+
+    private async Task ExportToExcel()
+    {
+        var excelBytes = await ExportData();
+
+        await JS.InvokeVoidAsync("downloadFileFromBytes", "Parts.xlsx", excelBytes);
+    }
+
+    private async Task<Byte[]> ExportData()
+    {
+        exporting = true; // Set exporting to true at the beginning of the method
+        try
+        {
+            var datas = FilteredData.OrderBy(x => x.PartNumber);
+
+            using (var workbook = new XLWorkbook())
+            {
+                var worksheet = workbook.Worksheets.Add("Parts");
+
+                // 헤더 설정
+                var headers = new[] { "Number", "Assembly", "Part Number", "Description", "Model",
+                                      "Category", "Maker", "Seller", "Lead", "단가", "필요 수량", "재고", "비고" };
+                for (int col = 1; col <= headers.Length; col++)
+                {
+                    worksheet.Cell(1, col).Value = headers[col - 1];
+                }
+
+                // 헤더 스타일 적용
+                var headerRange = worksheet.Range(1, 1, 1, headers.Length);
+                headerRange.Style.Font.Bold = true;
+                headerRange.Style.Fill.BackgroundColor = XLColor.LightGray;
+                headerRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+
+                for (int i = 0; i < datas.Count(); i++)
+                {
+                    var data = datas.ElementAt(i); // System.Linq 네임스페이스 필요
+                    worksheet.Cell(i + 2, 1).Value = i + 1;
+                    worksheet.Cell(i + 2, 2).Value = data.Assembly;
+                    worksheet.Cell(i + 2, 3).Value = data.PartNumber;
+                    worksheet.Cell(i + 2, 4).Value = data.Description;
+                    worksheet.Cell(i + 2, 5).Value = data.Model;
+                    worksheet.Cell(i + 2, 6).Value = data.Category;
+                    worksheet.Cell(i + 2, 7).Value = data.Maker;
+                    worksheet.Cell(i + 2, 8).Value = data.Seller;
+                    worksheet.Cell(i + 2, 9).Value = data.LeadTime;
+                    worksheet.Cell(i + 2, 10).Value = data.Price;
+                    worksheet.Cell(i + 2, 11).Value = data.Quantity;
+                    worksheet.Cell(i + 2, 12).Value = data.Stock;
+                    worksheet.Cell(i + 2, 13).Value = data.Note;
+                }
+
+                using (var stream = new MemoryStream())
+                {
+                    workbook.SaveAs(stream);
+                    return stream.ToArray();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"데이터 내보내기 중 오류가 발생했습니다: {ex.Message}", Severity.Error);
+            return Array.Empty<byte>();
+        }
+        finally
+        {
+            exporting = false;
         }
     }
 
@@ -251,22 +341,32 @@
             switch (searchField)
             {
                 case "Assembly":
-                    if (x.Assembly.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                    if (x.Assembly?.Contains(searchFilter, StringComparison.OrdinalIgnoreCase) == true)
                         return true;
                     break;
 
                 case "Part Number":
-                    if (x.PartNumber.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                    if (x.PartNumber?.Contains(searchFilter, StringComparison.OrdinalIgnoreCase) == true)
                         return true;
                     break;
 
                 case "Description":
-                    if (x.Description.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                    if (x.Description?.Contains(searchFilter, StringComparison.OrdinalIgnoreCase) == true)
+                        return true;
+                    break;
+
+                case "Category":
+                    if (x.Category?.Contains(searchFilter, StringComparison.OrdinalIgnoreCase) == true)
                         return true;
                     break;
 
                 case "Seller":
-                    if (x.Seller.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                    if (x.Seller?.Contains(searchFilter, StringComparison.OrdinalIgnoreCase) == true)
+                        return true;
+                    break;
+
+                case "비고":
+                    if (x.Note?.Contains(searchFilter, StringComparison.OrdinalIgnoreCase) == true)
                         return true;
                     break;
 

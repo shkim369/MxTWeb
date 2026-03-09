@@ -132,12 +132,12 @@
                 <PropertyColumn Property="x => x.Wafer" Title="웨이퍼" sortable="true" />
                 <PropertyColumn Property="x => x.WaferInfo" Title="웨이퍼 정보" />
                 <PropertyColumn Property="x => x.ReceiptDate" Title="납품일시" sortable="true" Format="yyyy-MM-dd" />
+                <PropertyColumn Property="x => x.Lot" Title="Lot" sortable="false" />
                 <PropertyColumn Property="x => x.Operator" Title="사용부서" sortable="true" />
                 <PropertyColumn Property="x => x.Available" Title="수량" sortable="false" />
                 <PropertyColumn Property="x => x.Production" Title="생산" sortable="false" />
                 <PropertyColumn Property="x => x.Left" Title="잔여" sortable="false" 
-                                CellStyleFunc="@_cellStyleFunc3"/>
-                <PropertyColumn Property="x => x.Lot" Title="Lot" sortable="false" />
+                                CellStyleFunc="@_cellStyleFunc3"/>                
                 <PropertyColumn Property="x => x.Note" Title="비고" sortable="false" />
             </Columns>
             <ChildRowContent>
@@ -152,15 +152,14 @@
                                  EditMode="DataGridEditMode.Cell" ReadOnly="false"
                                  CommittedItemChanges="@CommittedItemChanges" Items="@GetCachedChipPressureData($"{context.Item.Id}", context.Item)">
                         <Columns>
-                            <PropertyColumn Property="x => x.ProduceDate" Title="제작 날짜" Editable="false" Format="yyyy-MM-dd" />
                             <TemplateColumn Title="테스트 날짜" Context="x" SortBy="@(x => x.TestDate)">
                                 <EditTemplate>
                                     <MudDatePicker @bind-Date="x.Item.TestDate" DateFormat="yyyy-MM-dd" PickerClosed="@(() => CommittedItemChanges(x.Item))" />
                                 </EditTemplate>
                             </TemplateColumn>
-                            <PropertyColumn Property="x => x.WaferInfo" Title="웨이퍼 정보" Editable="false"/>
-                            <PropertyColumn Property="x => x.Number" Title="Origin No." />
-                            <PropertyColumn Property="x => x.TestNum" Title="Test No." />
+                            <PropertyColumn Property="x => x.WaferInfo" Title="웨이퍼 정보" Editable="false"/>                           
+                            <PropertyColumn Property="x => x.Lot" Title="Lot" />
+                            <PropertyColumn Property="x => x.Number" Title="Chip No." />
                             <PropertyColumn Property="x => x.Pressure" Title="Pressure (mbar)"/>
                             <PropertyColumn Property="x => x.passFail" Context="x" Title="합/불" CellStyleFunc="@_cellStyleFunc2"
                                             HeaderStyle="width: 120px; min-width: 120px; max-width: 120px;"
@@ -201,9 +200,9 @@
             <MudSpacer />
             <MudSpacer />
             <MudMenu Label="@PresSearchField" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Secondary">
-                <MudMenuItem Label="웨이퍼 정보" @onclick="@(() => SelectPresSearchField("웨이퍼 패턴"))" />
-                <MudMenuItem Label="제작 날짜" @onclick="@(() => SelectPresSearchField("제작 날짜"))" />
-                <MudMenuItem Label="테스트 날짜" @onclick="@(() => SelectPresSearchField("테스트 날짜"))" />
+                <MudMenuItem Label="웨이퍼 정보" @onclick="@(() => SelectPresSearchField("웨이퍼 정보"))" />
+                <MudMenuItem Label="웨이퍼 Lot" @onclick="@(() => SelectPresSearchField("웨이퍼 Lot"))" />
+                <MudMenuItem Label="테스트 날짜" @onclick="@(() => SelectPresSearchField("테스트 날짜"))" />                
             </MudMenu>
             &nbsp&nbsp&nbsp&nbsp
             <MudTextField @bind-Value="_presSearchFilter" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
@@ -222,15 +221,14 @@
                          CommittedItemChanges="@CommittedItemChanges"
                          QuickFilter="@_quickFilter">
                 <Columns>
-                    <PropertyColumn Property="x => x.ProduceDate" Title="제작 날짜" Editable="false" Format="yyyy-MM-dd" />
                     <TemplateColumn Title="테스트 날짜" Context="x" Sortable="true" InitialDirection="SortDirection.Descending" SortBy="@(x => x.TestDate)">
                         <EditTemplate>
                             <MudDatePicker @bind-Date="x.Item.TestDate" DateFormat="yyyy-MM-dd" PickerClosed="@(() => CommittedItemChanges(x.Item))"/>
                         </EditTemplate>
                     </TemplateColumn>
                     <PropertyColumn Property="x => x.WaferInfo" Title="웨이퍼 정보" />
-                    <PropertyColumn Property="x => x.Number" Title="Origin No." />
-                    <PropertyColumn Property="x => x.TestNum" Title="Test No." />
+                    <PropertyColumn Property="x => x.Lot" Title="웨이퍼 Lot" />
+                    <PropertyColumn Property="x => x.Number" Title="Chip No." />
                     <PropertyColumn Property="x => x.Pressure" Title="Pressure (mbar)" />
                     <PropertyColumn Property="x => x.passFail" Context="x" Title="합/불" CellStyleFunc="@_cellStyleFunc2"
                                     HeaderStyle="width: 120px; min-width: 120px; max-width: 120px;"
@@ -385,13 +383,13 @@
                         return true;
                     break;
 
-                case "제작 날짜":
-                    if (x.ProduceDate.GetValueOrDefault().ToString("yyyy-MM-dd").Contains(_presSearchFilter, StringComparison.OrdinalIgnoreCase))
+                case "웨이퍼 정보":
+                    if (x.WaferInfo.Contains(_presSearchFilter, StringComparison.OrdinalIgnoreCase))
                         return true;
                     break;
 
-                case "웨이퍼 패턴":
-                    if (x.WaferInfo.Contains(_presSearchFilter, StringComparison.OrdinalIgnoreCase))
+                case "웨이퍼 Lot":
+                    if (x.Lot.Contains(_presSearchFilter, StringComparison.OrdinalIgnoreCase))
                         return true;
                     break;
 
@@ -484,7 +482,7 @@
 
         using var context = DbFactory.CreateDbContext();
         return context.ChipPressure
-            .Where(cp => cp.ProduceDate == chipUsage.UseDate && cp.WaferInfo == chipUsage.WaferInfo)
+            .Where(cp => cp.Lot == chipUsage.Lot)
             .ToList();
     }
 
@@ -499,7 +497,7 @@
         using var context = DbFactory.CreateDbContext();
 
         ChipPressure temp = context.ChipPressure
-            .Where(cp => cp.ProduceDate == chipUsage.UseDate && cp.WaferInfo == chipUsage.WaferInfo)
+            .Where(cp => cp.Lot == chipUsage.Lot)
             .OrderByDescending(cp => cp.Id)
             .FirstOrDefault()!;
 
@@ -508,11 +506,10 @@
         {
             newPressure = new ChipPressure
             {
-                ProduceDate = chipUsage.UseDate,
                 TestDate = chipUsage.UseDate,
                 WaferInfo = chipUsage.WaferInfo,
+                Lot = chipUsage.Lot,
                 Number = 1,
-				TestNum = 100,
 				passFail = "PASS"
             };
         }
@@ -520,11 +517,10 @@
         {
             newPressure = new ChipPressure
             {
-                ProduceDate = chipUsage.UseDate,
                 TestDate = temp.TestDate,
                 WaferInfo = temp.WaferInfo,
-                Number = 1,
-                TestNum = temp.TestNum + 1,
+                Lot = temp.Lot,
+                Number = temp.Number + 1,
 				passFail = "PASS"
             };
         }
@@ -540,11 +536,9 @@
         using var context = DbFactory.CreateDbContext();
         var newPressure = new ChipPressure
         {
-			ProduceDate = DateTime.Today,
             TestDate = DateTime.Today,
             WaferInfo = "-",
             Number = 1,
-            TestNum = 100,
             passFail = "PASS"
         };
         context.ChipPressure.Add(newPressure);

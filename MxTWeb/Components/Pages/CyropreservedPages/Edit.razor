@@ -70,15 +70,18 @@
                                   @bind-Value="Cyropreserved.Quantity" />
                 </MudItem>
                 <MudItem xs="4">
-                    <MudText Typo="Typo.caption" Class="ms-1 mb-1" Style="color: var(--mud-palette-text-secondary)">Cell density</MudText>
-                    <div style="display: flex; align-items: center; gap: 4px;">
-                        <MudNumericField T="int?" Variant="Variant.Outlined" Style="width: 70px"
-                                         @bind-Value="_densityCoefficient" Min="1" Max="9" />
-                        <MudText Typo="Typo.body1">×10</MudText>
-                        <MudNumericField T="int?" Variant="Variant.Outlined" Style="width: 70px"
-                                         @bind-Value="_densityExponent" Min="0" Max="15" />
-                        <MudText Typo="Typo.body1" Style="white-space: nowrap">cells/mL</MudText>
-                    </div>
+                    <MudField Variant="Variant.Outlined" Label="Cell density" >
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <MudNumericField T="int?" Variant="Variant.Text" Style="width: 40px"
+                                             @bind-Value="_densityCoefficient" Min="1" Max="9"
+                                             Margin="Margin.Dense" HideSpinButtons="true" />
+                            <MudText Typo="Typo.body1" Style="margin-top: -4px">×10</MudText>
+                            <MudNumericField T="int?" Variant="Variant.Text" Style="width: 30px; margin-top: -12px; font-size: 0.75rem;"
+                                             @bind-Value="_densityExponent" Min="0" Max="15"
+                                             Margin="Margin.Dense" HideSpinButtons="true" />
+                            <MudText Typo="Typo.body1" Style="margin-top: -4px; white-space: nowrap">cells/mL</MudText>
+                        </div>
+                    </MudField>
                 </MudItem>
             </MudGrid>
 
@@ -188,7 +191,6 @@
 
         var text = Cyropreserved.Density.Trim();
 
-        // "3 × 10⁷ cells/mL" 형식 파싱
         var match = System.Text.RegularExpressions.Regex.Match(text, @"^(\d+)\s*[×xX]\s*10(.+?)\s*cells/mL$");
         if (match.Success)
         {

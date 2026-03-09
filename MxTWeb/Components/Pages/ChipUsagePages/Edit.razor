@@ -67,6 +67,10 @@
                            @bind-Date="ChipUsage.ReceiptDate"
                            DateFormat="yyyy-MM-dd"/>
 
+            <MudTextField Class="mb-5" Variant="Variant.Outlined"
+                          Label="Lot."
+                          @bind-Value="ChipUsage.Lot" />
+
             <MudAutocomplete Class="mb-5" Variant="Variant.Outlined"
                              Label="사용 부서"
                              @bind-Value="ChipUsage.Operator" Clearable="true" CoerceValue="true"
@@ -91,10 +95,6 @@
                                   @bind-Value="ChipUsage.Left" />
                 </MudItem>
             </MudGrid>
-
-            <MudTextField Class="mb-5" Variant="Variant.Outlined"
-                          Label="Lot."
-                          @bind-Value="ChipUsage.Lot" />
 
             <MudTextField Class="mb-5" Variant="Variant.Outlined"
                           Label="비고"

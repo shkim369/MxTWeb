@@ -9,7 +9,7 @@
 
 <PageTitle>Delete</PageTitle>
 
-<EditForm method="post" Model="component" OnValidSubmit="DeleteComponent" FormName="delete" Enhance>
+<EditForm method="post" Model="components" OnValidSubmit="DeleteComponent" FormName="delete" Enhance>
     <MudDialog>
         <DialogContent>
             <MudText>Are you sure you want to delete this?</MudText>
@@ -25,7 +25,7 @@
 
 @code {
     [Parameter]
-    public Component component { get; set; } = new();
+    public HashSet<Component> components { get; set; } = new();
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; }
     [SupplyParameterFromQuery]
@@ -39,7 +39,11 @@
     private async Task DeleteComponent()
     {
         using var context = DbFactory.CreateDbContext();
-        context.Component.Remove(component!);
+
+        foreach (var component in components)
+        {
+            context.Component.Remove(component!);
+        }
        
         await context.SaveChangesAsync();
         NavigationManager.NavigateTo("/components");

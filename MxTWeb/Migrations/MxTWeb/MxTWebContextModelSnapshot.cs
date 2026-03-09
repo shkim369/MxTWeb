@@ -84,6 +84,10 @@ namespace MxTWeb.Migrations.MxTWeb
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Lot")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Note")
                         .HasColumnType("nvarchar(max)");
 
@@ -93,7 +97,7 @@ namespace MxTWeb.Migrations.MxTWeb
                     b.Property<int>("Pressure")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("ProduceDate")
+                    b.Property<DateTime?>("ProduceDate")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime>("TestDate")
@@ -103,7 +107,6 @@ namespace MxTWeb.Migrations.MxTWeb
                         .HasColumnType("int");
 
                     b.Property<string>("WaferInfo")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("passFail")

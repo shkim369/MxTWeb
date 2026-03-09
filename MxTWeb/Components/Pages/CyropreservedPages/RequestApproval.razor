@@ -122,6 +122,7 @@
                 req.Status = RequestStatusEnum.Approved;
                 req.Approver = CurrentUserName;
                 req.ProcessedDate = DateTime.Now;
+                req.RejectionReason = RejectionReason;
             }
 
             await context.SaveChangesAsync();
