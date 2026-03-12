@@ -198,7 +198,7 @@
             switch (searchField)
             {
                 case "납품처":
-                    if (x.Destination.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                    if (x.Destination?.Contains(searchFilter, StringComparison.OrdinalIgnoreCase) == true)
                         return true;
                     break;
 

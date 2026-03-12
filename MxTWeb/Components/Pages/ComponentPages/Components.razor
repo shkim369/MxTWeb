@@ -127,7 +127,11 @@
         <PropertyColumn Property="x => x.Assembly" Title="Assembly" Sortable="true" 
                         Grouping="true" GroupExpanded="true" GroupByOrder="2" Editable="false">
             <GroupTemplate>
-                <span style="font-weight:bold">@context.Title: @(context.Grouping.Key)</span>
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <span style="font-weight:bold">@context.Title: @(context.Grouping.Key)</span>
+                    <MudIconButton Size="@Size.Small" Variant="Variant.Filled" Icon="@Icons.Material.Filled.Add"
+                                   Color="@Color.Info" Style="margin-right:12px;" OnClick="@(() => CreateNewAssemblyHistory(context.Grouping.Key?.ToString(), context.Grouping.ToList()))" />
+                </div>
             </GroupTemplate>
         </PropertyColumn>
         <PropertyColumn Property="x => x.PartNumber" Title="Part Number" sortable="true" InitialDirection="SortDirection.Ascending" Editable="false" />
@@ -220,6 +224,41 @@
         {
             using var context = DbFactory.CreateDbContext();
             FilteredData = context.Component.ToList();
+            StateHasChanged();
+        }
+    }
+
+    private async Task CreateNewAssemblyHistory(string? assemblyName, List<Component> components)
+    {
+        if (string.IsNullOrEmpty(assemblyName) || components.Count == 0)
+            return;
+
+        // Assembly 그룹용 가상 Component 생성
+        var assemblyComponent = new Component
+        {
+            ComponentId = 0, // 특별 ID로 Assembly 그룹임을 표시
+            Assembly = assemblyName,
+            PartNumber = "-",
+            Description = $"{components.Count} {assemblyName} components",
+            Price = components.Sum(c => c.Price * c.Quantity)
+        };
+
+        var parameters = new DialogParameters<HistoryEdit>
+        {
+            { x => x.action, UIActionEnum.Insert },
+            { x => x.Component, assemblyComponent },
+            { x => x.IsAssemblyGroup, true },
+            { x => x.AssemblyComponents, components }
+        };
+
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, CloseOnEscapeKey = true };
+        var dialog = await DialogService.ShowAsync<HistoryEdit>("Add Assembly History", parameters, options);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
+        {
+            using var ctx = DbFactory.CreateDbContext();
+            FilteredData = ctx.Component.ToList();
             StateHasChanged();
         }
     }

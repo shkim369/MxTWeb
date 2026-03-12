@@ -242,17 +242,17 @@
             switch (searchField)
             {
                 case "관리번호":
-                    if (x.Code.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                    if (x.Code?.Contains(searchFilter, StringComparison.OrdinalIgnoreCase) == true)
                         return true;
                     break;
 
                 case "시약명":
-                    if (x.Name.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                    if (x.Name?.Contains(searchFilter, StringComparison.OrdinalIgnoreCase) == true)
                         return true;
                     break;
 
                 case "제조사":
-                    if (x.Manufacturer.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                    if (x.Manufacturer?.Contains(searchFilter, StringComparison.OrdinalIgnoreCase) == true)
                         return true;
                     break;
 

@@ -246,27 +246,27 @@
             switch (searchField)
             {
                 case "세포":
-                    if (x.Name.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                    if (x.Name?.Contains(searchFilter, StringComparison.OrdinalIgnoreCase) == true)
                         return true;
                     break;
 
                 case "반입자":
-                    if (x.Recipient.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                    if (x.Recipient?.Contains(searchFilter, StringComparison.OrdinalIgnoreCase) == true)
                         return true;
                     break;
 
                 case "반입처":
-                    if (x.Supplier.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                    if (x.Supplier?.Contains(searchFilter, StringComparison.OrdinalIgnoreCase) == true)
                         return true;
                     break;
 
                 case "Tank":
-                    if (x.Location1.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                    if (x.Location1?.Contains(searchFilter, StringComparison.OrdinalIgnoreCase)== true)
                         return true;
                     break;
 
                 case "Canister":
-                    if (x.Location2.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                    if (x.Location2?.Contains(searchFilter, StringComparison.OrdinalIgnoreCase) == true)
                         return true;
                     break;
 

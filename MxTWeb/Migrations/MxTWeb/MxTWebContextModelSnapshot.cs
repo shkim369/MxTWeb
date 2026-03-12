@@ -109,8 +109,14 @@ namespace MxTWeb.Migrations.MxTWeb
                     b.Property<string>("WaferInfo")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("isUsed")
+                        .HasColumnType("int");
+
                     b.Property<string>("passFail")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("waferNumber")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -237,6 +243,9 @@ namespace MxTWeb.Migrations.MxTWeb
 
                     b.Property<DateTime?>("EntryDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("int");

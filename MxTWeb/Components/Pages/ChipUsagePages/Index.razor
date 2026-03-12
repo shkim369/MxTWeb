@@ -152,13 +152,15 @@
                                  EditMode="DataGridEditMode.Cell" ReadOnly="false"
                                  CommittedItemChanges="@CommittedItemChanges" Items="@GetCachedChipPressureData($"{context.Item.Id}", context.Item)">
                         <Columns>
-                            <TemplateColumn Title="테스트 날짜" Context="x" SortBy="@(x => x.TestDate)">
+                            @* <TemplateColumn Title="테스트 날짜" Context="x" SortBy="@(x => x.TestDate)">
                                 <EditTemplate>
                                     <MudDatePicker @bind-Date="x.Item.TestDate" DateFormat="yyyy-MM-dd" PickerClosed="@(() => CommittedItemChanges(x.Item))" />
                                 </EditTemplate>
-                            </TemplateColumn>
+                            </TemplateColumn> *@
+                            <PropertyColumn Property="x => x.ProduceDate" Title="제조 날짜"  Format="yyyy-MM-dd" Editable="false"/>
+                            <PropertyColumn Property="x => x.TestDate" Title="테스트 날짜" Format="yyyy-MM-dd" Editable="false"/>
                             <PropertyColumn Property="x => x.WaferInfo" Title="웨이퍼 정보" Editable="false"/>                           
-                            <PropertyColumn Property="x => x.Lot" Title="Lot" />
+                            <PropertyColumn Property="x => x.Lot" Title="Lot" Editable="false"/>
                             <PropertyColumn Property="x => x.Number" Title="Chip No." />
                             <PropertyColumn Property="x => x.Pressure" Title="Pressure (mbar)"/>
                             <PropertyColumn Property="x => x.passFail" Context="x" Title="합/불" CellStyleFunc="@_cellStyleFunc2"
@@ -195,7 +197,7 @@
         </MudDataGrid>
     </MudTabPanel>
 
-    <MudTabPanel Text="RUO Chip Pressure">
+    <MudTabPanel Text="RUO Chip Pressure" >
         <MudGrid Spacing="5" Style="margin-top: 0px; margin-bottom: 10px">
             <MudSpacer />
             <MudSpacer />
@@ -206,7 +208,7 @@
             </MudMenu>
             &nbsp&nbsp&nbsp&nbsp
             <MudTextField @bind-Value="_presSearchFilter" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
-                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-1"></MudTextField>
         </MudGrid>
 
         @if (pressureLoading)
@@ -221,6 +223,11 @@
                          CommittedItemChanges="@CommittedItemChanges"
                          QuickFilter="@_quickFilter">
                 <Columns>
+                    <TemplateColumn Title="제조 날짜" Context="x" Sortable="true" >
+                        <EditTemplate>
+                            <MudDatePicker @bind-Date="x.Item.ProduceDate" DateFormat="yyyy-MM-dd" PickerClosed="@(() => CommittedItemChanges(x.Item))" />
+                        </EditTemplate>
+                    </TemplateColumn>
                     <TemplateColumn Title="테스트 날짜" Context="x" Sortable="true" InitialDirection="SortDirection.Descending" SortBy="@(x => x.TestDate)">
                         <EditTemplate>
                             <MudDatePicker @bind-Date="x.Item.TestDate" DateFormat="yyyy-MM-dd" PickerClosed="@(() => CommittedItemChanges(x.Item))"/>
@@ -384,12 +391,12 @@
                     break;
 
                 case "웨이퍼 정보":
-                    if (x.WaferInfo.Contains(_presSearchFilter, StringComparison.OrdinalIgnoreCase))
+                    if (x.WaferInfo?.Contains(_presSearchFilter, StringComparison.OrdinalIgnoreCase)== true)
                         return true;
                     break;
 
                 case "웨이퍼 Lot":
-                    if (x.Lot.Contains(_presSearchFilter, StringComparison.OrdinalIgnoreCase))
+                    if (x.Lot?.Contains(_presSearchFilter, StringComparison.OrdinalIgnoreCase)== true)
                         return true;
                     break;
 
@@ -506,6 +513,7 @@
         {
             newPressure = new ChipPressure
             {
+                ProduceDate = chipUsage.UseDate,
                 TestDate = chipUsage.UseDate,
                 WaferInfo = chipUsage.WaferInfo,
                 Lot = chipUsage.Lot,
@@ -517,6 +525,7 @@
         {
             newPressure = new ChipPressure
             {
+                ProduceDate = temp.ProduceDate,
                 TestDate = temp.TestDate,
                 WaferInfo = temp.WaferInfo,
                 Lot = temp.Lot,
@@ -536,6 +545,7 @@
         using var context = DbFactory.CreateDbContext();
         var newPressure = new ChipPressure
         {
+            ProduceDate = DateTime.Today,
             TestDate = DateTime.Today,
             WaferInfo = "-",
             Number = 1,

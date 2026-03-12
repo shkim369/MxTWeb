@@ -26,21 +26,43 @@
                 <MudItem md="6">
                 <MudTextField Variant="Variant.Outlined"
                               Label="Assembly"
-                              @bind-Value="Component.Assembly" />
+                              @bind-Value="Component.Assembly"
+                              ReadOnly="@IsAssemblyGroup" />
                 </MudItem>
                 <MudItem md="6">
                 <MudTextField Variant="Variant.Outlined"
                               Label="Description"
-                              @bind-Value="Component.Description" />
+                              @bind-Value="Component.Description"
+                              ReadOnly="@IsAssemblyGroup" />
                 </MudItem>
             </MudGrid>
 
-            <MudAutocomplete Class="mb-5" Variant="Variant.Outlined"
-                             Label="Part Number"
-                             @bind-Value="Component.PartNumber"
-                             Required="true" Clearable="true"
-                             SearchFunc="@(async (value, token) => await SearchAutoComplete(value, token, "PartNumber"))" 
-                             TextChanged="OnInputPartNumber"/>
+            @if (IsAssemblyGroup)
+            {
+                <MudGrid Class="mb-5">
+                    <MudItem md="6">
+                        <MudTextField Variant="Variant.Outlined"
+                                      Label="Part Number"
+                                      Value="@Component.PartNumber"
+                                      ReadOnly="true" />
+                    </MudItem>
+                    <MudItem md="6">
+                        <MudTextField Variant="Variant.Outlined"
+                                      Label="총 가격"
+                                      Value="@Component.Price.ToString("N0")"
+                                      ReadOnly="true" />
+                    </MudItem>
+                </MudGrid>
+            }
+            else
+            {
+                <MudAutocomplete Class="mb-5" Variant="Variant.Outlined"
+                                 Label="Part Number"
+                                 @bind-Value="Component.PartNumber"
+                                 Required="true" Clearable="true"
+                                 SearchFunc="@(async (value, token) => await SearchAutoComplete(value, token, "PartNumber"))"
+                                 TextChanged="OnInputPartNumber" />
+            }
 
             <MudGrid Class="mb-5">
                 @if (action == UIActionEnum.Update)
@@ -57,9 +79,10 @@
                     </MudItem>
 
                     <MudItem md="4">
-                        <MudTextField Variant="Variant.Outlined"
-                                      Label="수량"
-                                      @bind-Value="CompHistory.Quantity" />
+                        <MudNumericField Variant="Variant.Outlined"
+                                         Label="수량"
+                                         @bind-Value="CompHistory.Quantity"
+                                         Min="1" Required="true" />
                     </MudItem>
 
                     <MudItem md="4">
@@ -82,9 +105,10 @@
                     </MudItem>
 
                     <MudItem md="6">
-                        <MudTextField Variant="Variant.Outlined"
-                                      Label="수량"
-                                      @bind-Value="CompHistory.Quantity" />
+                        <MudNumericField Variant="Variant.Outlined"
+                                         Label="수량"
+                                         @bind-Value="CompHistory.Quantity"
+                                         Min="1" Required="true" />
                     </MudItem>
                 }
             </MudGrid>
@@ -111,6 +135,10 @@
     public CompHistory CompHistory { get; set; } = new();
     [Parameter]
     public Component Component { get; set; } = new();
+    [Parameter]
+    public bool IsAssemblyGroup { get; set; } = false;
+    [Parameter]
+    public List<Component> AssemblyComponents { get; set; } = new();
 
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; }
@@ -135,7 +163,14 @@
 
             if (action == UIActionEnum.Insert)
             {
-                await AddCompHistory();
+                if (IsAssemblyGroup)
+                {
+                    await AddAssemblyHistory();
+                }
+                else
+                {
+                    await AddCompHistory();
+                }
             }
             else if (action == UIActionEnum.Update)
             {
@@ -155,7 +190,7 @@
 
         if (CompHistory.state == "입고")
         {
-            component.Stock += CompHistory.Quantity;     
+            component.Stock += CompHistory.Quantity;
         }
         else if (CompHistory.state == "출고")
         {
@@ -166,11 +201,51 @@
             component.Stock -= CompHistory.Quantity;
         }
 
+        CompHistory.Price = component.Price;
         context.CompHistory.Add(CompHistory);
 
         await context.SaveChangesAsync();
 
         Snackbar.Add("성공적으로 추가되었습니다.", Severity.Success);
+        MudDialog.Close();
+    }
+
+    private async Task AddAssemblyHistory()
+    {
+        using var context = DbFactory.CreateDbContext();
+        var totalPrice = AssemblyComponents.Sum(c => c.Price);
+
+        foreach (var comp in AssemblyComponents)
+        {
+            var component = await context.Component.FirstOrDefaultAsync(c => c.ComponentId == comp.ComponentId);
+            if (component == null) continue;
+
+            var history = new CompHistory
+            {
+                ComponentId = comp.ComponentId,
+                Date = CompHistory.Date,
+                state = CompHistory.state,
+                Quantity = CompHistory.Quantity,
+                Price = comp.Price * comp.Quantity,
+                Account = CompHistory.Account,
+                EntryDate = CompHistory.EntryDate
+            };
+
+            if (CompHistory.state == "입고")
+            {
+                component.Stock += CompHistory.Quantity;
+            }
+            else if (CompHistory.state == "출고" || CompHistory.state == "폐기")
+            {
+                component.Stock -= CompHistory.Quantity;
+            }
+
+            context.CompHistory.Add(history);
+        }
+
+        await context.SaveChangesAsync();
+
+        Snackbar.Add($"Assembly의 {AssemblyComponents.Count}개 부품에 대해 성공적으로 추가되었습니다.", Severity.Success);
         MudDialog.Close();
     }
 

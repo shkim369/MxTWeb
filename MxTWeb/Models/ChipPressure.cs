@@ -26,6 +26,10 @@ namespace MxTWeb.Models
 
         public string? passFail { get; set; }
 
+        public int waferNumber { get; set; }
+
+        public int? isUsed { get; set; }
+
         public string? Note { get; set; }
     }
 }
