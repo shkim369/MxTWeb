@@ -35,8 +35,8 @@ RUN apt-get update && apt-get install -y \
 COPY --from=publish /app/publish .
 
 # uploads 폴더를 위한 볼륨 포인트
-RUN mkdir -p /app/uploads
-VOLUME /app/uploads
+RUN mkdir -p /docker/web/web-uploads
+VOLUME /docker/web/web-uploads
 
 USER $APP_UID
 

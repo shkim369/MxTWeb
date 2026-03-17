@@ -74,11 +74,13 @@
         BomList = context.Bom.OrderBy(b => b.ProductName).ToList();
     }
 
-    private async Task CommittedItemChanges(Bom item)
+    private Task<DataGridEditFormAction> CommittedItemChanges(Bom item)
     {
         using var context = DbFactory.CreateDbContext();
         context.Attach(item!).State = EntityState.Modified;
-        await context.SaveChangesAsync();
+        context.SaveChangesAsync();
+
+        return Task.FromResult(DataGridEditFormAction.Close);
     }
 
     private async Task AddBomData()

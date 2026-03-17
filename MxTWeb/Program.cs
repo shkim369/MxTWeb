@@ -49,7 +49,7 @@ builder.Services.AddScoped<HttpClient>(sp =>
 
 builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration);
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
+builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("LoginConnection") ?? throw new InvalidOperationException("Connection string 'DockerConnection' not found.")));
 builder.Services.AddDbContextFactory<MxTWebContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("WebContextConnection") ?? throw new InvalidOperationException("Connection string 'DockerConnection' not found.")));

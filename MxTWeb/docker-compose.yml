@@ -30,8 +30,9 @@ services:
     networks:
       - mxtweb-network
     volumes:
-      # NAS의 실제 경로와 컨테이너 경로 매핑
-      - /docker/blazor-uploads:/app/uploads
+      # NAS 실제 경로 : 컨테이너 내부 경로 (appsettings.json의 UploadPath)
+      # 로컬일 때 /app/uploads:/app/web/web-uploads
+      - /volume1/docker/web/web-uploads:/docker/web/web-uploads
     restart: unless-stopped
 
 networks:

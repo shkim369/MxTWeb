@@ -271,11 +271,13 @@
         return false;
     };
 
-    private async Task CommittedItemChanges(Equipment item)
+    private Task<DataGridEditFormAction> CommittedItemChanges(Equipment item)
     {
         using var context = DbFactory.CreateDbContext();
         context.Attach(item!).State = EntityState.Modified;
-        await context.SaveChangesAsync();
+        context.SaveChangesAsync();
+
+        return Task.FromResult(DataGridEditFormAction.Close);
     }
 
     protected override async Task OnInitializedAsync()

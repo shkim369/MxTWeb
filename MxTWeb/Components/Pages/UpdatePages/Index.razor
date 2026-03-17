@@ -1,0 +1,217 @@
+@page "/updates"
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using MxTWeb.Data
+@using Microsoft.AspNetCore.Authorization
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
+@inject HttpClient Http
+@inject IConfiguration Configuration
+@attribute [Authorize]
+
+<PageTitle>업데이트 관리</PageTitle>
+
+<style>
+    .cursor-pointer tbody tr {
+        cursor: pointer;
+    }
+</style>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudGrid>
+        <MudItem xs="12" Class="d-flex justify-space-between align-center">
+            <MudText Typo="Typo.h4">업데이트 관리</MudText>
+
+            <AuthorizeView Roles="Admin">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Add"
+                           Href="/updates/create">
+                    새 업데이트 등록
+                </MudButton>
+            </AuthorizeView>
+        </MudItem>
+    </MudGrid>
+
+    <MudPaper Class="pa-4 mt-4">
+        @if (_loading)
+        {
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+        }
+        else if (_posts.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info">등록된 업데이트가 없습니다.</MudAlert>
+        }
+        else
+        {
+            <MudTable Items="@_posts" Hover="true" Breakpoint="Breakpoint.Sm" Dense="false" RowsPerPage="10"
+                      OnRowClick="@OnRowClick" T="UpdatePost" RowClass="cursor-pointer">
+                <HeaderContent>
+                    <MudTh Style="width: 80px;">번호</MudTh>
+                    <MudTh>제목</MudTh>
+                    <MudTh Style="width: 160px;">버전</MudTh>
+                    <MudTh Style="width: 130px;">첨부파일</MudTh>
+                    <MudTh Style="width: 130px;">작성자</MudTh>
+                    <MudTh Style="width: 150px;">작성일</MudTh>
+                    <MudTh>작업</MudTh>
+                </HeaderContent>
+                <RowTemplate Context="post">
+                    <MudTd DataLabel="번호">@post.Id</MudTd>
+                    <MudTd DataLabel="제목">@post.Title</MudTd>
+                    <MudTd DataLabel="버전">
+                        @if (!string.IsNullOrEmpty(post.Version))
+                        {
+                            <MudChip T="string" Color="Color.Info" Size="Size.Small">@post.Version</MudChip>
+                        }
+                    </MudTd>
+                    <MudTd DataLabel="첨부파일">
+                        @if (!string.IsNullOrEmpty(post.StoredFileName))
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.AttachFile" Size="Size.Small" Color="Color.Info" />
+                            <MudText Typo="Typo.caption">@FormatFileSize(post.FileSize ?? 0)</MudText>
+                        }
+                    </MudTd>
+                    <MudTd DataLabel="작성자">@post.CreatedBy</MudTd>
+                    <MudTd DataLabel="작성일">@post.CreatedAt.ToString("yyyy-MM-dd")</MudTd>
+                    <MudTd DataLabel="작업" @onclick:stopPropagation="true">
+                        @if (!string.IsNullOrEmpty(post.StoredFileName))
+                        {
+                            <MudIconButton Icon="@Icons.Material.Filled.Download"
+                                           Color="Color.Primary"
+                                           Size="Size.Small"
+                                           OnClick="@(() => DownloadFile(post))"
+                                           Title="다운로드" />
+                        }
+                        <AuthorizeView Roles="Admin">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                           Color="Color.Success"
+                                           Size="Size.Small"
+                                           Href="@($"/updates/edit/{post.Id}")"
+                                           Title="수정" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                           Color="Color.Error"
+                                           Size="Size.Small"
+                                           OnClick="@(() => DeletePost(post))"
+                                           Title="삭제" />
+                        </AuthorizeView>
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <MudTablePager />
+                </PagerContent>
+            </MudTable>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private bool _loading = true;
+    private List<UpdatePost> _posts = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPosts();
+    }
+
+    private async Task LoadPosts()
+    {
+        _loading = true;
+        try
+        {
+            using var context = await DbFactory.CreateDbContextAsync();
+            _posts = await context.UpdatePosts
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"데이터 로드 실패: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task DownloadFile(UpdatePost post)
+    {
+        try
+        {
+            var apiKey = Configuration["ApiKey"] ?? "MxT0304";
+            using var request = new HttpRequestMessage(HttpMethod.Get, $"api/fileupload/update/download/{post.StoredFileName}");
+            request.Headers.Add("X-Api-Key", apiKey);
+            var response = await Http.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var fileBytes = await response.Content.ReadAsByteArrayAsync();
+                var fileName = post.AttachedFileName ?? post.StoredFileName ?? "download";
+
+                var base64 = Convert.ToBase64String(fileBytes);
+                await JS.InvokeVoidAsync("downloadFile", fileName, base64);
+
+                Snackbar.Add("다운로드 완료!", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("다운로드 실패", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"다운로드 실패: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task DeletePost(UpdatePost post)
+    {
+        bool? result = await JS.InvokeAsync<bool?>("confirm", $"'{post.Title}' 게시글을 삭제하시겠습니까?");
+
+        if (result == true)
+        {
+            try
+            {
+                using var context = await DbFactory.CreateDbContextAsync();
+
+                // 첨부파일이 있으면 삭제
+                if (!string.IsNullOrEmpty(post.StoredFileName))
+                {
+                    var apiKey = Configuration["ApiKey"] ?? "MxT0304";
+                    using var deleteRequest = new HttpRequestMessage(HttpMethod.Delete, $"api/fileupload/update/delete/{post.StoredFileName}");
+                    deleteRequest.Headers.Add("X-Api-Key", apiKey);
+                    await Http.SendAsync(deleteRequest);
+                }
+
+                context.UpdatePosts.Remove(post);
+                await context.SaveChangesAsync();
+
+                Snackbar.Add("삭제되었습니다.", Severity.Success);
+                await LoadPosts();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"삭제 실패: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
+    }
+
+    private void OnRowClick(TableRowClickEventArgs<UpdatePost> args)
+    {
+        NavigationManager.NavigateTo($"/updates/details/{args.Item!.Id}");
+    }
+}

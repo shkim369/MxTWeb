@@ -1,0 +1,211 @@
+@page "/updates/create"
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using MxTWeb.Data
+@using System.Net.Http.Headers
+@using Microsoft.AspNetCore.Authorization
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@inject HttpClient Http
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IConfiguration Configuration
+@attribute [Authorize]
+
+<PageTitle>새 업데이트 등록</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-4">새 업데이트 등록</MudText>
+
+    <MudPaper Class="pa-4">
+        <MudForm @ref="_form" @bind-IsValid="@_formValid">
+            <MudGrid>
+                <MudItem xs="12" md="8">
+                    <MudTextField @bind-Value="_post.Title"
+                                  Label="제목"
+                                  Required="true"
+                                  RequiredError="제목을 입력해주세요."
+                                  MaxLength="200"
+                                  Counter="200"
+                                  Immediate="true" />
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudTextField @bind-Value="_post.Version"
+                                  Label="버전"
+                                  Placeholder="예: v1.0.0"
+                                  MaxLength="50" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_post.Content"
+                                  Label="내용"
+                                  Required="true"
+                                  RequiredError="내용을 입력해주세요."
+                                  Lines="10"
+                                  Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudText Typo="Typo.subtitle1" Class="mb-2">첨부파일 (최대 50MB)</MudText>
+                    <MudFileUpload T="IBrowserFile"
+                                   FilesChanged="OnFileSelected"
+                                   Accept="*" DragAndDrop="true"
+                                   MaxFileSize="52428800">
+
+                        <SelectedTemplate>
+                            @if (_selectedFile != null)
+                            {
+                                <MudChip T="string" Color="Color.Info" Class="mt-2" OnClose="ClearFile">
+                                    <MudIcon Icon="@Icons.Material.Filled.InsertDriveFile" Class="mr-1" />
+                                    @_selectedFile.Name (@FormatFileSize(_selectedFile.Size))
+                                </MudChip>
+                            }
+                        </SelectedTemplate>
+                                   
+                    </MudFileUpload>
+                </MudItem>
+            </MudGrid>
+
+            <MudDivider Class="my-4" />
+
+            <MudGrid>
+                <MudItem xs="12" Class="d-flex justify-end gap-2">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Secondary"
+                               Href="/updates">
+                        취소
+                    </MudButton>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Disabled="@(!_formValid || _saving)"
+                               OnClick="SavePost">
+                        @if (_saving)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            <span>저장 중...</span>
+                        }
+                        else
+                        {
+                            <span>등록</span>
+                        }
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private MudForm _form = null!;
+    private bool _formValid;
+    private bool _saving;
+    private UpdatePost _post = new();
+    private IBrowserFile? _selectedFile;
+    private long _maxFileSize = 50 * 1024 * 1024; // 50MB
+
+    private void OnFileSelected(IBrowserFile file)
+    {
+        if (file.Size > _maxFileSize)
+        {
+            Snackbar.Add("파일 크기는 50MB를 초과할 수 없습니다.", Severity.Warning);
+            return;
+        }
+        _selectedFile = file;
+    }
+
+    private void ClearFile()
+    {
+        _selectedFile = null;
+    }
+
+    private async Task SavePost()
+    {
+        await _form.Validate();
+        if (!_formValid) return;
+
+        _saving = true;
+
+        try
+        {
+            // 파일 업로드
+            if (_selectedFile != null)
+            {
+                using var content = new MultipartFormDataContent();
+                var fileContent = new StreamContent(_selectedFile.OpenReadStream(_maxFileSize));
+                fileContent.Headers.ContentType = new MediaTypeHeaderValue(
+                    string.IsNullOrEmpty(_selectedFile.ContentType) ? "application/octet-stream" : _selectedFile.ContentType);
+                content.Add(fileContent, "file", _selectedFile.Name);
+
+                // API 키 헤더 추가
+                var apiKey = Configuration["ApiKey"] ?? "MxT0304";
+                using var request = new HttpRequestMessage(HttpMethod.Post, "api/fileupload/update/upload");
+                request.Headers.Add("X-Api-Key", apiKey);
+                request.Content = content;
+
+                var response = await Http.SendAsync(request);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<FileUploadResult>();
+                    if (result != null)
+                    {
+                        _post.AttachedFileName = result.FileName;
+                        _post.StoredFileName = result.StoredFileName;
+                        _post.FileSize = result.Size;
+                    }
+                }
+                else
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    Snackbar.Add($"파일 업로드 실패 [{response.StatusCode}]: {error}", Severity.Error);
+                    Console.WriteLine($"=== 업로드 실패 ===");
+                    Console.WriteLine($"StatusCode: {response.StatusCode}");
+                    Console.WriteLine($"Error: {error}");
+                    _saving = false;
+                    return;
+                }
+            }
+
+            // 게시글 저장
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            _post.CreatedBy = authState.User.Identity?.Name ?? "Unknown";
+            _post.CreatedAt = DateTime.Now;
+
+            using var context = await DbFactory.CreateDbContextAsync();
+            context.UpdatePosts.Add(_post);
+            await context.SaveChangesAsync();
+
+            Snackbar.Add("업데이트가 등록되었습니다.", Severity.Success);
+            NavigationManager.NavigateTo("/updates");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"저장 실패: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
+    }
+
+    private class FileUploadResult
+    {
+        public string Id { get; set; } = "";
+        public string FileName { get; set; } = "";
+        public string StoredFileName { get; set; } = "";
+        public long Size { get; set; }
+        public string ContentType { get; set; } = "";
+        public DateTime UploadDate { get; set; }
+    }
+}

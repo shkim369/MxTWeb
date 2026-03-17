@@ -1,32 +1,42 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.IO;
-using MxTWeb.Services;
 
 namespace MxTWeb.Services
 {
-    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
+    [ApiKeyAuth]
     public class FileUploadController : ControllerBase
     {
-        private readonly IWebHostEnvironment _environment;
-        private readonly string _uploadPath;
+        private readonly string _uploadPath;        // 일반 파일 (사진, 엑셀, PDF 등)
+        private readonly string _updateUploadPath;  // 업데이트 파일 전용
 
-        //public FileUploadController(IWebHostEnvironment environment)
         public FileUploadController(IConfiguration configuration)
         {
-            //_environment = environment;
-            //_uploadPath = Path.Combine(_environment.WebRootPath, "uploads");
+            _uploadPath = configuration["UploadPath"] ?? "/docker/web/web-uploads";
+            _updateUploadPath = configuration["UpdateUploadPath"] ?? "/docker/web/web-uploads/update";
 
-            // Docker 환경에서는 /app/uploads 사용
-            _uploadPath = configuration["UploadPath"] ?? "/app/uploads";
+            Console.WriteLine($"[FileUploadController] UploadPath: {_uploadPath}");
+            Console.WriteLine($"[FileUploadController] UpdateUploadPath: {_updateUploadPath}");
 
-
-            // uploads 폴더가 없으면 생성
+            // 폴더가 없으면 생성
             if (!Directory.Exists(_uploadPath))
             {
                 Directory.CreateDirectory(_uploadPath);
+                Console.WriteLine($"[FileUploadController] UploadPath 폴더 생성 완료");
+            }
+            if (!Directory.Exists(_updateUploadPath))
+            {
+                try
+                {
+                    Directory.CreateDirectory(_updateUploadPath);
+                    Console.WriteLine($"[FileUploadController] UpdateUploadPath 폴더 생성 완료");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[FileUploadController] UpdateUploadPath 폴더 생성 실패: {ex.Message}");
+                }
             }
         }
 
@@ -38,9 +48,9 @@ namespace MxTWeb.Services
                 if (file == null || file.Length == 0)
                     return BadRequest("파일이 선택되지 않았습니다.");
 
-                // 파일 크기 제한 (10MB)
-                if (file.Length > 10 * 1024 * 1024)
-                    return BadRequest("파일 크기는 10MB를 초과할 수 없습니다.");
+                // 파일 크기 제한 (50MB)
+                if (file.Length > 50 * 1024 * 1024)
+                    return BadRequest("파일 크기는 50MB를 초과할 수 없습니다.");
 
                 // 고유한 파일명 생성
                 var uniqueFileName = $"{Guid.NewGuid()}_{file.FileName}";
@@ -136,6 +146,117 @@ namespace MxTWeb.Services
             try
             {
                 var filePath = Path.Combine(_uploadPath, storedFileName);
+
+                if (!System.IO.File.Exists(filePath))
+                    return NotFound("파일을 찾을 수 없습니다.");
+
+                System.IO.File.Delete(filePath);
+                return Ok("파일이 삭제되었습니다.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"파일 삭제 실패: {ex.Message}");
+            }
+        }
+
+        // ========== 업데이트 파일 전용 엔드포인트 ==========
+
+        [HttpPost("update/upload")]
+        [AllowAnonymous]  // Blazor Server HttpClient는 쿠키를 전달하지 않으므로
+        [RequestSizeLimit(52428800)] // 50MB
+        public async Task<IActionResult> UploadUpdateFile(IFormFile file)
+        {
+            Console.WriteLine("=== 업데이트 파일 업로드 요청 ===");
+            Console.WriteLine($"[UpdateUpload] UpdateUploadPath: {_updateUploadPath}");
+
+            try
+            {
+                if (file == null || file.Length == 0)
+                {
+                    Console.WriteLine("[UpdateUpload] 파일이 null이거나 비어있음");
+                    return BadRequest("파일이 선택되지 않았습니다.");
+                }
+
+                Console.WriteLine($"[UpdateUpload] 파일명: {file.FileName}, 크기: {file.Length} bytes");
+
+                if (file.Length > 50 * 1024 * 1024)
+                {
+                    Console.WriteLine($"[UpdateUpload] 파일 크기 초과: {file.Length} bytes");
+                    return BadRequest("파일 크기는 50MB를 초과할 수 없습니다.");
+                }
+
+                if (!Directory.Exists(_updateUploadPath))
+                {
+                    Console.WriteLine($"[UpdateUpload] 폴더가 없어서 생성 시도: {_updateUploadPath}");
+                    Directory.CreateDirectory(_updateUploadPath);
+                }
+
+                var uniqueFileName = $"{Guid.NewGuid()}_{file.FileName}";
+                var filePath = Path.Combine(_updateUploadPath, uniqueFileName);
+                Console.WriteLine($"[UpdateUpload] 저장 경로: {filePath}");
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+
+                Console.WriteLine($"[UpdateUpload] 파일 저장 성공: {filePath}");
+
+                var fileInfo = new FileInfoDto
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    FileName = file.FileName,
+                    StoredFileName = uniqueFileName,
+                    Size = file.Length,
+                    ContentType = string.IsNullOrEmpty(file.ContentType) ? "application/octet-stream" : file.ContentType,
+                    UploadDate = DateTime.Now
+                };
+
+                return Ok(fileInfo);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[UpdateUpload] 업데이트 파일 업로드 실패: {ex.Message}");
+                return StatusCode(500, $"파일 업로드 실패: {ex.Message}");
+            }
+        }
+
+        [HttpGet("update/download/{storedFileName}")]
+        [AllowAnonymous]
+        public IActionResult DownloadUpdateFile(string storedFileName)
+        {
+            try
+            {
+                var filePath = Path.Combine(_updateUploadPath, storedFileName);
+
+                if (!System.IO.File.Exists(filePath))
+                    return NotFound("파일을 찾을 수 없습니다.");
+
+                var memory = new MemoryStream();
+                using (var stream = new FileStream(filePath, FileMode.Open))
+                {
+                    stream.CopyTo(memory);
+                }
+                memory.Position = 0;
+
+                var originalFileName = storedFileName.Length > 37 ? storedFileName.Substring(37) : storedFileName;
+                var contentType = GetContentType(filePath);
+
+                return File(memory, contentType, originalFileName);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"파일 다운로드 실패: {ex.Message}");
+            }
+        }
+
+        [HttpDelete("update/delete/{storedFileName}")]
+        [AllowAnonymous]
+        public IActionResult DeleteUpdateFile(string storedFileName)
+        {
+            try
+            {
+                var filePath = Path.Combine(_updateUploadPath, storedFileName);
 
                 if (!System.IO.File.Exists(filePath))
                     return NotFound("파일을 찾을 수 없습니다.");

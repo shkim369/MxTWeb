@@ -1,0 +1,249 @@
+@page "/updates/details/{Id:int}"
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using MxTWeb.Data
+@using Microsoft.AspNetCore.Authorization
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
+@inject HttpClient Http
+@inject IConfiguration Configuration
+@attribute [Authorize]
+
+<PageTitle>업데이트 상세</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-4">
+    @if (_loading)
+    {
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    }
+    else if (_post == null)
+    {
+        <MudAlert Severity="Severity.Error">게시글을 찾을 수 없습니다.</MudAlert>
+    }
+    else
+    {
+        <MudPaper Class="pa-4">
+            <MudGrid>
+                <MudItem xs="12" Class="d-flex justify-space-between align-center">
+                    <MudText Typo="Typo.h5">@_post.Title</MudText>
+                    @if (!string.IsNullOrEmpty(_post.Version))
+                    {
+                        <MudChip T="string" Color="Color.Info">@_post.Version</MudChip>
+                    }
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudDivider />
+                </MudItem>
+
+                <MudItem xs="12" Class="d-flex gap-4">
+                    <MudText Typo="Typo.caption" Color="Color.Dark">
+                        <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" Class="mr-1" />
+                        @_post.CreatedBy
+                    </MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Dark">
+                        <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" Size="Size.Small" Class="mr-1" />
+                        @_post.CreatedAt.ToString("yyyy-MM-dd HH:mm")
+                    </MudText>
+                    @if (_post.UpdatedAt.HasValue)
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Dark">
+                            <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Class="mr-1" />
+                            수정: @_post.UpdatedAt.Value.ToString("yyyy-MM-dd HH:mm")
+                        </MudText>
+                    }
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudDivider Class="my-2" />
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudText Typo="Typo.body1" Style="white-space: pre-wrap;">@_post.Content</MudText>
+                </MudItem>
+
+                @if (!string.IsNullOrEmpty(_post.StoredFileName))
+                {
+                    <MudItem xs="12">
+                        <MudDivider Class="my-2" />
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <MudText Typo="Typo.subtitle2" Class="mb-2">첨부파일</MudText>
+                        <MudPaper Outlined="true" Class="pa-3 d-flex align-center justify-space-between">
+                            <div class="d-flex align-center">
+                                <MudIcon Icon="@Icons.Material.Filled.InsertDriveFile" Color="Color.Primary" Class="mr-2" />
+                                <div>
+                                    <MudText Typo="Typo.body2">@_post.AttachedFileName</MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">@FormatFileSize(_post.FileSize ?? 0)</MudText>
+                                </div>
+                            </div>
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.Download"
+                                       OnClick="DownloadFile"
+                                       Disabled="@_downloading">
+                                @if (_downloading)
+                                {
+                                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                                }
+                                다운로드
+                            </MudButton>
+                        </MudPaper>
+                    </MudItem>
+                }
+
+                <MudItem xs="12">
+                    <MudDivider Class="my-4" />
+                </MudItem>
+
+                <MudItem xs="12" Class="d-flex justify-space-between">
+                    <MudButton Variant="Variant.Text"
+                               Color="Color.Default"
+                               StartIcon="@Icons.Material.Filled.ArrowBack"
+                               Href="/updates">
+                        목록으로
+                    </MudButton>
+
+                    <AuthorizeView Roles="Admin">
+                        <div class="d-flex gap-2">
+                            <MudButton Variant="Variant.Outlined"
+                                       Color="Color.Info"
+                                       StartIcon="@Icons.Material.Filled.Edit"
+                                       Href="@($"/updates/edit/{Id}")">
+                                수정
+                            </MudButton>
+                            <MudButton Variant="Variant.Outlined"
+                                       Color="Color.Error"
+                                       StartIcon="@Icons.Material.Filled.Delete"
+                                       OnClick="DeletePost">
+                                삭제
+                            </MudButton>
+                        </div>
+                    </AuthorizeView>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    }
+</MudContainer>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private bool _loading = true;
+    private bool _downloading = false;
+    private UpdatePost? _post;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPost();
+    }
+
+    private async Task LoadPost()
+    {
+        _loading = true;
+        try
+        {
+            using var context = await DbFactory.CreateDbContextAsync();
+            _post = await context.UpdatePosts.FindAsync(Id);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"데이터 로드 실패: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task DownloadFile()
+    {
+        if (_post == null || string.IsNullOrEmpty(_post.StoredFileName)) return;
+
+        _downloading = true;
+        try
+        {
+            var apiKey = Configuration["ApiKey"] ?? "MxT0304";
+            using var request = new HttpRequestMessage(HttpMethod.Get, $"api/fileupload/update/download/{_post.StoredFileName}");
+            request.Headers.Add("X-Api-Key", apiKey);
+            var response = await Http.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var fileBytes = await response.Content.ReadAsByteArrayAsync();
+                var fileName = _post.AttachedFileName ?? _post.StoredFileName ?? "download";
+
+                var base64 = Convert.ToBase64String(fileBytes);
+                await JS.InvokeVoidAsync("downloadFile", fileName, base64);
+
+                Snackbar.Add("다운로드 완료!", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("다운로드 실패", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"다운로드 실패: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _downloading = false;
+        }
+    }
+
+    private async Task DeletePost()
+    {
+        if (_post == null) return;
+
+        bool? result = await JS.InvokeAsync<bool?>("confirm", "이 게시글을 삭제하시겠습니까?");
+
+        if (result == true)
+        {
+            try
+            {
+                using var context = await DbFactory.CreateDbContextAsync();
+
+                if (!string.IsNullOrEmpty(_post.StoredFileName))
+                {
+                    var apiKey = Configuration["ApiKey"] ?? "MxT0304";
+                    using var deleteRequest = new HttpRequestMessage(HttpMethod.Delete, $"api/fileupload/update/delete/{_post.StoredFileName}");
+                    deleteRequest.Headers.Add("X-Api-Key", apiKey);
+                    await Http.SendAsync(deleteRequest);
+                }
+
+                var postToDelete = await context.UpdatePosts.FindAsync(_post.Id);
+                if (postToDelete != null)
+                {
+                    context.UpdatePosts.Remove(postToDelete);
+                    await context.SaveChangesAsync();
+                }
+
+                Snackbar.Add("삭제되었습니다.", Severity.Success);
+                NavigationManager.NavigateTo("/updates");
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"삭제 실패: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
+    }
+}
