@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.IO;
+using Microsoft.EntityFrameworkCore;
+using MxTWeb.Data;
 
 namespace MxTWeb.Services
 {
@@ -11,9 +12,11 @@ namespace MxTWeb.Services
     {
         private readonly string _uploadPath;        // 일반 파일 (사진, 엑셀, PDF 등)
         private readonly string _updateUploadPath;  // 업데이트 파일 전용
+        private readonly IDbContextFactory<ApplicationDbContext> _dbFactory;
 
-        public FileUploadController(IConfiguration configuration)
+        public FileUploadController(IConfiguration configuration, IDbContextFactory<ApplicationDbContext> dbFactory)
         {
+            _dbFactory = dbFactory;
             _uploadPath = configuration["UploadPath"] ?? "/docker/web/web-uploads";
             _updateUploadPath = configuration["UpdateUploadPath"] ?? "/docker/web/web-uploads/update";
 
@@ -202,14 +205,14 @@ namespace MxTWeb.Services
 
                 Console.WriteLine($"[UpdateUpload] 파일 저장 성공: {filePath}");
 
-                var fileInfo = new FileInfoDto
+                var fileInfo = new UpdateFileInfoDto
                 {
                     Id = Guid.NewGuid().ToString(),
                     FileName = file.FileName,
                     StoredFileName = uniqueFileName,
                     Size = file.Length,
                     ContentType = string.IsNullOrEmpty(file.ContentType) ? "application/octet-stream" : file.ContentType,
-                    UploadDate = DateTime.Now
+                    UploadDate = DateTime.Now,
                 };
 
                 return Ok(fileInfo);
@@ -221,6 +224,119 @@ namespace MxTWeb.Services
             }
         }
 
+
+        // 장비 업데이트 목록 확인 (내부용으로 사용)
+        [HttpGet("update/list/{equipment}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetUpdateFileList(string equipment)
+        {
+            try
+            {
+                using var context = await _dbFactory.CreateDbContextAsync();
+                var posts = await context.UpdatePosts
+                    .Where(p => p.Equipment == equipment && p.StoredFileName != null && p.StoredFileName != "")
+                    .OrderByDescending(p => p.CreatedAt)
+                    .Select(p => new UpdateFileInfoDto
+                    {
+                        Id = p.Id.ToString(),
+                        FileName = p.AttachedFileName ?? "",
+                        StoredFileName = p.StoredFileName ?? "",
+                        Size = p.FileSize ?? 0,
+                        ContentType = "application/octet-stream",
+                        UploadDate = p.CreatedAt,
+                        Version = p.Version ?? "",
+                        IsLastest = p.IsLatest,
+                    })
+                    .ToListAsync();
+
+                return Ok(posts);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[UpdateList] 업데이트 파일 목록 조회 실패: {ex.Message}");
+                return StatusCode(500, $"파일 목록 조회 실패: {ex.Message}");
+            }
+        }
+
+        /// 최신 버전 파일 정보 조회 (판매용 장비에서 사용)
+        [HttpGet("update/latest/{equipment}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetLatestUpdateFile(string equipment)
+        {
+            try
+            {
+                using var context = await _dbFactory.CreateDbContextAsync();
+                var latestPost = await context.UpdatePosts
+                    .Where(p => p.IsLatest && p.Equipment == equipment && p.StoredFileName != null && p.StoredFileName != "")
+                    .FirstOrDefaultAsync();
+
+                if (latestPost == null)
+                {
+                    return NotFound($"'{equipment}'의 최신 업데이트가 없습니다.");
+                }
+
+                var result = new UpdateFileInfoDto
+                {
+                    Id = latestPost.Id.ToString(),
+                    FileName = latestPost.AttachedFileName ?? "",
+                    StoredFileName = latestPost.StoredFileName ?? "",
+                    Size = latestPost.FileSize ?? 0,
+                    ContentType = "application/octet-stream",
+                    UploadDate = latestPost.CreatedAt,
+                    Version = latestPost.Version ?? "",
+                };
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[UpdateLatest] 최신 버전 조회 실패: {ex.Message}");
+                return StatusCode(500, $"최신 버전 조회 실패: {ex.Message}");
+            }
+        }
+
+        /// 최신 버전 파일 직접 다운로드 (판매용 장비에서 사용)
+        [HttpGet("update/latest/{equipment}/download")]
+        [AllowAnonymous]
+        public async Task<IActionResult> DownloadLatestUpdateFile(string equipment)
+        {
+            try
+            {
+                using var context = await _dbFactory.CreateDbContextAsync();
+                var latestPost = await context.UpdatePosts
+                    .Where(p => p.IsLatest && p.Equipment == equipment && p.StoredFileName != null && p.StoredFileName != "")
+                    .FirstOrDefaultAsync();
+
+                if (latestPost == null || string.IsNullOrEmpty(latestPost.StoredFileName))
+                {
+                    return NotFound($"'{equipment}'의 최신 업데이트가 없습니다.");
+                }
+
+                var filePath = Path.Combine(_updateUploadPath, latestPost.StoredFileName);
+
+                if (!System.IO.File.Exists(filePath))
+                {
+                    return NotFound("파일을 찾을 수 없습니다.");
+                }
+
+                var memory = new MemoryStream();
+                using (var stream = new FileStream(filePath, FileMode.Open))
+                {
+                    await stream.CopyToAsync(memory);
+                }
+                memory.Position = 0;
+
+                var contentType = GetContentType(filePath);
+                return File(memory, contentType, latestPost.AttachedFileName ?? latestPost.StoredFileName);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[UpdateLatestDownload] 최신 버전 다운로드 실패: {ex.Message}");
+                return StatusCode(500, $"최신 버전 다운로드 실패: {ex.Message}");
+            }
+        }
+
+        // 단순 다운로드 - 파일 이름으로 확인 - web에서 사용
         [HttpGet("update/download/{storedFileName}")]
         [AllowAnonymous]
         public IActionResult DownloadUpdateFile(string storedFileName)
@@ -290,6 +406,7 @@ namespace MxTWeb.Services
             var ext = Path.GetExtension(path).ToLowerInvariant();
             return types.ContainsKey(ext) ? types[ext] : "application/octet-stream";
         }
+
     }
 
     public class FileInfoDto
@@ -300,5 +417,12 @@ namespace MxTWeb.Services
         public long Size { get; set; }
         public string ContentType { get; set; }
         public DateTime UploadDate { get; set; }
+    }
+
+    public class UpdateFileInfoDto : FileInfoDto
+    {
+        public string Version { get; set; } = "";
+        public bool IsLastest { get; set; } = false;
+        public string Equipment { get; set; } = "";
     }
 }

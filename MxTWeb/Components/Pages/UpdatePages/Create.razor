@@ -20,20 +20,30 @@
     <MudPaper Class="pa-4">
         <MudForm @ref="_form" @bind-IsValid="@_formValid">
             <MudGrid>
-                <MudItem xs="12" md="8">
+                <MudItem xs="12" md="12">
                     <MudTextField @bind-Value="_post.Title"
                                   Label="제목"
                                   Required="true"
                                   RequiredError="제목을 입력해주세요."
                                   MaxLength="200"
-                                  Counter="200"
                                   Immediate="true" />
+                </MudItem>
+                <MudItem xs="12" md="5">
+                    <MudTextField @bind-Value="_post.Equipment"
+                                  Label="장비명"
+                                  Placeholder="예: Hydroporator RUO"
+                                  MaxLength="50" />
                 </MudItem>
                 <MudItem xs="12" md="4">
                     <MudTextField @bind-Value="_post.Version"
                                   Label="버전"
                                   Placeholder="예: v1.0.0"
                                   MaxLength="50" />
+                </MudItem>
+                <MudItem xs="12" md="3" Class="d-flex align-center mt-2">
+                    <MudCheckBox @bind-Value="_post.IsLatest"
+                                 Label="Lastest"
+                                 Color="Color.Primary" />
                 </MudItem>
                 <MudItem xs="12">
                     <MudTextField @bind-Value="_post.Content"
@@ -118,7 +128,7 @@
 
     private async Task SavePost()
     {
-        await _form.Validate();
+        await _form.ValidateAsync();
         if (!_formValid) return;
 
         _saving = true;
@@ -150,6 +160,7 @@
                         _post.AttachedFileName = result.FileName;
                         _post.StoredFileName = result.StoredFileName;
                         _post.FileSize = result.Size;
+                        _post.Version = result.Version;
                     }
                 }
                 else
@@ -170,6 +181,19 @@
             _post.CreatedAt = DateTime.Now;
 
             using var context = await DbFactory.CreateDbContextAsync();
+
+            // 최신 버전으로 설정 시, 같은 장비의 기존 최신 버전 해제
+            if (_post.IsLatest)
+            {
+                var currentLatest = await context.UpdatePosts
+                    .Where(p => p.IsLatest && p.Equipment == _post.Equipment)
+                    .ToListAsync();
+                foreach (var post in currentLatest)
+                {
+                    post.IsLatest = false;
+                }
+            }
+
             context.UpdatePosts.Add(_post);
             await context.SaveChangesAsync();
 
@@ -207,5 +231,6 @@
         public long Size { get; set; }
         public string ContentType { get; set; } = "";
         public DateTime UploadDate { get; set; }
+        public string Version { get; set; } = "";
     }
 }

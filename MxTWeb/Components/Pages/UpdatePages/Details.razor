@@ -26,11 +26,22 @@
     {
         <MudPaper Class="pa-4">
             <MudGrid>
-                <MudItem xs="12" Class="d-flex justify-space-between align-center">
+                <MudItem xs="7" Class="mt-1">
                     <MudText Typo="Typo.h5">@_post.Title</MudText>
+                </MudItem>
+
+                <MudItem xs="5">
+                    @if (!string.IsNullOrEmpty(_post.Equipment))
+                    {
+                        <MudChip T="string" Color="Color.Dark">@_post.Equipment</MudChip>
+                    }
                     @if (!string.IsNullOrEmpty(_post.Version))
                     {
                         <MudChip T="string" Color="Color.Info">@_post.Version</MudChip>
+                    }
+                    @if (_post.IsLatest)
+                    {
+                        <MudChip T="string" Color="Color.Success">Lastest</MudChip>
                     }
                 </MudItem>
 
@@ -77,7 +88,7 @@
                                 <MudIcon Icon="@Icons.Material.Filled.InsertDriveFile" Color="Color.Primary" Class="mr-2" />
                                 <div>
                                     <MudText Typo="Typo.body2">@_post.AttachedFileName</MudText>
-                                    <MudText Typo="Typo.caption" Color="Color.Secondary">@FormatFileSize(_post.FileSize ?? 0)</MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Info">@FormatFileSize(_post.FileSize ?? 0)</MudText>
                                 </div>
                             </div>
                             <MudButton Variant="Variant.Filled"

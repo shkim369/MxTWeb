@@ -274,8 +274,15 @@ namespace MxTWeb.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Equipment")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<long?>("FileSize")
                         .HasColumnType("bigint");
+
+                    b.Property<bool>("IsLatest")
+                        .HasColumnType("bit");
 
                     b.Property<string>("StoredFileName")
                         .HasColumnType("nvarchar(max)");

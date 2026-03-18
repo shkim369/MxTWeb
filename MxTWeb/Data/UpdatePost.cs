@@ -18,9 +18,14 @@ namespace MxTWeb.Data
         public string? StoredFileName { get; set; }
         public long? FileSize { get; set; }
 
-        // 버전 정보 (예: v1.0.0)
+        [MaxLength(50)]
+        public string? Equipment { get; set; }
+
         [MaxLength(50)]
         public string? Version { get; set; }
+
+        // 최신 버전 여부
+        public bool IsLatest { get; set; } = false;
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public string CreatedBy { get; set; } = string.Empty;

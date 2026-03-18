@@ -29,20 +29,30 @@
         <MudPaper Class="pa-4">
             <MudForm @ref="_form" @bind-IsValid="@_formValid">
                 <MudGrid>
-                    <MudItem xs="12" md="8">
+                    <MudItem xs="12" md="12">
                         <MudTextField @bind-Value="_post.Title"
                                       Label="제목"
                                       Required="true"
                                       RequiredError="제목을 입력해주세요."
                                       MaxLength="200"
-                                      Counter="200"
                                       Immediate="true" />
+                    </MudItem>
+                    <MudItem xs="12" md="5">
+                        <MudTextField @bind-Value="_post.Equipment"
+                                      Label="장비명"
+                                      Placeholder="예: Hydroporator RUO"
+                                      MaxLength="50" />
                     </MudItem>
                     <MudItem xs="12" md="4">
                         <MudTextField @bind-Value="_post.Version"
                                       Label="버전"
                                       Placeholder="예: v1.0.0"
                                       MaxLength="50" />
+                    </MudItem>
+                    <MudItem xs="12" md="3" Class="d-flex align-center mt-2">
+                        <MudCheckBox @bind-Value="_post.IsLatest"
+                                     Label="Lastest"
+                                     Color="Color.Primary" />
                     </MudItem>
                     <MudItem xs="12">
                         <MudTextField @bind-Value="_post.Content"
@@ -246,6 +256,7 @@
                 fileContent.Headers.ContentType = new MediaTypeHeaderValue(
                     string.IsNullOrEmpty(_selectedFile.ContentType) ? "application/octet-stream" : _selectedFile.ContentType);
                 content.Add(fileContent, "file", _selectedFile.Name);
+                content.Add(new StringContent(_post.Version ?? ""), "version");
 
                 using var uploadRequest = new HttpRequestMessage(HttpMethod.Post, "api/fileupload/update/upload");
                 uploadRequest.Headers.Add("X-Api-Key", apiKey);
@@ -276,6 +287,19 @@
             _post.UpdatedAt = DateTime.Now;
 
             using var context = await DbFactory.CreateDbContextAsync();
+
+            // 최신 버전으로 설정 시, 같은 장비의 기존 최신 버전 해제 (자신 제외)
+            if (_post.IsLatest)
+            {
+                var currentLatest = await context.UpdatePosts
+                    .Where(p => p.IsLatest && p.Equipment == _post.Equipment && p.Id != _post.Id)
+                    .ToListAsync();
+                foreach (var post in currentLatest)
+                {
+                    post.IsLatest = false;
+                }
+            }
+
             context.UpdatePosts.Update(_post);
             await context.SaveChangesAsync();
 
@@ -313,5 +337,6 @@
         public long Size { get; set; }
         public string ContentType { get; set; } = "";
         public DateTime UploadDate { get; set; }
+        public string Version { get; set; } = "";
     }
 }

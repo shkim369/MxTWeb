@@ -19,7 +19,7 @@
     }
 </style>
 
-<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
     <MudGrid>
         <MudItem xs="12" Class="d-flex justify-space-between align-center">
             <MudText Typo="Typo.h4">업데이트 관리</MudText>
@@ -51,30 +51,41 @@
                 <HeaderContent>
                     <MudTh Style="width: 80px;">번호</MudTh>
                     <MudTh>제목</MudTh>
+                    <MudTh Style="width: 200px;">장비명</MudTh>
                     <MudTh Style="width: 160px;">버전</MudTh>
+                    <MudTh Style="width: 80px;">최신</MudTh>
                     <MudTh Style="width: 130px;">첨부파일</MudTh>
                     <MudTh Style="width: 130px;">작성자</MudTh>
-                    <MudTh Style="width: 150px;">작성일</MudTh>
+                    <MudTh Style="width: 120px;">작성일</MudTh>
+                    <MudTh Style="width: 120px;">수정일</MudTh>
                     <MudTh>작업</MudTh>
                 </HeaderContent>
                 <RowTemplate Context="post">
                     <MudTd DataLabel="번호">@post.Id</MudTd>
                     <MudTd DataLabel="제목">@post.Title</MudTd>
+                    <MudTd DataLabel="장비명">@post.Equipment</MudTd>
                     <MudTd DataLabel="버전">
                         @if (!string.IsNullOrEmpty(post.Version))
                         {
-                            <MudChip T="string" Color="Color.Info" Size="Size.Small">@post.Version</MudChip>
+                            <MudChip T="string" Color="Color.Info" Size="Size.Small" Class="ms-0">@post.Version</MudChip>
+                        }
+                    </MudTd>
+                    <MudTd DataLabel="최신">
+                        @if (post.IsLatest)
+                        {
+                            <MudChip T="string" Color="Color.Success" Size="Size.Small" Class="ms-0">Lastest</MudChip>
                         }
                     </MudTd>
                     <MudTd DataLabel="첨부파일">
                         @if (!string.IsNullOrEmpty(post.StoredFileName))
                         {
-                            <MudIcon Icon="@Icons.Material.Filled.AttachFile" Size="Size.Small" Color="Color.Info" />
+                            <MudIcon Class="ms-0" Icon="@Icons.Material.Filled.AttachFile" Size="Size.Small" Color="Color.Info" />
                             <MudText Typo="Typo.caption">@FormatFileSize(post.FileSize ?? 0)</MudText>
                         }
                     </MudTd>
                     <MudTd DataLabel="작성자">@post.CreatedBy</MudTd>
                     <MudTd DataLabel="작성일">@post.CreatedAt.ToString("yyyy-MM-dd")</MudTd>
+                    <MudTd DataLabel="수정일">@(post.UpdatedAt?.ToString("yyyy-MM-dd") ?? "-")</MudTd>
                     <MudTd DataLabel="작업" @onclick:stopPropagation="true">
                         @if (!string.IsNullOrEmpty(post.StoredFileName))
                         {
