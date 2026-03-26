@@ -7,7 +7,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.OpenApi;
+using Microsoft.AspNetCore.OpenApi;
+using Scalar.AspNetCore;
 using MudBlazor.Services;
 using MxTWeb.Components;
 using MxTWeb.Components.Account;
@@ -24,14 +25,36 @@ builder.Services.AddControllersWithViews();
 //builder.Services.AddRazorPages();
 builder.Services.AddMudServices();
 
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options =>
+builder.Services.AddOpenApi(options =>
 {
-    options.SwaggerDoc("v1", new OpenApiInfo
+    options.AddDocumentTransformer((document, context, cancellationToken) =>
     {
-        Version = "v1",
-        Title = "ChipPressure",
-        Description = "API description"
+        document.Info = new()
+        {
+            Title = "MxTWeb API",
+            Version = "v1",
+            Description = "API description"
+        };
+
+        // API 키 인증 스키마 추가
+        document.Components ??= new();
+        document.Components.SecuritySchemes ??= new Dictionary<string, Microsoft.OpenApi.Models.OpenApiSecurityScheme>();
+        document.Components.SecuritySchemes["ApiKey"] = new()
+        {
+            Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+            In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+            Name = "X-Api-Key",
+            Description = "API 키를 입력하세요"
+        };
+
+        // 전역 보안 요구사항 추가
+        document.SecurityRequirements ??= new List<Microsoft.OpenApi.Models.OpenApiSecurityRequirement>();
+        document.SecurityRequirements.Add(new()
+        {
+            [new() { Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey, Reference = new() { Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme, Id = "ApiKey" } }] = new List<string>()
+        });
+
+        return Task.CompletedTask;
     });
 });
 
@@ -131,8 +154,11 @@ using (var scope = app.Services.CreateScope())
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.MapOpenApi();
+    app.MapScalarApiReference(options =>
+    {
+        options.WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
+    });
     app.UseMigrationsEndPoint();
 }
 else

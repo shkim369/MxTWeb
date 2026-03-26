@@ -162,7 +162,8 @@
         var parameters = new DialogParameters<HistoryEdit>
         {
             { x => x.action, UIActionEnum.Update },
-            { x => x.CompHistory, data.Item }
+            { x => x.CompHistory, data.Item },
+            { x => x.PartNumber, data.Item.Component.PartNumber }
         };
 
         var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, CloseOnEscapeKey = true };

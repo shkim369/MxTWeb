@@ -31,7 +31,7 @@ namespace MxTWeb.Services
         {
             if (_activeUsers.TryGetValue(circuitId, out var info))
             {
-                info.LastActivity = DateTime.Now;
+                info.LastActivity = DateTime.UtcNow;
             }
         }
 

@@ -175,7 +175,7 @@
                     </HeaderContent>
                     <RowTemplate Context="x">
                         <MudTd DataLabel="날짜" Style="min-width: 115px">@x.Date?.ToString("yyyy-MM-dd")</MudTd>
-                        <MudTd DataLabel="구분" Style="width: 70px; padding-right: 0px; padding-left: 10px">
+                        <MudTd DataLabel="구분" Style="min-width: 68px; padding-right: 0px; padding-left: 10px">
                             <MudChip T="string" Size="Size.Small" Style="@GetStateColor(x.state)">
                                 @x.state
                             </MudChip>
@@ -264,12 +264,12 @@
                     </ToolBarContent>
                     <HeaderContent>
                         <MudTh>입고일</MudTh>
-                        <MudTh>관리번호</MudTh>
+                        <MudTh>제품코드</MudTh>
                         <MudTh>🧪시약명</MudTh>
                     </HeaderContent>
                     <RowTemplate Context="x">
-                        <MudTd DataLabel="입고일">@x.ReceiptDate</MudTd>
-                        <MudTd DataLabel="관리번호" Style="height: 45px">@x.Code</MudTd>
+                        <MudTd DataLabel="입고일">@x.ReceiptDate?.ToString("yyyy-MM-dd")</MudTd>
+                        <MudTd DataLabel="제품코드" Style="height: 45px">@x.Code</MudTd>
                         <MudTd DataLabel="🧪시약명">@x.Name</MudTd>                        
                     </RowTemplate>
                 </MudTable>

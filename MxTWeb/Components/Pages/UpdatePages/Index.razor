@@ -73,7 +73,7 @@
                     <MudTd DataLabel="최신">
                         @if (post.IsLatest)
                         {
-                            <MudChip T="string" Color="Color.Success" Size="Size.Small" Class="ms-0">Lastest</MudChip>
+                            <MudChip T="string" Color="Color.Success" Size="Size.Small" Class="ms-0">Latest</MudChip>
                         }
                     </MudTd>
                     <MudTd DataLabel="첨부파일">
@@ -84,8 +84,8 @@
                         }
                     </MudTd>
                     <MudTd DataLabel="작성자">@post.CreatedBy</MudTd>
-                    <MudTd DataLabel="작성일">@post.CreatedAt.ToString("yyyy-MM-dd")</MudTd>
-                    <MudTd DataLabel="수정일">@(post.UpdatedAt?.ToString("yyyy-MM-dd") ?? "-")</MudTd>
+                    <MudTd DataLabel="작성일">@ToKstString(post.CreatedAt, "yyyy-MM-dd")</MudTd>
+                    <MudTd DataLabel="수정일">@(post.UpdatedAt.HasValue ? ToKstString(post.UpdatedAt.Value, "yyyy-MM-dd") : "-")</MudTd>
                     <MudTd DataLabel="작업" @onclick:stopPropagation="true">
                         @if (!string.IsNullOrEmpty(post.StoredFileName))
                         {
@@ -120,6 +120,13 @@
 @code {
     private bool _loading = true;
     private List<UpdatePost> _posts = new();
+
+    private static readonly TimeZoneInfo KstZone = TimeZoneInfo.FindSystemTimeZoneById("Korea Standard Time");
+
+    private string ToKstString(DateTime utcTime, string format = "yyyy-MM-dd HH:mm")
+    {
+        return TimeZoneInfo.ConvertTimeFromUtc(utcTime, KstZone).ToString(format);
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -160,8 +167,9 @@
                 var fileBytes = await response.Content.ReadAsByteArrayAsync();
                 var fileName = post.AttachedFileName ?? post.StoredFileName ?? "download";
 
-                var base64 = Convert.ToBase64String(fileBytes);
-                await JS.InvokeVoidAsync("downloadFile", fileName, base64);
+                using var stream = new MemoryStream(fileBytes);
+                using var streamRef = new DotNetStreamReference(stream);
+                await JS.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
 
                 Snackbar.Add("다운로드 완료!", Severity.Success);
             }

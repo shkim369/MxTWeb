@@ -60,8 +60,8 @@
                 UserId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "",
                 Email = user.Identity.Name ?? "",
                 DisplayName = user.FindFirst("DisplayName")?.Value,
-                ConnectedAt = DateTime.Now,
-                LastActivity = DateTime.Now,
+                ConnectedAt = DateTime.UtcNow,
+                LastActivity = DateTime.UtcNow,
                 IpAddress = ipAddress
             });
 

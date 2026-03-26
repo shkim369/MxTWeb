@@ -69,8 +69,9 @@
 
             <MudItem>
                 <MudFileUpload Class="me-2" T="IBrowserFile" Accept=".xlsx, .csv" @ref="excelUpload" FilesChanged="UploadFile">
-                    <ActivatorContent>
-                        <MudButton Disabled="@importing" Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Custom.FileFormats.FileExcel">
+                    <CustomContent>
+                        <MudButton Disabled="@importing" Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Custom.FileFormats.FileExcel"
+                                   OnClick="@context.OpenFilePickerAsync">
                             @if (importing)
                             {
                                 <MudProgressCircular Indeterminate="true" Color="Color.Info" Size="Size.Small" Class="me-2" />
@@ -81,7 +82,7 @@
                                 <MudText>Import</MudText>
                             }
                         </MudButton>
-                    </ActivatorContent>
+                    </CustomContent>
                 </MudFileUpload>
             </MudItem>
 
@@ -105,7 +106,7 @@
 
             <MudSpacer />
             <MudMenu Class="mt-3" Label="@searchField" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Secondary">
-                <MudMenuItem Label="관리번호" @onclick="@(() => SelectSearchField("관리번호"))" />
+                <MudMenuItem Label="제품코드" @onclick="@(() => SelectSearchField("제품코드"))" />
                 <MudMenuItem Label="시약명" @onclick="@(() => SelectSearchField("시약명"))" />
                 <MudMenuItem Label="제조사" @onclick="@(() => SelectSearchField("제조사"))" />
                 <MudMenuItem Label="용량" @onclick="@(() => SelectSearchField("용량"))" />
@@ -133,7 +134,7 @@
 
     <Columns>
         <SelectColumn T="Reagent" ShowInHeader="false" />
-        <PropertyColumn Property="x => x.Code" Title="관리번호" sortable="true" InitialDirection="SortDirection.Ascending"/>
+        <PropertyColumn Property="x => x.Code" Title="제품코드" sortable="true" InitialDirection="SortDirection.Ascending"/>
         <PropertyColumn Property="x => x.Name" Title="시약명" Sortable="false" />
         <PropertyColumn Property="x => x.Manufacturer" Title="제조사" sortable="true" Required="false" />
         <PropertyColumn Property="x => x.Amount" Title="용량" sortable="false" Required="false" />
@@ -160,7 +161,7 @@
 @code {
     private MxTWebContext context = default!;
 
-    private string searchField = "관리번호";
+    private string searchField = "제품코드";
     private string searchFilter;
 
     private IEnumerable<Reagent> FilteredData = new List<Reagent>();
@@ -241,7 +242,7 @@
         {
             switch (searchField)
             {
-                case "관리번호":
+                case "제품코드":
                     if (x.Code?.Contains(searchFilter, StringComparison.OrdinalIgnoreCase) == true)
                         return true;
                     break;
@@ -400,7 +401,7 @@
                 var worksheet = workbook.Worksheets.Add("Reagents");
 
                 worksheet.Cell(1, 1).Value = "번호";
-                worksheet.Cell(1, 2).Value = "관리번호";
+                worksheet.Cell(1, 2).Value = "제품코드";
                 worksheet.Cell(1, 3).Value = "시약명";
                 worksheet.Cell(1, 4).Value = "제조사";
                 worksheet.Cell(1, 5).Value = "용량";

@@ -72,7 +72,7 @@ namespace MxTWeb.Services
                     StoredFileName = uniqueFileName,
                     Size = file.Length,
                     ContentType = file.ContentType,
-                    UploadDate = DateTime.Now
+                    UploadDate = DateTime.UtcNow
                 };
 
                 return Ok(fileInfo);
@@ -212,7 +212,7 @@ namespace MxTWeb.Services
                     StoredFileName = uniqueFileName,
                     Size = file.Length,
                     ContentType = string.IsNullOrEmpty(file.ContentType) ? "application/octet-stream" : file.ContentType,
-                    UploadDate = DateTime.Now,
+                    UploadDate = DateTime.UtcNow,
                 };
 
                 return Ok(fileInfo);
@@ -245,7 +245,7 @@ namespace MxTWeb.Services
                         ContentType = "application/octet-stream",
                         UploadDate = p.CreatedAt,
                         Version = p.Version ?? "",
-                        IsLastest = p.IsLatest,
+                        IsLatest = p.IsLatest,
                     })
                     .ToListAsync();
 
@@ -336,7 +336,7 @@ namespace MxTWeb.Services
             }
         }
 
-        // 단순 다운로드 - 파일 이름으로 확인 - web에서 사용
+        // 다운로드 - 파일 이름으로 확인
         [HttpGet("update/download/{storedFileName}")]
         [AllowAnonymous]
         public IActionResult DownloadUpdateFile(string storedFileName)
@@ -422,7 +422,7 @@ namespace MxTWeb.Services
     public class UpdateFileInfoDto : FileInfoDto
     {
         public string Version { get; set; } = "";
-        public bool IsLastest { get; set; } = false;
+        public bool IsLatest { get; set; } = false;
         public string Equipment { get; set; } = "";
     }
 }

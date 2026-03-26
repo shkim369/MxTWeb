@@ -42,7 +42,7 @@
                 </MudItem>
                 <MudItem xs="12" md="3" Class="d-flex align-center mt-2">
                     <MudCheckBox @bind-Value="_post.IsLatest"
-                                 Label="Lastest"
+                                 Label="Latest"
                                  Color="Color.Primary" />
                 </MudItem>
                 <MudItem xs="12">
@@ -178,7 +178,7 @@
             // 게시글 저장
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
             _post.CreatedBy = authState.User.Identity?.Name ?? "Unknown";
-            _post.CreatedAt = DateTime.Now;
+            _post.CreatedAt = DateTime.UtcNow;
 
             using var context = await DbFactory.CreateDbContextAsync();
 

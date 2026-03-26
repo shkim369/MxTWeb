@@ -191,8 +191,9 @@
                 var fileName = file.FileName;
 
                 // JavaScript를 통해 파일 다운로드
-                var base64 = Convert.ToBase64String(fileBytes);
-                await JS.InvokeVoidAsync("downloadFile", fileName, base64);
+                using var stream = new MemoryStream(fileBytes);
+                using var streamRef = new DotNetStreamReference(stream);
+                await JS.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
 
                 Snackbar.Add("다운로드 완료!", Severity.Success);
             }

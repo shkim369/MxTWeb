@@ -157,7 +157,7 @@
         <TemplateColumn Context="x" Resizable="false" Editable="false" Sortable="false" Title="➕">
             <CellTemplate>
                 <MudIconButton Class="ms-0 me-3" Size="@Size.Small" Variant="Variant.Filled" Icon="@Icons.Material.Filled.Add"
-                                Color="@Color.Tertiary" OnClick="@(() => this.CreateNew2(x))" />
+                                Color="@Color.Tertiary" OnClick="@(() => this.CreateNew2(x.Item))" />
             </CellTemplate>
         </TemplateColumn>
     </Columns>        
@@ -208,12 +208,12 @@
         }  
     }
 
-    private async Task CreateNew2(CellContext<Component> data)
+    private async Task CreateNew2(Component item)
     {
         var parameters = new DialogParameters<HistoryEdit>
         {
             { x => x.action, UIActionEnum.Insert },
-            { x => x.Component, data.Item }
+            { x => x.PartNumber, item.PartNumber }
         };
 
         var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, CloseOnEscapeKey = true };

@@ -51,7 +51,7 @@
                     </MudItem>
                     <MudItem xs="12" md="3" Class="d-flex align-center mt-2">
                         <MudCheckBox @bind-Value="_post.IsLatest"
-                                     Label="Lastest"
+                                     Label="Latest"
                                      Color="Color.Primary" />
                     </MudItem>
                     <MudItem xs="12">
@@ -284,7 +284,7 @@
             }
 
             // 게시글 업데이트
-            _post.UpdatedAt = DateTime.Now;
+            _post.UpdatedAt = DateTime.UtcNow;
 
             using var context = await DbFactory.CreateDbContextAsync();
 

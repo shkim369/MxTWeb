@@ -22,7 +22,7 @@
                 <MudGrid>
                     <MudItem xs="6"><MudText Typo="Typo.body1"><strong>칩 타입:</strong> @GetChipTypeName(Request.ChipType)</MudText></MudItem>
                     <MudItem xs="6"><MudText Typo="Typo.body1"><strong>신청자:</strong> @Request.Applicant</MudText></MudItem>
-                    <MudItem xs="6"><MudText Typo="Typo.body1"><strong>신청일:</strong> @Request.ApplicationDate?.ToString("yyyy-MM-dd")</MudText></MudItem>
+                    <MudItem xs="6"><MudText Typo="Typo.body1"><strong>신청일:</strong> @ToKstString(Request.ApplicationDate)</MudText></MudItem>
                     <MudItem xs="6"><MudText Typo="Typo.body1"><strong>신청 수량:</strong> @Request.RequestedQuantity</MudText></MudItem>
                     <MudItem xs="12"><MudText Typo="Typo.body1"><strong>사용 목적:</strong> @Request.Purpose</MudText></MudItem>
                     @if (!string.IsNullOrEmpty(Request.Note))
@@ -72,6 +72,14 @@
     private string? RejectionReason { get; set; }
     private string? CurrentUserName { get; set; }
 
+    private static readonly TimeZoneInfo KstZone = TimeZoneInfo.FindSystemTimeZoneById("Korea Standard Time");
+
+    private string ToKstString(DateTime? utcTime, string format = "yyyy-MM-dd")
+    {
+        if (!utcTime.HasValue) return "-";
+        return TimeZoneInfo.ConvertTimeFromUtc(utcTime.Value, KstZone).ToString(format);
+    }
+
     private string GetChipTypeName(int chipType) => chipType switch
     {
         0 => "B01_Small",
@@ -102,7 +110,7 @@
             {
                 req.Status = RequestStatusEnum.Approved;
                 req.Approver = CurrentUserName;
-                req.ProcessedDate = DateTime.Now;
+                req.ProcessedDate = DateTime.UtcNow;
                 req.RejectionReason = RejectionReason;
             }
 
@@ -116,7 +124,7 @@
             {
                 req.Status = RequestStatusEnum.Rejected;
                 req.Approver = CurrentUserName;
-                req.ProcessedDate = DateTime.Now;
+                req.ProcessedDate = DateTime.UtcNow;
                 req.RejectionReason = RejectionReason;
             }
 

@@ -43,7 +43,7 @@
                     <MudItem md="6">
                         <MudTextField Variant="Variant.Outlined"
                                       Label="Part Number"
-                                      Value="@Component.PartNumber"
+                                      Value="@PartNumber"
                                       ReadOnly="true" />
                     </MudItem>
                     <MudItem md="6">
@@ -58,10 +58,10 @@
             {
                 <MudAutocomplete Class="mb-5" Variant="Variant.Outlined"
                                  Label="Part Number"
-                                 @bind-Value="Component.PartNumber"
                                  Required="true" Clearable="true"
                                  SearchFunc="@(async (value, token) => await SearchAutoComplete(value, token, "PartNumber"))"
-                                 TextChanged="OnInputPartNumber" />
+                                 Value="@PartNumber"
+                                 ValueChanged="@((string val) => OnInputPartNumber(val))" />
             }
 
             <MudGrid Class="mb-5">
@@ -133,12 +133,17 @@
 
     [Parameter]
     public CompHistory CompHistory { get; set; } = new();
-    [Parameter]
-    public Component Component { get; set; } = new();
+
     [Parameter]
     public bool IsAssemblyGroup { get; set; } = false;
+
     [Parameter]
-    public List<Component> AssemblyComponents { get; set; } = new();
+    public List<Component?> AssemblyComponents { get; set; } = new();
+
+    [Parameter]
+    public string? PartNumber { get; set; } = "";
+
+    public Component Component { get; set; } = new();
 
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; }
@@ -158,7 +163,7 @@
             var applicant = user?.DisplayName ?? authState.User.Identity?.Name ?? "";
 
             CompHistory.Account = applicant ?? "Unknown";
-            CompHistory.EntryDate = DateTime.Now;
+            CompHistory.EntryDate = DateTime.UtcNow;
             CompHistory.ComponentId = Component.ComponentId;
 
             if (action == UIActionEnum.Insert)
@@ -233,11 +238,11 @@
 
             if (CompHistory.state == "입고")
             {
-                component.Stock += CompHistory.Quantity;
+                component.Stock += CompHistory.Quantity * component.Quantity;
             }
             else if (CompHistory.state == "출고" || CompHistory.state == "폐기")
             {
-                component.Stock -= CompHistory.Quantity;
+                component.Stock -= CompHistory.Quantity * component.Quantity;
             }
 
             context.CompHistory.Add(history);
@@ -290,16 +295,15 @@
         {
             using var context = DbFactory.CreateDbContext();
             CompHistory ??= await context.CompHistory.FirstOrDefaultAsync(m => m.CompHistoryId == Id);
-            Component = await context.Component.FirstOrDefaultAsync(c => c.ComponentId == CompHistory.ComponentId);
 
-            if (CompHistory is null || Component is null)
+            if (CompHistory is null || PartNumber is null)
             {
                 NavigationManager.NavigateTo("notfound");
             }
 
             StateHasChanged();
         }
-
+        await OnInputPartNumber(PartNumber);
         await LoadAutoComplete();
     }
 
@@ -309,11 +313,11 @@
         return context.CompHistory.Any(e => e.CompHistoryId == id);
     }
 
-    private async Task OnInputPartNumber()
+    private async Task OnInputPartNumber(string val)
     {
-        var partNumber = Component.PartNumber?.Trim();
+        PartNumber = val?.Trim();
 
-        if (string.IsNullOrEmpty(partNumber))
+        if (string.IsNullOrEmpty(PartNumber))
         {
             Component = new Component();
             return;
@@ -322,7 +326,7 @@
         using var context = DbFactory.CreateDbContext();
 
         var temp = await context.Component
-            .Where(x => x.PartNumber == partNumber)
+            .Where(x => x.PartNumber == PartNumber)
             .FirstOrDefaultAsync();
 
         Component = temp ?? new Component();

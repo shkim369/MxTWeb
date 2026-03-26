@@ -92,7 +92,7 @@
         {
             ProductName = "Product",
             BomVersion = "Version",
-            CreatedAt = DateTime.Now
+            CreatedAt = DateTime.UtcNow
         };
         context.Bom.Add(newBom);
         await context.SaveChangesAsync();

@@ -17,6 +17,21 @@
 <PageTitle>동결세포 사용 신청</PageTitle>
 
 <style>
+    .custom-grid .mud-table-cell .column-header .column-options .mud-menu .mud-icon-button-label {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
+    .custom-grid .mud-table-cell .column-header .column-options .mud-menu {
+        display: none !important;
+        visibility: hidden !important;
+        width: 0px !important;
+    }
+
+    .custom-grid .mud-table-cell {
+        padding-right: 15px !important;
+    }
+
     .custom-grid .mud-table-toolbar {
         position: sticky;
         top: 0;
@@ -94,23 +109,34 @@
 
     <Columns>
         <SelectColumn T="CyropreservedRequest" ShowInHeader="false" />
-        <PropertyColumn Property="x => x.Cyropreserved.Code" Title="번호" Sortable="false"/>
+        <PropertyColumn Property="x => x.Cyropreserved.Code" Title="번호" Sortable="true"/>
         <PropertyColumn Property="x => x.Cyropreserved.Name" Title="세포명" Sortable="true"/>
         <PropertyColumn Property="x => x.Cyropreserved.Division" Title="구분" Sortable="true" />
         <PropertyColumn Property="x => x.Applicant" Title="신청자" Sortable="true" />
-        <PropertyColumn Property="x => x.ApplicationDate" Title="신청일" Format="yyyy-MM-dd" Sortable="true"
-                        InitialDirection="SortDirection.Descending" />
+        <TemplateColumn Title="신청일" Sortable="true" InitialDirection="SortDirection.Descending">
+            <CellTemplate>
+                @ToKstString(context.Item.ApplicationDate)
+            </CellTemplate>
+        </TemplateColumn>
         <PropertyColumn Property="x => x.RequestedQuantity" Title="신청수량" Sortable="false" />
         <PropertyColumn Property="x => x.Purpose" Title="사용목적" Sortable="false" />
-        <TemplateColumn Title="상태" Sortable="true">
+        <TemplateColumn Title="상태" Sortable="false">
             <CellTemplate>
                 <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(context.Item.Status)">
                     @GetStatusText(context.Item.Status)
                 </MudChip>
             </CellTemplate>
         </TemplateColumn>
-        <PropertyColumn Property="x => x.Approver" Title="처리자" Sortable="true" />
-        <PropertyColumn Property="x => x.ProcessedDate" Title="처리일시" Format="yyyy-MM-dd HH:mm" Sortable="true" />
+        <TemplateColumn Title="처리자" Sortable="false">
+            <CellTemplate>
+                @(context.Item.Approver?.Split('@')[0] ?? "-")
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="처리일" Sortable="false">
+            <CellTemplate>
+                @(context.Item.ProcessedDate.HasValue ? ToKstString(context.Item.ProcessedDate.Value) : "-")
+            </CellTemplate>
+        </TemplateColumn>
         <PropertyColumn Property="x => x.RejectionReason" Title="사유" Sortable="false" />
         <PropertyColumn Property="x => x.Note" Title="비고" Sortable="false" />
     </Columns>
@@ -126,6 +152,14 @@
     private string? searchFilter;
 
     private List<CyropreservedRequest> AllData = new();
+
+    private static readonly TimeZoneInfo KstZone = TimeZoneInfo.FindSystemTimeZoneById("Korea Standard Time");
+
+    private string ToKstString(DateTime? utcTime, string format = "yyyy-MM-dd")
+    {
+        if (!utcTime.HasValue) return "-";
+        return TimeZoneInfo.ConvertTimeFromUtc(utcTime.Value, KstZone).ToString(format);
+    }
     private IEnumerable<CyropreservedRequest> FilteredData => AllData
         .Where(x => _selectedStatus == null || x.Status == _selectedStatus);
 

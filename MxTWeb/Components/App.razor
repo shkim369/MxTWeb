@@ -50,7 +50,7 @@
         async function downloadFileFromStream(fileName, contentStreamReference) 
         {
             const arrayBuffer = await contentStreamReference.arrayBuffer();
-            const blob = new Blob([arrayBuffer]);
+            const blob = new Blob([arrayBuffer], { type: 'application/octet-stream' });
             const url = URL.createObjectURL(blob);
             const anchorElement = document.createElement('a');
             anchorElement.href = url;
@@ -70,7 +70,7 @@
                 byteNumbers[i] = byteCharacters.charCodeAt(i);
             }
             const byteArray = new Uint8Array(byteNumbers);
-            const blob = new Blob([byteArray]);
+            const blob = new Blob([byteArray], { type: 'application/octet-stream' });
 
             const url = URL.createObjectURL(blob);
             const anchorElement = document.createElement('a');

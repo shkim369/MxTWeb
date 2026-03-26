@@ -189,7 +189,7 @@
     {
         using var context = DbFactory.CreateDbContext();
         Request!.Status = RequestStatusEnum.Pending;
-        Request.CreatedDate = DateTime.Now;
+        Request.CreatedDate = DateTime.UtcNow;
         context.CyropreservedRequest.Add(Request);
         await context.SaveChangesAsync();
 

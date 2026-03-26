@@ -23,7 +23,7 @@
                     <MudItem xs="6"><MudText Typo="Typo.body1"><strong>세포명:</strong> @Cyropreserved.Name</MudText></MudItem>
                     <MudItem xs="6"><MudText Typo="Typo.body1"><strong>구분:</strong> @Cyropreserved.Division</MudText></MudItem>
                     <MudItem xs="6"><MudText Typo="Typo.body1"><strong>신청자:</strong> @Request.Applicant</MudText></MudItem>
-                    <MudItem xs="6"><MudText Typo="Typo.body1"><strong>신청일:</strong> @Request.ApplicationDate?.ToString("yyyy-MM-dd")</MudText></MudItem>
+                    <MudItem xs="6"><MudText Typo="Typo.body1"><strong>신청일:</strong> @(Request.ApplicationDate.HasValue ? ToKstString(Request.ApplicationDate.Value) : "-")</MudText></MudItem>
                     <MudItem xs="6"><MudText Typo="Typo.body1"><strong>신청 수량:</strong> @Request.RequestedQuantity</MudText></MudItem>
                     <MudItem xs="6"><MudText Typo="Typo.body1"><strong>현재 재고:</strong> @Cyropreserved.Quantity</MudText></MudItem>
                     <MudItem xs="12"><MudText Typo="Typo.body1"><strong>사용 목적:</strong> @Request.Purpose</MudText></MudItem>
@@ -80,6 +80,13 @@
 
     private Cyropreserved? Cyropreserved { get; set; }
     private string ApprovalAction { get; set; } = "approve";
+
+    private static readonly TimeZoneInfo KstZone = TimeZoneInfo.FindSystemTimeZoneById("Korea Standard Time");
+
+    private string ToKstString(DateTime utcTime, string format = "yyyy-MM-dd")
+    {
+        return TimeZoneInfo.ConvertTimeFromUtc(utcTime, KstZone).ToString(format);
+    }
     private string? RejectionReason { get; set; }
     private string? CurrentUserName { get; set; }
 
@@ -121,7 +128,7 @@
             {
                 req.Status = RequestStatusEnum.Approved;
                 req.Approver = CurrentUserName;
-                req.ProcessedDate = DateTime.Now;
+                req.ProcessedDate = DateTime.UtcNow;
                 req.RejectionReason = RejectionReason;
             }
 
@@ -135,7 +142,7 @@
             {
                 req.Status = RequestStatusEnum.Rejected;
                 req.Approver = CurrentUserName;
-                req.ProcessedDate = DateTime.Now;
+                req.ProcessedDate = DateTime.UtcNow;
                 req.RejectionReason = RejectionReason;
             }
 
