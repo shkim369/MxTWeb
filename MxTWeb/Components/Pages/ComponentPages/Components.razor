@@ -42,6 +42,13 @@
 
 <h2>부품 재고 현황</h2>
 <br/>
+
+<MudToggleGroup T="string" SelectionMode="SelectionMode.SingleSelection" @bind-Value="SelectedProduct" Color="Color.Info"
+                Style="width: 300px" Vertical="false">
+    <MudToggleItem Value="@("Ordyh")" Text="Ordyh" />
+    <MudToggleItem Value="@("RUO")" Text="RUO" />
+</MudToggleGroup>
+<br/>
 <MudDataGrid T="Component" Class="custom-grid" Items="@FilteredData" @ref="_dataGrid"
                 SortMode="SortMode.Single" Dense="true" Hover="true" Bordered="true" Striped="true"
                 EditMode="DataGridEditMode.Cell" ReadOnly="false" Groupable="true" GroupClass="pa-3"
@@ -177,7 +184,6 @@
     private string searchField = "Assembly";
     private string searchFilter;
 
-    private IEnumerable<Component> FilteredData = new List<Component>();
     private HashSet<Component> selectedItems = new();
     private bool IsEditDisabled => selectedItems.Count != 1 || selectedItems.First().ComponentId == 0;
     private bool IsDeleteDisabled => selectedItems.Count == 0;
@@ -190,6 +196,12 @@
 
     private DateRange _dateRange { get; set; }
 
+    private List<Component> AllData = new();
+    private IEnumerable<Component> FilteredData => AllData
+        .Where(x => SelectedProduct == null || x.Product == SelectedProduct);
+
+    private string? SelectedProduct;
+
     private async Task CreateNew()
     {
         var parameters = new DialogParameters<Edit>
@@ -197,14 +209,13 @@
             { x => x.action, UIActionEnum.Insert }
         };
 
-        var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, CloseOnEscapeKey = true };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, BackdropClick = false, CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<Edit>("Add New Component", parameters, options);
         var result = await dialog.Result;
 
         if (result is not null && !result.Canceled)
         {
-            FilteredData = context.Component.ToList();
-            StateHasChanged();
+            await LoadData();
         }  
     }
 
@@ -216,15 +227,14 @@
             { x => x.PartNumber, item.PartNumber }
         };
 
-        var options = new DialogOptions { MaxWidth = MaxWidth.Large, BackdropClick = false, CloseOnEscapeKey = true };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, BackdropClick = false, CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<HistoryEdit>("Add New History", parameters, options);
         var result = await dialog.Result;
 
         if (result is not null && !result.Canceled)
         {
-            using var context = DbFactory.CreateDbContext();
-            FilteredData = context.Component.ToList();
-            StateHasChanged();
+            context = DbFactory.CreateDbContext();
+            await LoadData();
         }
     }
 
@@ -237,6 +247,7 @@
         var assemblyComponent = new Component
         {
             ComponentId = 0, // 특별 ID로 Assembly 그룹임을 표시
+            Product = SelectedProduct ?? components.FirstOrDefault()?.Product ?? "Ordyh",
             Assembly = assemblyName,
             PartNumber = "-",
             Description = $"{components.Count} {assemblyName} components",
@@ -258,8 +269,7 @@
         if (result is not null && !result.Canceled)
         {
             using var ctx = DbFactory.CreateDbContext();
-            FilteredData = ctx.Component.ToList();
-            StateHasChanged();
+            await LoadData();
         }
     }
 
@@ -277,8 +287,7 @@
 
         if (result is not null && !result.Canceled)
         {
-            FilteredData = context.Component.ToList();
-            StateHasChanged();
+            await LoadData();
         }    
     }
 
@@ -296,8 +305,7 @@
         if (result is not null && !result.Canceled)
         {
             selectedItems = new();
-            FilteredData = context.Component.ToList();
-            StateHasChanged();
+            await LoadData();
         }
     }
 
@@ -431,10 +439,17 @@
     {
         isLoading = true;
 
+        SelectedProduct = "Ordyh";
         context = DbFactory.CreateDbContext();
-        FilteredData = await context.Component.ToListAsync();
+        await LoadData();
 
         isLoading = false;
+    }
+
+    private async Task LoadData()
+    {
+        AllData = await context.Component.ToListAsync();
+        StateHasChanged();
     }
 
     private void SelectSearchField(string item)

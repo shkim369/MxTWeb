@@ -11,7 +11,13 @@
 <EditForm method="post" Model="Component" OnValidSubmit="OnValidSubmit" FormName="edit" Enhance>
     <MudDialog>
         <DialogContent>
-            <DataAnnotationsValidator />            
+            <DataAnnotationsValidator />  
+            
+            <MudSelect T="string" Class="mb-5" Value="Component.Product" ValueChanged="OnProductChanged" 
+                Variant="Variant.Outlined" Required="true" Label="제품">
+                <MudSelectItem Value="@("Ordyh")">Ordyh</MudSelectItem>
+                <MudSelectItem Value="@("RUO")">RUO</MudSelectItem>
+            </MudSelect>
 
             <MudAutocomplete Class="mb-5" Variant="Variant.Outlined"
                              Label="Assembly"
@@ -152,7 +158,7 @@
     {
         if (action == UIActionEnum.Insert)
         {
-
+            Component.Product = "Ordyh";
         }
         else if (action == UIActionEnum.Update)
         {
@@ -225,11 +231,20 @@
     {
         using var context = DbFactory.CreateDbContext();
 
-        _assemblyStates = await context.Component
+        _assemblyStates = await context.Component.Where(x => x.Product == Component.Product)
             .Select(x => x.Assembly)
             .Distinct()
             .Where(x => !string.IsNullOrEmpty(x) && x != "-")
             .OrderBy(x => x)
             .ToArrayAsync();
+    }
+
+    private async Task OnProductChanged(string value)
+    {
+        Component.Product = value;
+        Component.PartNumber = "";
+        Component.Assembly = "";
+        Component.Description = "";
+        await LoadAutoComplete();
     }
 }

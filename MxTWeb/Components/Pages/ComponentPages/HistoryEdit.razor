@@ -12,7 +12,7 @@
 @inject UserManager<ApplicationUser> UserManager
 
 <EditForm method="post" Model="CompHistory" OnValidSubmit="OnValidSubmit" FormName="edit" Enhance>
-    <MudDialog Style="min-width: 600px">
+    <MudDialog Style="width: 600px">
         <DialogContent>
             <DataAnnotationsValidator />
 
@@ -21,6 +21,12 @@
                            Label="날짜"
                            @bind-Date="CompHistory.Date"
                            DateFormat="yyyy-MM-dd" />
+
+            <MudSelect Class="mb-5" Value="Component.Product" ValueChanged="OnProductChanged" T="string"
+                       Variant="Variant.Outlined" Required="true" Label="제품">
+                <MudSelectItem Value="@("Ordyh")">Ordyh</MudSelectItem>
+                <MudSelectItem Value="@("RUO")">RUO</MudSelectItem>
+            </MudSelect>
 
             <MudGrid Class="mb-5">
                 <MudItem md="6">
@@ -143,6 +149,7 @@
     [Parameter]
     public string? PartNumber { get; set; } = "";
 
+    [Parameter]
     public Component Component { get; set; } = new();
 
     [CascadingParameter]
@@ -290,6 +297,22 @@
         {
             CompHistory.state = "입고";
             CompHistory.Date = DateTime.Today;
+
+            if (IsAssemblyGroup)
+            {
+                // Assembly 그룹은 이미 Component가 전달됨 - 건드리지 않음
+            }
+            else if (!string.IsNullOrEmpty(PartNumber))
+            {
+                // PartNumber가 전달된 경우 해당 Component 정보 로드
+                await OnInputPartNumber(PartNumber);
+            }
+            else
+            {
+                // 새로 추가하는 경우 기본값 설정
+                Component.Product = "Ordyh";
+            }
+            await LoadAutoComplete();
         }
         else if (action == UIActionEnum.Update)
         {
@@ -301,10 +324,10 @@
                 NavigationManager.NavigateTo("notfound");
             }
 
+            await OnInputPartNumber(PartNumber);
+            await LoadAutoComplete();
             StateHasChanged();
         }
-        await OnInputPartNumber(PartNumber);
-        await LoadAutoComplete();
     }
 
     private bool CompHistoryExists(int id)
@@ -356,11 +379,20 @@
     {
         using var context = DbFactory.CreateDbContext();
 
-        _partNumberStates = await context.Component
+        _partNumberStates = await context.Component.Where(x => x.Product == Component.Product)
             .Select(x => x.PartNumber)
             .Distinct()
             .Where(x => !string.IsNullOrEmpty(x) && x != "-")
             .OrderBy(x => x)
             .ToArrayAsync();
+    }
+
+    private async Task OnProductChanged(string value)
+    {
+        Component.Product = value;
+        PartNumber = "";
+        Component.Assembly = "";
+        Component.Description = "";
+        await LoadAutoComplete();
     }
 }

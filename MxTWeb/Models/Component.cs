@@ -6,6 +6,8 @@ namespace MxTWeb.Models
     {
         public int ComponentId { get; set; }
         [Required]
+        public string? Product { get; set; }
+        [Required]
         public string? Assembly { get; set; }
         [Required]
         public string? PartNumber { get; set; }

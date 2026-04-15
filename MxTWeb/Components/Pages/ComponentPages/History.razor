@@ -31,14 +31,26 @@
 </style>
 
 <h2>부품 입·출고 이력</h2>
+<br/>
 
-<MudGrid Spacing="5" Style="margin-top: 0px; margin-bottom: 10px">
-    <MudItem>
-        <MudButton Class="ms-5 me-2" OnClick="CreateNew2" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">
-            이력 추가
-        </MudButton>
-    </MudItem>
-    @* <MudItem>
+<MudToggleGroup T="string" SelectionMode="SelectionMode.SingleSelection" @bind-Value="SelectedProduct" Color="Color.Info"
+                Style="width: 300px" Vertical="false">
+    <MudToggleItem Value="@("Ordyh")" Text="Ordyh" />
+    <MudToggleItem Value="@("RUO")" Text="RUO" />
+</MudToggleGroup>
+<br/>
+<MudDataGrid T="CompHistory" Class="custom-grid" SortMode="SortMode.Single" Items="@FilteredData2"
+             Dense="true" Style="white-space: nowrap" Hover="true" Bordered="true" Striped="true"
+             RowsPerPage="100" SelectOnRowClick="true" QuickFilter="_quickFilter2">
+
+    <ToolBarContent>
+        <MudGrid Spacing="5" Style="margin-top: 0px; margin-bottom: 20px">
+            <MudItem>
+                <MudButton Class="mt-2" OnClick="CreateNew2" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">
+                    이력 추가
+                </MudButton>
+            </MudItem>
+            @* <MudItem>
         <MudButton Class="me-2" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Build"
                    Color="@Color.Tertiary" OnClick="@StockComsumption">
             @if (isProcessing)
@@ -53,19 +65,17 @@
         </MudButton>
     </MudItem> *@
 
-    <MudSpacer />
+            <MudSpacer />
 
-    <MudDateRangePicker DateRange="_dateRange" Margin="Margin.Normal" Clearable="true" DateRangeChanged="@OnDateRangeChanged"
-                        Variant="Variant.Text" Label="Date Range" Class="mt-2 pe-2" PlaceholderStart="Start Date" PlaceholderEnd="End Date" />
-    &nbsp&nbsp&nbsp&nbsp
-    <MudTextField Class="mt-4 pe-5" @bind-Value="searchFilter2" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
-                  Variant="Variant.Text" Label="Part Number" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" />
+            <MudDateRangePicker DateRange="_dateRange" Margin="Margin.Normal" Clearable="true" DateRangeChanged="@OnDateRangeChanged"
+                                Variant="Variant.Text" Label="Date Range" Class="mt-2 pe-2" PlaceholderStart="Start Date" PlaceholderEnd="End Date" />
+            &nbsp&nbsp&nbsp&nbsp
+            <MudTextField Class="mt-4 pe-5" @bind-Value="searchFilter2" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                          Variant="Variant.Text" Label="Part Number" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" />
 
-</MudGrid>
+        </MudGrid>
+    </ToolBarContent>
 
-<MudDataGrid T="CompHistory" Class="custom-grid" SortMode="SortMode.Single" Items="@FilteredData2"
-             Dense="true" Style="white-space: nowrap" Hover="true" Bordered="true" Striped="true"
-             RowsPerPage="100" SelectOnRowClick="true" QuickFilter="_quickFilter2">
     <Columns>
         <PropertyColumn Property="x => x.Date" Title="날짜" Sortable="true" Format="yyyy-MM-dd" />
         <PropertyColumn Property="x => x.Component.Assembly" Title="Assembly" Sortable="true" />
@@ -91,7 +101,7 @@
 
     <PagerContent>
         <MudCardContent Style="display:flex; justify-content:flex-end; align-items:flex-end;" Class="me-5">
-            <MudText Typo="Typo.h6">Total Price : </MudText> &nbsp&nbsp
+            <MudText Typo="Typo.h6">Total Used Amount: </MudText> &nbsp&nbsp
             @if (_dateRange is null)
             {
                 <MudText Typo="Typo.h6">날짜를 선택해주세요.</MudText>
@@ -120,13 +130,17 @@
     private string searchField2 = "Part Number";
     private string searchFilter2;
 
-    private IEnumerable<CompHistory> FilteredData2 = new List<CompHistory>();
-
     private bool isProcessing = false;
     private bool isLoading = true;
     private decimal totalPrice = 0;
 
     private DateRange _dateRange { get; set; }
+
+    private List<CompHistory> AllData = new();
+    private IEnumerable<CompHistory> FilteredData2 => AllData
+        .Where(x => SelectedProduct == null || x.Component.Product == SelectedProduct);
+
+    private string? SelectedProduct;
 
     private async Task CreateNew2()
     {
@@ -140,20 +154,8 @@
         var result = await dialog.Result;
 
         if (result is not null && !result.Canceled)
-        {            
-            var start = _dateRange.Start.Value.Date;
-            var end = _dateRange.End.Value.Date.AddDays(1).AddTicks(-1);
-
-            context = DbFactory.CreateDbContext();
-            FilteredData2 = context.CompHistory.Include(c => c.Component)
-                .Where(x => x.Date >= start && x.Date <= end)
-                .OrderByDescending(x => x.Date)
-                .ToList();
-
-            totalPrice = FilteredData2.Where(x => x.state == "출고").Sum(x => x.Component.Price * x.Quantity)
-                + FilteredData2.Where(x => x.state == "폐기").Sum(x => x.Component.Price * x.Quantity);
-
-            StateHasChanged();
+        {          
+            await LoadData();
         }
     }
 
@@ -172,19 +174,7 @@
 
         if (result is not null && !result.Canceled)
         {
-            var start = _dateRange.Start.Value.Date;
-            var end = _dateRange.End.Value.Date.AddDays(1).AddTicks(-1);
-
-            context = DbFactory.CreateDbContext();
-            FilteredData2 = context.CompHistory.Include(c => c.Component)
-                .Where(x => x.Date >= start && x.Date <= end)
-                .OrderByDescending(x => x.Date)
-                .ToList();
-
-            totalPrice = FilteredData2.Where(x => x.state == "출고").Sum(x => x.Component.Price * x.Quantity)
-                + FilteredData2.Where(x => x.state == "폐기").Sum(x => x.Component.Price * x.Quantity);
-
-            StateHasChanged();
+            await LoadData();
         }
     }
 
@@ -198,18 +188,7 @@
             await context.SaveChangesAsync();
             await transaction.CommitAsync();
 
-            var start = _dateRange.Start.Value.Date;
-            var end = _dateRange.End.Value.Date.AddDays(1).AddTicks(-1);
-
-            FilteredData2 = context.CompHistory.Include(c => c.Component)
-                .Where(x => x.Date >= start && x.Date <= end)
-                .OrderByDescending(x => x.Date)
-                .ToList();
-
-            totalPrice = FilteredData2.Where(x => x.state == "출고").Sum(x => x.Component.Price * x.Quantity)
-                + FilteredData2.Where(x => x.state == "폐기").Sum(x => x.Component.Price * x.Quantity);
-
-            StateHasChanged();
+            await LoadData();
         }
         catch
         {
@@ -260,7 +239,7 @@
         return false;
     };
 
-    private void OnDateRangeChanged(DateRange? range)
+    private async Task OnDateRangeChanged(DateRange? range)
     {
         _dateRange = range;
 
@@ -268,23 +247,16 @@
 
         if (range?.Start == null || range?.End == null)
         {
-            FilteredData2 = context.CompHistory.Include(c => c.Component)
+            AllData = context.CompHistory.Include(c => c.Component)
                 .OrderByDescending(x => x.Date)
                 .ToList();
             totalPrice = 0;
             return;
         }
-
-        var start = range.Start.Value.Date;
-        var end = range.End.Value.Date.AddDays(1).AddTicks(-1);
-
-        FilteredData2 = context.CompHistory.Include(c => c.Component)
-            .Where(x => x.Date >= start && x.Date <= end)
-            .OrderByDescending(x => x.Date)
-            .ToList();
-
-        totalPrice = FilteredData2.Where(x => x.state == "출고").Sum(x => x.Component.Price * x.Quantity)
-            + FilteredData2.Where(x => x.state == "폐기").Sum(x => x.Component.Price * x.Quantity);
+        else 
+        {
+            await LoadData();
+        }
     }
 
     private async Task CommittedItemChanges(Component item)
@@ -298,11 +270,28 @@
     {
         isLoading = true;
 
+        SelectedProduct = "Ordyh";
         context = DbFactory.CreateDbContext();
-        FilteredData2 = await context.CompHistory.Include(c => c.Component).ToListAsync();
-        _dateRange = new DateRange(DateTime.Today.AddMonths(-3), DateTime.Today);
+        _dateRange = new DateRange(DateTime.Today.AddMonths(-1), DateTime.Today);
+        await LoadData();
 
         isLoading = false;
+    }
+
+    private async Task LoadData()
+    {
+        var start = _dateRange.Start.Value.Date;
+        var end = _dateRange.End.Value.Date.AddDays(1).AddTicks(-1);
+
+        AllData = context.CompHistory.Include(c => c.Component)
+            .Where(x => x.Date >= start && x.Date <= end)
+            .OrderByDescending(x => x.Date)
+            .ToList();
+
+        totalPrice = FilteredData2.Where(x => x.state == "출고").Sum(x => x.Component.Price * x.Quantity)
+            + FilteredData2.Where(x => x.state == "폐기").Sum(x => x.Component.Price * x.Quantity);
+
+        StateHasChanged();
     }
 
     private Func<CompHistory, string> _cellStyleFunc2 => x =>

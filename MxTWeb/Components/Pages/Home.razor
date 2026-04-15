@@ -159,7 +159,7 @@
 
 
         <MudGrid >
-            <MudItem xs="4">
+            <MudItem xs="5">
                 <MudTable Items="compHistoryData" Bordered="true" Dense="true" Class="pb-1">
                     <ToolBarContent>
                         <MudText Typo="Typo.h6">부품 입·출고 이력</MudText>
@@ -169,8 +169,9 @@
                     <HeaderContent>
                         <MudTh>날짜</MudTh>
                         <MudTh>구분</MudTh>
+                        <MudTh>제품</MudTh>
                         <MudTh>Assembly</MudTh>
-                        <MudTh>Description</MudTh>
+                        <MudTh>Part No.</MudTh>
                         <MudTh>수량</MudTh>
                     </HeaderContent>
                     <RowTemplate Context="x">
@@ -180,14 +181,15 @@
                                 @x.state
                             </MudChip>
                         </MudTd>
+                        <MudTd DataLabel="제품">@x.Component.Product</MudTd>
                         <MudTd DataLabel="Assembly">@x.Component.Assembly</MudTd>
-                        <MudTd DataLabel="Chip 종류">@x.Component.Description</MudTd>
+                        <MudTd DataLabel="Part No.">@x.Component.PartNumber</MudTd>
                         <MudTd DataLabel="수량" Style="min-width: 60px">@x.Quantity</MudTd>
                     </RowTemplate>
                 </MudTable>
             </MudItem>
 
-            <MudItem xs="4">
+            <MudItem xs="5">
                 <MudTable Items="chipUsageData" Bordered="true" Dense="true" Class="pb-1">
                     <ToolBarContent>
                         <MudText Typo="Typo.h6">칩 사용 관리대장</MudText>
