@@ -1,8 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
@@ -12,27 +15,37 @@ public class ApiKeyAuthAttribute : Attribute, IAsyncActionFilter
 
     public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
-        // 1. 설정에서 서버에 저장된 실제 API 키를 가져옵니다.
         var configuration = context.HttpContext.RequestServices.GetRequiredService<IConfiguration>();
-        var serverApiKey = configuration.GetValue<string>("ApiKey"); // appsettings.json의 "ApiKey"
+        var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<ApiKeyAuthAttribute>>();
 
-        // 2. 클라이언트 요청의 헤더에서 API 키를 가져옵니다.
-        if (!context.HttpContext.Request.Headers.TryGetValue(ApiKeyHeaderName, out var clientApiKey))
+        var serverApiKey = configuration.GetValue<string>("ApiKey");
+
+        // 서버측 키가 비어 있으면 모든 요청을 거부 (운영 사고 방지)
+        if (string.IsNullOrEmpty(serverApiKey))
         {
-            // 헤더에 키가 아예 없는 경우
+            logger.LogError("API Key가 서버 구성에 설정되어 있지 않습니다. 모든 요청을 거부합니다.");
+            context.Result = new UnauthorizedObjectResult("API Key not configured on server");
+            return;
+        }
+
+        if (!context.HttpContext.Request.Headers.TryGetValue(ApiKeyHeaderName, out var clientApiKey) ||
+            string.IsNullOrEmpty(clientApiKey))
+        {
             context.Result = new UnauthorizedObjectResult("API Key missing");
             return;
         }
 
-        // 3. 두 키를 비교합니다.
-        if (!serverApiKey.Equals(clientApiKey))
+        // 타이밍 공격을 막기 위해 고정 시간 비교(FixedTimeEquals) 사용
+        var serverBytes = Encoding.UTF8.GetBytes(serverApiKey);
+        var clientBytes = Encoding.UTF8.GetBytes(clientApiKey.ToString());
+
+        if (serverBytes.Length != clientBytes.Length ||
+            !CryptographicOperations.FixedTimeEquals(serverBytes, clientBytes))
         {
-            // 키가 일치하지 않는 경우
             context.Result = new UnauthorizedObjectResult("Invalid API Key");
             return;
         }
 
-        // 4. 키가 유효하면 컨트롤러의 원래 액션을 실행합니다.
         await next();
     }
 }

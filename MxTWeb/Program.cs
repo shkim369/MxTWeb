@@ -130,24 +130,44 @@ using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
     if (!await roleManager.RoleExistsAsync("Admin"))
         await roleManager.CreateAsync(new IdentityRole("Admin"));
 
-    var adminUser = await userManager.FindByEmailAsync("admin@mxtbiotech.com");
-    if (adminUser == null)
-    {
-        adminUser = new ApplicationUser // Changed from IdentityUser to ApplicationUser  
-        {
-            UserName = "admin@mxtbiotech.com",
-            Email = "admin@mxtbiotech.com",
-            EmailConfirmed = true
-        };
+    // 최초 Admin 계정 시드: 이메일/비밀번호는 구성(User Secrets 또는 환경 변수)에서 읽음.
+    // 비밀번호가 비어 있으면 시드를 건너뛴다(코드/리포지토리에 평문 비밀번호를 두지 않기 위함).
+    var adminEmail = builder.Configuration["AdminBootstrap:Email"];
+    var adminPassword = builder.Configuration["AdminBootstrap:Password"];
 
-        var result = await userManager.CreateAsync(adminUser, "Nano12#$");
-        if (result.Succeeded)
+    if (string.IsNullOrWhiteSpace(adminEmail) || string.IsNullOrWhiteSpace(adminPassword))
+    {
+        logger.LogWarning("AdminBootstrap 설정이 비어 있어 초기 관리자 시드를 건너뜁니다. " +
+                          "User Secrets 또는 환경 변수에 AdminBootstrap:Email / AdminBootstrap:Password 를 설정하세요.");
+    }
+    else
+    {
+        var adminUser = await userManager.FindByEmailAsync(adminEmail);
+        if (adminUser == null)
         {
-            await userManager.AddToRoleAsync(adminUser, "Admin");
+            adminUser = new ApplicationUser
+            {
+                UserName = adminEmail,
+                Email = adminEmail,
+                EmailConfirmed = true
+            };
+
+            var result = await userManager.CreateAsync(adminUser, adminPassword);
+            if (result.Succeeded)
+            {
+                await userManager.AddToRoleAsync(adminUser, "Admin");
+                logger.LogInformation("초기 관리자 계정을 생성했습니다: {Email}", adminEmail);
+            }
+            else
+            {
+                logger.LogError("초기 관리자 계정 생성 실패: {Errors}",
+                    string.Join("; ", result.Errors.Select(e => e.Description)));
+            }
         }
     }
 }

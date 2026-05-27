@@ -5,7 +5,8 @@
       "Bash(dotnet user-secrets:*)",
       "Bash(dotnet build:*)",
       "Bash(dotnet ef migrations add:*)",
-      "Bash(dotnet ef database update:*)"
+      "Bash(dotnet ef database update:*)",
+      "Bash(xargs wc -l)"
     ]
   }
 }

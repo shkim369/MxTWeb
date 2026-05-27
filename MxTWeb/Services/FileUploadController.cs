@@ -13,32 +13,30 @@ namespace MxTWeb.Services
         private readonly string _uploadPath;        // 일반 파일 (사진, 엑셀, PDF 등)
         private readonly string _updateUploadPath;  // 업데이트 파일 전용
         private readonly IDbContextFactory<ApplicationDbContext> _dbFactory;
+        private readonly ILogger<FileUploadController> _logger;
 
-        public FileUploadController(IConfiguration configuration, IDbContextFactory<ApplicationDbContext> dbFactory)
+        public FileUploadController(IConfiguration configuration, IDbContextFactory<ApplicationDbContext> dbFactory, ILogger<FileUploadController> logger)
         {
             _dbFactory = dbFactory;
+            _logger = logger;
             _uploadPath = configuration["UploadPath"] ?? "/docker/web/web-uploads";
             _updateUploadPath = configuration["UpdateUploadPath"] ?? "/docker/web/web-uploads/update";
 
-            Console.WriteLine($"[FileUploadController] UploadPath: {_uploadPath}");
-            Console.WriteLine($"[FileUploadController] UpdateUploadPath: {_updateUploadPath}");
+            _logger.LogInformation("UploadPath: {UploadPath}, UpdateUploadPath: {UpdateUploadPath}", _uploadPath, _updateUploadPath);
 
-            // 폴더가 없으면 생성
             if (!Directory.Exists(_uploadPath))
             {
                 Directory.CreateDirectory(_uploadPath);
-                Console.WriteLine($"[FileUploadController] UploadPath 폴더 생성 완료");
             }
             if (!Directory.Exists(_updateUploadPath))
             {
                 try
                 {
                     Directory.CreateDirectory(_updateUploadPath);
-                    Console.WriteLine($"[FileUploadController] UpdateUploadPath 폴더 생성 완료");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[FileUploadController] UpdateUploadPath 폴더 생성 실패: {ex.Message}");
+                    _logger.LogError(ex, "UpdateUploadPath 폴더 생성 실패: {Path}", _updateUploadPath);
                 }
             }
         }
@@ -79,7 +77,8 @@ namespace MxTWeb.Services
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"파일 업로드 실패: {ex.Message}");
+                _logger.LogError(ex, "파일 업로드 실패. FileName={FileName}", file?.FileName);
+                return StatusCode(500, "파일 업로드에 실패했습니다.");
             }
         }
 
@@ -111,7 +110,8 @@ namespace MxTWeb.Services
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"파일 목록 조회 실패: {ex.Message}");
+                _logger.LogError(ex, "파일 목록 조회 실패");
+                return StatusCode(500, "파일 목록 조회에 실패했습니다.");
             }
         }
 
@@ -139,7 +139,8 @@ namespace MxTWeb.Services
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"파일 다운로드 실패: {ex.Message}");
+                _logger.LogError(ex, "파일 다운로드 실패. StoredFileName={StoredFileName}", storedFileName);
+                return StatusCode(500, "파일 다운로드에 실패했습니다.");
             }
         }
 
@@ -158,7 +159,8 @@ namespace MxTWeb.Services
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"파일 삭제 실패: {ex.Message}");
+                _logger.LogError(ex, "파일 삭제 실패. StoredFileName={StoredFileName}", storedFileName);
+                return StatusCode(500, "파일 삭제에 실패했습니다.");
             }
         }
 
@@ -169,41 +171,32 @@ namespace MxTWeb.Services
         [RequestSizeLimit(52428800)] // 50MB
         public async Task<IActionResult> UploadUpdateFile(IFormFile file)
         {
-            Console.WriteLine("=== 업데이트 파일 업로드 요청 ===");
-            Console.WriteLine($"[UpdateUpload] UpdateUploadPath: {_updateUploadPath}");
-
             try
             {
                 if (file == null || file.Length == 0)
                 {
-                    Console.WriteLine("[UpdateUpload] 파일이 null이거나 비어있음");
                     return BadRequest("파일이 선택되지 않았습니다.");
                 }
 
-                Console.WriteLine($"[UpdateUpload] 파일명: {file.FileName}, 크기: {file.Length} bytes");
-
                 if (file.Length > 50 * 1024 * 1024)
                 {
-                    Console.WriteLine($"[UpdateUpload] 파일 크기 초과: {file.Length} bytes");
                     return BadRequest("파일 크기는 50MB를 초과할 수 없습니다.");
                 }
 
                 if (!Directory.Exists(_updateUploadPath))
                 {
-                    Console.WriteLine($"[UpdateUpload] 폴더가 없어서 생성 시도: {_updateUploadPath}");
                     Directory.CreateDirectory(_updateUploadPath);
                 }
 
                 var uniqueFileName = $"{Guid.NewGuid()}_{file.FileName}";
                 var filePath = Path.Combine(_updateUploadPath, uniqueFileName);
-                Console.WriteLine($"[UpdateUpload] 저장 경로: {filePath}");
 
                 using (var stream = new FileStream(filePath, FileMode.Create))
                 {
                     await file.CopyToAsync(stream);
                 }
 
-                Console.WriteLine($"[UpdateUpload] 파일 저장 성공: {filePath}");
+                _logger.LogInformation("업데이트 파일 저장 성공. Path={FilePath}, Size={Size}", filePath, file.Length);
 
                 var fileInfo = new UpdateFileInfoDto
                 {
@@ -219,8 +212,8 @@ namespace MxTWeb.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[UpdateUpload] 업데이트 파일 업로드 실패: {ex.Message}");
-                return StatusCode(500, $"파일 업로드 실패: {ex.Message}");
+                _logger.LogError(ex, "업데이트 파일 업로드 실패. FileName={FileName}", file?.FileName);
+                return StatusCode(500, "파일 업로드에 실패했습니다.");
             }
         }
 
@@ -253,8 +246,8 @@ namespace MxTWeb.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[UpdateList] 업데이트 파일 목록 조회 실패: {ex.Message}");
-                return StatusCode(500, $"파일 목록 조회 실패: {ex.Message}");
+                _logger.LogError(ex, "업데이트 파일 목록 조회 실패. Equipment={Equipment}", equipment);
+                return StatusCode(500, "파일 목록 조회에 실패했습니다.");
             }
         }
 
@@ -290,8 +283,8 @@ namespace MxTWeb.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[UpdateLatest] 최신 버전 조회 실패: {ex.Message}");
-                return StatusCode(500, $"최신 버전 조회 실패: {ex.Message}");
+                _logger.LogError(ex, "최신 버전 조회 실패. Equipment={Equipment}", equipment);
+                return StatusCode(500, "최신 버전 조회에 실패했습니다.");
             }
         }
 
@@ -331,8 +324,8 @@ namespace MxTWeb.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[UpdateLatestDownload] 최신 버전 다운로드 실패: {ex.Message}");
-                return StatusCode(500, $"최신 버전 다운로드 실패: {ex.Message}");
+                _logger.LogError(ex, "최신 버전 다운로드 실패. Equipment={Equipment}", equipment);
+                return StatusCode(500, "최신 버전 다운로드에 실패했습니다.");
             }
         }
 
@@ -362,7 +355,8 @@ namespace MxTWeb.Services
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"파일 다운로드 실패: {ex.Message}");
+                _logger.LogError(ex, "업데이트 파일 다운로드 실패. StoredFileName={StoredFileName}", storedFileName);
+                return StatusCode(500, "파일 다운로드에 실패했습니다.");
             }
         }
 
@@ -382,7 +376,8 @@ namespace MxTWeb.Services
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"파일 삭제 실패: {ex.Message}");
+                _logger.LogError(ex, "업데이트 파일 삭제 실패. StoredFileName={StoredFileName}", storedFileName);
+                return StatusCode(500, "파일 삭제에 실패했습니다.");
             }
         }
 

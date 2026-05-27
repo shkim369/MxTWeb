@@ -396,3 +396,10 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# 환경 변수 / 시크릿 — 반드시 리포지토리에서 제외
+.env
+.env.*
+!.env.example
+appsettings.Local.json
+appsettings.Production.json

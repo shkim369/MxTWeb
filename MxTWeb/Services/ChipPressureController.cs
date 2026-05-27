@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using MxTWeb.Data;
@@ -14,9 +14,12 @@ namespace MxTWeb.Services
     {
 
         private readonly IDbContextFactory<MxTWebContext> _dbFactory;
-        public ChipPressureController(IDbContextFactory<MxTWebContext> dbFactory) 
+        private readonly ILogger<ChipPressureController> _logger;
+
+        public ChipPressureController(IDbContextFactory<MxTWebContext> dbFactory, ILogger<ChipPressureController> logger)
         {
-            _dbFactory = dbFactory; 
+            _dbFactory = dbFactory;
+            _logger = logger;
         }
 
         [HttpGet]  // 임시 테스트용
@@ -47,13 +50,12 @@ namespace MxTWeb.Services
                 using var context = _dbFactory.CreateDbContext();
                 context.ChipPressure.Add(pressureData);
                 await context.SaveChangesAsync();
-                //return Ok("Chip pressure data saved successfully.");
                 return Ok(pressureData);
             }
             catch (Exception ex)
             {
-                //return StatusCode(500, "Internal server error while saving data.");
-                return StatusCode(500, ex.ToString());
+                _logger.LogError(ex, "ChipPressure 저장 실패. Wafer={WaferInfo}, Lot={Lot}", data.WaferInfo, data.Lot);
+                return StatusCode(500, "Internal server error while saving data.");
             }
         }
     }
