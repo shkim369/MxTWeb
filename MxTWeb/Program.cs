@@ -122,6 +122,8 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownProxies.Clear();
 });
 builder.Services.AddSingleton<ActiveUserService>();
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<DashboardService>();   // 대시보드 요약 30초 캐시
 builder.Services.AddHostedService<LoginFailureCleanupService>();
 
 var app = builder.Build();

@@ -1,0 +1,131 @@
+@using Microsoft.EntityFrameworkCore
+@using MxTWeb.Models
+@using MxTWeb.Data
+@inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
+@inject ISnackbar Snackbar
+
+@* 칩 사용 대장에서 '제작' 행을 펼쳤을 때 보이는 해당 Lot 의 압력 테스트 목록.
+   펼칠 때만 비동기로 해당 Lot 데이터만 조회한다(IX_ChipPressure_Lot 인덱스 사용). *@
+
+@if (_loading)
+{
+    <MudProgressCircular Indeterminate="true" Color="Color.Info" Size="Size.Large" />
+}
+else
+{
+    <MudDataGrid T="ChipPressure" Class="custom-grid" SortMode="SortMode.Single"
+                 Dense="true" Style="white-space: nowrap" Hover="true" Bordered="true" Striped="true" RowsPerPage="100"
+                 EditMode="DataGridEditMode.Cell" ReadOnly="false"
+                 CommittedItemChanges="@CommittedItemChanges" Items="@_rows">
+        <Columns>
+            <PropertyColumn Property="x => x.ProduceDate" Title="제조 날짜" Format="yyyy-MM-dd" Editable="false" />
+            <PropertyColumn Property="x => x.TestDate" Title="테스트 날짜" Format="yyyy-MM-dd" Editable="false" />
+            <PropertyColumn Property="x => x.WaferInfo" Title="웨이퍼 정보" Editable="false" />
+            <PropertyColumn Property="x => x.Lot" Title="Lot" Editable="false" />
+            <PropertyColumn Property="x => x.Number" Title="Chip No." />
+            <PropertyColumn Property="x => x.Pressure" Title="Pressure (mbar)" />
+            <PropertyColumn Property="x => x.passFail" Context="x" Title="합/불" CellStyleFunc="@PassFailStyle"
+                            HeaderStyle="width: 120px; min-width: 120px; max-width: 120px;"
+                            CellStyle="width: 120px; min-width: 120px; max-width: 120px;">
+                <EditTemplate>
+                    <MudSelect T="string" Value="x.Item.passFail" Margin="@Margin.Dense"
+                               ValueChanged="@(async val => { x.Item.passFail = val; await CommittedItemChanges(x.Item); })">
+                        <MudSelectItem Value=@("PASS")>PASS</MudSelectItem>
+                        <MudSelectItem Value=@("FAIL")>FAIL</MudSelectItem>
+                    </MudSelect>
+                </EditTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Note" Title="Note" Required="false" />
+            <TemplateColumn Context="x" Editable="false">
+                <CellTemplate>
+                    <MudIconButton Size="@Size.Small" Variant="Variant.Filled" Icon="@Icons.Material.Filled.Delete"
+                                   Color="@Color.Error" OnClick="@(() => DeleteAsync(x.Item))" />
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+    </MudDataGrid>
+    <div class="d-flex justify-end pa-2 me-2">
+        <MudButton OnClick="AddAsync" Variant="Variant.Filled" Color="@Color.Success" StartIcon="@Icons.Material.Filled.Add"
+                   Class="add-item-btn">Add Item</MudButton>
+    </div>
+    <br />
+}
+
+@code {
+    [Parameter, EditorRequired] public ChipUsage ChipUsage { get; set; } = default!;
+
+    private List<ChipPressure> _rows = new();
+    private bool _loading = true;
+    private string? _loadedLot;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedLot == ChipUsage.Lot && !_loading) return;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        if (string.IsNullOrEmpty(ChipUsage.WaferInfo))
+        {
+            Snackbar.Add("WaferInfo 값이 비어 있습니다. 데이터를 확인하세요.", Severity.Warning);
+            _rows = new();
+        }
+        else
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            _rows = await db.ChipPressure.AsNoTracking()
+                .Where(cp => cp.Lot == ChipUsage.Lot)
+                .OrderBy(cp => cp.Number)
+                .ToListAsync();
+        }
+        _loadedLot = ChipUsage.Lot;
+        _loading = false;
+    }
+
+    private async Task<DataGridEditFormAction> CommittedItemChanges(ChipPressure item)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        db.Attach(item).State = EntityState.Modified;
+        await db.SaveChangesAsync();
+        return DataGridEditFormAction.Close;
+    }
+
+    private async Task AddAsync()
+    {
+        if (string.IsNullOrEmpty(ChipUsage.WaferInfo))
+        {
+            Snackbar.Add("WaferInfo 값이 비어 있습니다. 데이터를 확인하세요.", Severity.Warning);
+            return;
+        }
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var last = await db.ChipPressure.AsNoTracking()
+            .Where(cp => cp.Lot == ChipUsage.Lot)
+            .OrderByDescending(cp => cp.Id)
+            .FirstOrDefaultAsync();
+
+        db.ChipPressure.Add(new ChipPressure
+        {
+            ProduceDate = last?.ProduceDate ?? ChipUsage.UseDate,
+            TestDate = last?.TestDate ?? ChipUsage.UseDate,
+            WaferInfo = last?.WaferInfo ?? ChipUsage.WaferInfo,
+            Lot = ChipUsage.Lot,
+            Number = (last?.Number ?? 0) + 1,
+            passFail = "PASS"
+        });
+        await db.SaveChangesAsync();
+        await LoadAsync();
+    }
+
+    private async Task DeleteAsync(ChipPressure data)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        db.ChipPressure.Remove(data);
+        await db.SaveChangesAsync();
+        await LoadAsync();
+    }
+
+    private readonly Func<ChipPressure, string> PassFailStyle = x => x.passFail == "FAIL" ? "background-color:#f8766b" : "";
+}

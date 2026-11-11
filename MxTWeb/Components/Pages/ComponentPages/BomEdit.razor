@@ -74,13 +74,13 @@
         BomList = context.Bom.OrderBy(b => b.ProductName).ToList();
     }
 
-    private Task<DataGridEditFormAction> CommittedItemChanges(Bom item)
+    private async Task<DataGridEditFormAction> CommittedItemChanges(Bom item)
     {
-        using var context = DbFactory.CreateDbContext();
+        await using var context = await DbFactory.CreateDbContextAsync();
         context.Attach(item!).State = EntityState.Modified;
-        context.SaveChangesAsync();
+        await context.SaveChangesAsync();   // await 없이 using 이 끝나면 저장 전에 context 가 해제될 수 있음
 
-        return Task.FromResult(DataGridEditFormAction.Close);
+        return DataGridEditFormAction.Close;
     }
 
     private async Task AddBomData()

@@ -8,11 +8,11 @@
 @using ClosedXML.Excel;
 @using System.Globalization;
 @attribute [Authorize]
-@implements IAsyncDisposable
 @inject IDbContextFactory<MxTWeb.Data.MxTWebContext> DbFactory
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 @inject IJSRuntime JS
+@inject MxTWeb.Services.DashboardService Dashboard
 
 <PageTitle>칩 사용 관리대장</PageTitle>
 
@@ -35,9 +35,16 @@
 <h2>RUO 칩 사용 관리대장</h2>
 <br />
 
-<MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" ActivePanelIndexChanged="OnTabChanged">
-    <MudTabPanel Text="RUO 칩 사용 관리대장" OnClick="@(StateHasChanged)">
-        <MudDataGrid T="ChipUsage" Class="custom-grid" @ref="dataGrid" Items="FilteredData.AsQueryable()" SortMode="SortMode.Single"
+@*
+    성능 메모
+    - 두 그리드 모두 ServerData(서버 측 페이징)로 동작: 현재 페이지(100행)만 DB 에서 조회하고 회로(circuit)에는 그 페이지만 보관.
+      예전에는 페이지 진입 시 ChipUsage/ChipPressure 테이블 전체를 메모리에 올려 사용자 수만큼 복제됐다.
+    - 압력 탭은 탭이 활성화될 때만 렌더링되므로(MudTabs 기본 동작) 그때 첫 페이지만 조회한다.
+    - 검색은 SQL WHERE 로 처리. 날짜 검색은 문자열 비교 대신 범위 조건이라 인덱스(IX_ChipUsage_Chip_UseDate)를 탄다.
+*@
+<MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true">
+    <MudTabPanel Text="RUO 칩 사용 관리대장">
+        <MudDataGrid T="ChipUsage" Class="custom-grid" @ref="dataGrid" ServerData="LoadChipUsagesAsync" SortMode="SortMode.Single"
                      Dense="true" Style="white-space: nowrap" Hover="true" Bordered="true" Striped="true" SelectOnRowClick="true"
                      MultiSelection="false" @bind-SelectedItem="selectedItem"
                      RowsPerPage="100">
@@ -69,7 +76,7 @@
                     </MudItem>
 
                     <MudItem>
-                        <MudText Typo="Typo.body2" Class="mt-3 ms-2">총 항목 수: @FilteredData.Count()</MudText>
+                        <MudText Typo="Typo.body2" Class="mt-3 ms-2">총 항목 수: @_totalCount</MudText>
                     </MudItem>
 
                     @* <MudItem>
@@ -114,8 +121,10 @@
                         <MudMenuItem Label="사용부서" @onclick="@(() => SelectSearchField("사용부서"))" />
                     </MudMenu>
                     &nbsp&nbsp&nbsp&nbsp
-                    <MudTextField @bind-Value="SearchFilter" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
-                                    AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" />
+                    @* 입력이 멈춘 뒤 300ms 후에 한 번만 조회 (키 입력마다 DB 조회하지 않도록) *@
+                    <MudTextField T="string" Value="SearchFilter" ValueChanged="OnSearchChanged" DebounceInterval="300"
+                                  Placeholder="Search (날짜: yyyy / yyyy-MM / yyyy-MM-dd)" Adornment="Adornment.Start" Immediate="true"
+                                  AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" />
                 </MudGrid>
 
             </ToolBarContent>
@@ -127,7 +136,7 @@
                                 CellStyleFunc="@_cellStyleFunc" Editable="true">
                 </PropertyColumn>
                 <PropertyColumn Property="x => x.UseDate" Title="날짜" sortable="true" Format="yyyy-MM-dd"
-                                SortBy="x => x.UseDate" InitialDirection="SortDirection.Descending" />
+                                InitialDirection="SortDirection.Descending" />
                 <PropertyColumn Property="x => x.Producer" Title="작업자" Sortable="true" />
                 <PropertyColumn Property="x => x.Wafer" Title="웨이퍼" sortable="true" />
                 <PropertyColumn Property="x => x.WaferInfo" Title="웨이퍼 정보" />
@@ -136,59 +145,12 @@
                 <PropertyColumn Property="x => x.Operator" Title="사용부서" sortable="true" />
                 <PropertyColumn Property="x => x.Available" Title="수량" sortable="false" />
                 <PropertyColumn Property="x => x.Production" Title="생산" sortable="false" />
-                <PropertyColumn Property="x => x.Left" Title="잔여" sortable="false" 
-                                CellStyleFunc="@_cellStyleFunc3"/>                
+                <PropertyColumn Property="x => x.Left" Title="잔여" sortable="false"
+                                CellStyleFunc="@_cellStyleFunc3"/>
                 <PropertyColumn Property="x => x.Note" Title="비고" sortable="false" />
             </Columns>
             <ChildRowContent>
-                @if (pressureLoading)
-                {
-                    <MudProgressCircular Indeterminate="true" Color="Color.Info" Size="Size.Large"/>
-                }
-                else
-                {   
-                    <MudDataGrid T="ChipPressure" Class="custom-grid" SortMode="SortMode.Single"
-                                 Dense="true" Style="white-space: nowrap" Hover="true" Bordered="true" Striped="true" RowsPerPage="100"
-                                 EditMode="DataGridEditMode.Cell" ReadOnly="false"
-                                 CommittedItemChanges="@CommittedItemChanges" Items="@GetCachedChipPressureData($"{context.Item.Id}", context.Item)">
-                        <Columns>
-                            @* <TemplateColumn Title="테스트 날짜" Context="x" SortBy="@(x => x.TestDate)">
-                                <EditTemplate>
-                                    <MudDatePicker @bind-Date="x.Item.TestDate" DateFormat="yyyy-MM-dd" PickerClosed="@(() => CommittedItemChanges(x.Item))" />
-                                </EditTemplate>
-                            </TemplateColumn> *@
-                            <PropertyColumn Property="x => x.ProduceDate" Title="제조 날짜"  Format="yyyy-MM-dd" Editable="false"/>
-                            <PropertyColumn Property="x => x.TestDate" Title="테스트 날짜" Format="yyyy-MM-dd" Editable="false"/>
-                            <PropertyColumn Property="x => x.WaferInfo" Title="웨이퍼 정보" Editable="false"/>                           
-                            <PropertyColumn Property="x => x.Lot" Title="Lot" Editable="false"/>
-                            <PropertyColumn Property="x => x.Number" Title="Chip No." />
-                            <PropertyColumn Property="x => x.Pressure" Title="Pressure (mbar)"/>
-                            <PropertyColumn Property="x => x.passFail" Context="x" Title="합/불" CellStyleFunc="@_cellStyleFunc2"
-                                            HeaderStyle="width: 120px; min-width: 120px; max-width: 120px;"
-                                            CellStyle="width: 120px; min-width: 120px; max-width: 120px;">
-                                <EditTemplate>
-                                    <MudSelect T="string" Value="x.Item.passFail" Margin="@Margin.Dense"
-                                               ValueChanged="@(val => { x.Item.passFail = val; CommittedItemChanges(x.Item); })" >
-                                        <MudSelectItem Value=@("PASS")>PASS</MudSelectItem>
-                                        <MudSelectItem Value=@("FAIL")>FAIL</MudSelectItem>
-                                    </MudSelect>
-                                </EditTemplate>
-                            </PropertyColumn>
-                            <PropertyColumn Property="x => x.Note" Title="Note" Required="false"/>
-                            <TemplateColumn Context="x" Editable="false">
-                                <CellTemplate>
-                                    <MudIconButton Size="@Size.Small" Variant="Variant.Filled" Icon="@Icons.Material.Filled.Delete"
-                                                   Color="@Color.Error" OnClick="@(async () => { await DeletePressureData(x.Item); UpdateChipPressureData($"{context.Item.Id}", context.Item); })" />
-                                </CellTemplate>
-                            </TemplateColumn>
-                        </Columns>
-                    </MudDataGrid>
-                    <div class="d-flex justify-end pa-2 me-2">
-                        <MudButton OnClick="@(() => AddPressureData(context.Item))" Variant="Variant.Filled" Color="@Color.Success" StartIcon="@Icons.Material.Filled.Add"
-                                   Class="add-item-btn">Add Item</MudButton>
-                    </div>
-                    <br/>
-                }
+                <ChipPressureRows ChipUsage="context.Item" />
             </ChildRowContent>
 
             <PagerContent>
@@ -204,64 +166,60 @@
             <MudMenu Label="@PresSearchField" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Secondary">
                 <MudMenuItem Label="웨이퍼 정보" @onclick="@(() => SelectPresSearchField("웨이퍼 정보"))" />
                 <MudMenuItem Label="웨이퍼 Lot" @onclick="@(() => SelectPresSearchField("웨이퍼 Lot"))" />
-                <MudMenuItem Label="테스트 날짜" @onclick="@(() => SelectPresSearchField("테스트 날짜"))" />                
+                <MudMenuItem Label="테스트 날짜" @onclick="@(() => SelectPresSearchField("테스트 날짜"))" />
             </MudMenu>
             &nbsp&nbsp&nbsp&nbsp
-            <MudTextField @bind-Value="_presSearchFilter" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+            <MudTextField T="string" Value="_presSearchFilter" ValueChanged="OnPresSearchChanged" DebounceInterval="300"
+                          Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
                           AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-1"></MudTextField>
         </MudGrid>
 
-        @if (pressureLoading)
-        {
-            <MudProgressCircular Indeterminate="true" Color="Color.Info" Size="Size.Large"/>
-        }
-        else
-        {           
-            <MudDataGrid T="ChipPressure" Class="custom-grid" Items="@FilteredPresData" SortMode="SortMode.Single"
-                         Dense="true" Style="white-space: nowrap" Hover="true" Bordered="true" Striped="true" RowsPerPage="100"
-					     EditMode="DataGridEditMode.Cell" ReadOnly="false"                   
-                         CommittedItemChanges="@CommittedItemChanges"
-                         QuickFilter="@_quickFilter">
-                <Columns>
-                    <TemplateColumn Title="제조 날짜" Context="x" Sortable="true" >
-                        <EditTemplate>
-                            <MudDatePicker @bind-Date="x.Item.ProduceDate" DateFormat="yyyy-MM-dd" PickerClosed="@(() => CommittedItemChanges(x.Item))" />
-                        </EditTemplate>
-                    </TemplateColumn>
-                    <TemplateColumn Title="테스트 날짜" Context="x" Sortable="true" InitialDirection="SortDirection.Descending" SortBy="@(x => x.TestDate)">
-                        <EditTemplate>
-                            <MudDatePicker @bind-Date="x.Item.TestDate" DateFormat="yyyy-MM-dd" PickerClosed="@(() => CommittedItemChanges(x.Item))"/>
-                        </EditTemplate>
-                    </TemplateColumn>
-                    <PropertyColumn Property="x => x.WaferInfo" Title="웨이퍼 정보" />
-                    <PropertyColumn Property="x => x.Lot" Title="웨이퍼 Lot" />
-                    <PropertyColumn Property="x => x.Number" Title="Chip No." />
-                    <PropertyColumn Property="x => x.Pressure" Title="Pressure (mbar)" />
-                    <PropertyColumn Property="x => x.passFail" Context="x" Title="합/불" CellStyleFunc="@_cellStyleFunc2"
-                                    HeaderStyle="width: 120px; min-width: 120px; max-width: 120px;"
-                                    CellStyle="width: 120px; min-width: 120px; max-width: 120px;">
-                        <EditTemplate>
-                            <MudSelect T="string" Value="x.Item.passFail" Margin="@Margin.Dense"
-                                       ValueChanged="@(val => { x.Item.passFail = val; CommittedItemChanges(x.Item); })">
-                                <MudSelectItem Value=@("PASS")>PASS</MudSelectItem>
-                                <MudSelectItem Value=@("FAIL")>FAIL</MudSelectItem>
-                            </MudSelect>
-                        </EditTemplate>
-                    </PropertyColumn>
-                    <PropertyColumn Property="x => x.Note" Title="Note" Required="false"/>
-                    <TemplateColumn Context="x" Editable="false">
-                        <CellTemplate>
-                            <MudIconButton Size="@Size.Small" Variant="Variant.Filled" Icon="@Icons.Material.Filled.Delete"
-                                           Color="@Color.Error" OnClick="@(() => this.DeletePressureData(x.Item))" />
-                        </CellTemplate>
-                    </TemplateColumn>
-                </Columns>
-            </MudDataGrid>
-            <div class="d-flex justify-end pa-2 me-2">
-                @* <MudButton OnClick="@(() => AddPressureData())" Variant="Variant.Filled" Color="@Color.Success" StartIcon="@Icons.Material.Filled.Add"
-                           Class="add-item-btn">Add Item</MudButton> *@
-            </div>
-        }
+        @* 예전: 압력 데이터 전체(Items)를 페이저 없이 한 번에 렌더링 → 데이터가 많으면 탭이 열리지 않음.
+           지금: 서버 페이징 + 페이저.
+           셀 편집 모드라 모든 셀이 입력 컴포넌트(DatePicker/NumericField/Select)로 렌더링되고, 회로 메모리가
+           '표시 행 수 × 편집 컬럼 수'에 비례한다(100행 ≈ 컴포넌트 8,600개). 그래서 기본 25행, 필요 시 50/100 선택. *@
+        <MudDataGrid T="ChipPressure" Class="custom-grid" @ref="pressureGrid" ServerData="LoadPressuresAsync" SortMode="SortMode.Single"
+                     Dense="true" Style="white-space: nowrap" Hover="true" Bordered="true" Striped="true" RowsPerPage="25"
+                     EditMode="DataGridEditMode.Cell" ReadOnly="false"
+                     CommittedItemChanges="@CommittedItemChanges">
+            <Columns>
+                <TemplateColumn Title="제조 날짜" Context="x" Sortable="false">
+                    <EditTemplate>
+                        <MudDatePicker @bind-Date="x.Item.ProduceDate" DateFormat="yyyy-MM-dd" PickerClosed="@(() => CommittedItemChanges(x.Item))" />
+                    </EditTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="테스트 날짜" Context="x" Sortable="false">
+                    <EditTemplate>
+                        <MudDatePicker @bind-Date="x.Item.TestDate" DateFormat="yyyy-MM-dd" PickerClosed="@(() => CommittedItemChanges(x.Item))"/>
+                    </EditTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="x => x.WaferInfo" Title="웨이퍼 정보" />
+                <PropertyColumn Property="x => x.Lot" Title="웨이퍼 Lot" />
+                <PropertyColumn Property="x => x.Number" Title="Chip No." />
+                <PropertyColumn Property="x => x.Pressure" Title="Pressure (mbar)" />
+                <PropertyColumn Property="x => x.passFail" Context="x" Title="합/불" CellStyleFunc="@_cellStyleFunc2"
+                                HeaderStyle="width: 120px; min-width: 120px; max-width: 120px;"
+                                CellStyle="width: 120px; min-width: 120px; max-width: 120px;">
+                    <EditTemplate>
+                        <MudSelect T="string" Value="x.Item.passFail" Margin="@Margin.Dense"
+                                   ValueChanged="@(async val => { x.Item.passFail = val; await CommittedItemChanges(x.Item); })">
+                            <MudSelectItem Value=@("PASS")>PASS</MudSelectItem>
+                            <MudSelectItem Value=@("FAIL")>FAIL</MudSelectItem>
+                        </MudSelect>
+                    </EditTemplate>
+                </PropertyColumn>
+                <PropertyColumn Property="x => x.Note" Title="Note" Required="false"/>
+                <TemplateColumn Context="x" Editable="false">
+                    <CellTemplate>
+                        <MudIconButton Size="@Size.Small" Variant="Variant.Filled" Icon="@Icons.Material.Filled.Delete"
+                                       Color="@Color.Error" OnClick="@(() => DeletePressureData(x.Item))" />
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+            <PagerContent>
+                <MudDataGridPager PageSizeOptions="@(new[] { 25, 50, 100 })" />
+            </PagerContent>
+        </MudDataGrid>
     </MudTabPanel>
 </MudTabs>
 
@@ -274,140 +232,124 @@
 <br />
 
 @code {
-    private MxTWebContext context = default!;
-    private MudDataGrid<ChipUsage> dataGrid;
-    private MudFileUpload<IBrowserFile> excelUpload;
+    private MudDataGrid<ChipUsage> dataGrid = null!;
+    private MudDataGrid<ChipPressure> pressureGrid = null!;
+    private MudFileUpload<IBrowserFile> excelUpload = null!;
 
-    private readonly SemaphoreSlim _searchSemaphore = new(1, 1);
-    private readonly SemaphoreSlim _deleteSemaphore = new(1, 1);
-    private CancellationTokenSource? _searchCts;
-    private List<ChipUsage> _filteredResults = new();
     private ChipUsage selectedItem = new();
     private bool IsEditDisabled => selectedItem == null || selectedItem.Id == 0;
 
+    private int _totalCount;
+    // 현재 페이지에 보이는 웨이퍼별 '가장 최근 사용일' (잔여 칸 강조용). 페이지 로드 시 한 번의 집계 쿼리로 계산.
+    private Dictionary<string, DateTime> _latestUseDateByWafer = new(StringComparer.OrdinalIgnoreCase);
 
-    private IEnumerable<ChipUsage> FilteredData => _filteredResults;
-    private IEnumerable<ChipPressure> FilteredPresData = new List<ChipPressure>();
-    private Dictionary<string, IEnumerable<ChipPressure>> chipPressureCache = new();
-
-    private string _selectedChip = "";
-    public string SelectedChip
-    {
-        get => _selectedChip;
-        set
-        {
-            _selectedChip = value;
-            _ = PerformSelectChipAsync();
-        }
-    }
-
-    private string SearchField = "";
-    private string PresSearchField = "";
-
-    private string _searchFilter = "";
-    public string SearchFilter
-    {
-        get => _searchFilter;
-        set
-        {
-            _searchFilter = value;
-            _ = PerformSearchAsync();
-        }
-    }
-    private string _presSearchFilter;
+    private string SelectedChip = "B01_Small";
+    private string SearchField = "웨이퍼 정보";
+    private string PresSearchField = "웨이퍼 정보";
+    private string SearchFilter = "";
+    private string _presSearchFilter = "";
 
     bool importing = false;
     bool exporting = false;
-    bool pressureLoading = false;
 
-    private async Task SelectChip(string Type)
+    // ───────────────────────── 칩 사용 대장 (서버 페이징) ─────────────────────────
+
+    /// <summary>선택된 칩 + 검색 조건을 SQL WHERE 로 적용한 쿼리</summary>
+    private IQueryable<ChipUsage> BuildChipUsageQuery(MxTWebContext db)
     {
-        SelectedChip = Type;
-    }
+        var q = db.ChipUsage.AsNoTracking().Where(x => x.Chip == SelectedChip);
+        var term = SearchFilter?.Trim();
+        if (string.IsNullOrEmpty(term)) return q;
 
-    private async Task PerformSelectChipAsync()
-    {
-        try
+        switch (SearchField)
         {
-            using var context = DbFactory.CreateDbContext();
-
-            var query = SelectedChip switch
-            {
-                "A01_Small" => context.ChipUsage.Where(m => m.Chip!.Equals("A01_Small")),
-                "A01_Large" => context.ChipUsage.Where(m => m.Chip!.Equals("A01_Large")),
-                "B01_Small" => context.ChipUsage.Where(m => m.Chip!.Equals("B01_Small")),
-                "B01_Large" => context.ChipUsage.Where(m => m.Chip!.Equals("B01_Large")),
-                _ => context.ChipUsage.Where(m => m.Chip!.Equals("A01_Small")),
-            };
-
-            _filteredResults = await query.ToListAsync();
-            await InvokeAsync(StateHasChanged);
-        }
-        catch (OperationCanceledException) { }
-    }
-
-    private async Task PerformSearchAsync()
-    {
-        // 동시 실행 방지 // available semaphore가 없으면 바로 return
-        if (!await _searchSemaphore.WaitAsync(0)) return;
-
-        try
-        {
-            _searchCts?.Cancel();
-            _searchCts = new CancellationTokenSource();
-
-            using var context = DbFactory.CreateDbContext();
-
-            var query = SearchField switch
-            {
-                "날짜" => context.ChipUsage.Where(m => m.UseDate.ToString()!.Contains(SearchFilter) && m.Chip!.Equals(SelectedChip)),
-                "웨이퍼 정보" => context.ChipUsage.Where(m => m.WaferInfo!.Contains(SearchFilter) && m.Chip!.Equals(SelectedChip)),
-                "납품일시" => context.ChipUsage.Where(m => m.ReceiptDate.ToString()!.Contains(SearchFilter) && m.Chip!.Equals(SelectedChip)),
-                "사용부서" => context.ChipUsage.Where(m => m.Operator!.Contains(SearchFilter) && m.Chip!.Equals(SelectedChip)),
-                _ => context.ChipUsage.Where(m => m.Chip!.Equals(SelectedChip))
-            };
-
-            _filteredResults = await query.ToListAsync(_searchCts.Token);
-            await InvokeAsync(StateHasChanged);
-        }
-        catch (OperationCanceledException) { }
-        finally
-        {
-            _searchSemaphore.Release();
+            case "웨이퍼 정보": return q.Where(x => x.WaferInfo!.Contains(term));
+            case "사용부서": return q.Where(x => x.Operator!.Contains(term));
+            case "날짜":
+            case "납품일시":
+                // 예전: UseDate.ToString().Contains(...) → 컬럼에 함수가 씌워져 인덱스를 못 탐(Non-SARGable)
+                // 지금: 입력값을 기간으로 해석해 범위 조건으로 검색
+                if (!TryParseDateRange(term, out var from, out var to)) return q.Where(x => false);
+                return SearchField == "날짜"
+                    ? q.Where(x => x.UseDate >= from && x.UseDate < to)
+                    : q.Where(x => x.ReceiptDate >= from && x.ReceiptDate < to);
+            default: return q;
         }
     }
 
-    private Func<ChipPressure, bool> _quickFilter => x =>
+    private async Task<GridData<ChipUsage>> LoadChipUsagesAsync(GridState<ChipUsage> state, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(_presSearchFilter))
-            return true;
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        var query = BuildChipUsageQuery(db);
 
-        else {
-            switch (PresSearchField)
-            {
-                case "테스트 날짜":
-                    if (x.TestDate.GetValueOrDefault().ToString("yyyy-MM-dd").Contains(_presSearchFilter, StringComparison.OrdinalIgnoreCase))
-                        return true;
-                    break;
+        var total = await query.CountAsync(ct);
+        var items = await ApplyChipSort(query, state)
+            .Skip(state.Page * state.PageSize)
+            .Take(state.PageSize)
+            .ToListAsync(ct);
 
-                case "웨이퍼 정보":
-                    if (x.WaferInfo?.Contains(_presSearchFilter, StringComparison.OrdinalIgnoreCase)== true)
-                        return true;
-                    break;
+        // 잔여 칸 강조: 이 페이지에 나온 웨이퍼들의 최근 사용일만 집계 (예전엔 셀마다 전체 목록을 순회 → O(N²))
+        var wafers = items.Select(x => x.WaferInfo).Where(w => !string.IsNullOrWhiteSpace(w)).Distinct().ToList();
+        var latest = wafers.Count == 0
+            ? new()
+            : await query.Where(x => wafers.Contains(x.WaferInfo) && x.UseDate != null)
+                         .GroupBy(x => x.WaferInfo!)
+                         .Select(g => new { Wafer = g.Key, Max = g.Max(x => x.UseDate)!.Value })
+                         .ToListAsync(ct);
+        _latestUseDateByWafer = latest.ToDictionary(x => x.Wafer, x => x.Max, StringComparer.OrdinalIgnoreCase);
 
-                case "웨이퍼 Lot":
-                    if (x.Lot?.Contains(_presSearchFilter, StringComparison.OrdinalIgnoreCase)== true)
-                        return true;
-                    break;
+        _totalCount = total;
+        return new GridData<ChipUsage> { Items = items, TotalItems = total };
+    }
 
-                default:
-                    break;
-            }
+    private static IQueryable<ChipUsage> ApplyChipSort(IQueryable<ChipUsage> q, GridState<ChipUsage> state)
+    {
+        var sort = state.SortDefinitions.FirstOrDefault();
+        if (sort is null) return q.OrderByDescending(x => x.UseDate).ThenByDescending(x => x.Id);
 
-        }
+        IOrderedQueryable<ChipUsage> ordered = sort.SortBy switch
+        {
+            nameof(ChipUsage.Division) => sort.Descending ? q.OrderByDescending(x => x.Division) : q.OrderBy(x => x.Division),
+            nameof(ChipUsage.Producer) => sort.Descending ? q.OrderByDescending(x => x.Producer) : q.OrderBy(x => x.Producer),
+            nameof(ChipUsage.Wafer) => sort.Descending ? q.OrderByDescending(x => x.Wafer) : q.OrderBy(x => x.Wafer),
+            nameof(ChipUsage.ReceiptDate) => sort.Descending ? q.OrderByDescending(x => x.ReceiptDate) : q.OrderBy(x => x.ReceiptDate),
+            nameof(ChipUsage.Operator) => sort.Descending ? q.OrderByDescending(x => x.Operator) : q.OrderBy(x => x.Operator),
+            _ => sort.Descending ? q.OrderByDescending(x => x.UseDate) : q.OrderBy(x => x.UseDate),
+        };
+        return ordered.ThenByDescending(x => x.Id);   // 페이지 경계가 흔들리지 않도록 고유 키로 2차 정렬
+    }
 
+    /// <summary>"2026", "2026-11", "2026-11-05" (또는 '.' 구분) → [from, to)</summary>
+    private static bool TryParseDateRange(string input, out DateTime from, out DateTime to)
+    {
+        var s = input.Replace('.', '-').Replace('/', '-');
+        var c = CultureInfo.InvariantCulture;
+        if (DateTime.TryParseExact(s, new[] { "yyyy-MM-dd", "yyyy-M-d" }, c, DateTimeStyles.None, out from)) { to = from.AddDays(1); return true; }
+        if (DateTime.TryParseExact(s, new[] { "yyyy-MM", "yyyy-M" }, c, DateTimeStyles.None, out from)) { to = from.AddMonths(1); return true; }
+        if (DateTime.TryParseExact(s, "yyyy", c, DateTimeStyles.None, out from)) { to = from.AddYears(1); return true; }
+        to = default;
         return false;
-    };
+    }
+
+    private async Task SelectChip(string type)
+    {
+        SelectedChip = type;
+        await dataGrid.ReloadServerData();
+    }
+
+    private void SelectSearchField(string item) => SearchField = item;
+
+    private async Task OnSearchChanged(string value)
+    {
+        SearchFilter = value;
+        await dataGrid.ReloadServerData();
+    }
+
+    private async Task ReloadAfterChangeAsync()
+    {
+        Dashboard.Invalidate();   // 대시보드 캐시도 즉시 갱신
+        await dataGrid.ReloadServerData();
+    }
 
     private async Task CreateNew()
     {
@@ -422,9 +364,7 @@
         var result = await dialog.Result;
 
         if (result is not null && !result.Canceled)
-        {
-            await PerformSearchAsync();
-        }
+            await ReloadAfterChangeAsync();
     }
 
     private async Task UpdateData()
@@ -440,9 +380,7 @@
         var result = await dialog.Result;
 
         if (result is not null && !result.Canceled)
-        {
-            await PerformSearchAsync();
-        }
+            await ReloadAfterChangeAsync();
     }
 
     private async Task DeleteData()
@@ -458,123 +396,77 @@
 
         if (result is not null && !result.Canceled)
         {
-            await PerformSearchAsync();
             selectedItem = new();
+            await ReloadAfterChangeAsync();
         }
     }
 
-    private IEnumerable<ChipPressure> GetCachedChipPressureData(string cacheKey, ChipUsage chipUsage)
+    // ───────────────────────── 압력 탭 (서버 페이징) ─────────────────────────
+
+    private async Task<GridData<ChipPressure>> LoadPressuresAsync(GridState<ChipPressure> state, CancellationToken ct)
     {
-        pressureLoading = true;
-        if (!chipPressureCache.ContainsKey(cacheKey))
+        await using var db = await DbFactory.CreateDbContextAsync(ct);
+        IQueryable<ChipPressure> q = db.ChipPressure.AsNoTracking();
+
+        var term = _presSearchFilter?.Trim();
+        if (!string.IsNullOrEmpty(term))
         {
-            chipPressureCache[cacheKey] = GetChipPressureData(chipUsage);
-        }
-        pressureLoading = false;
-        return chipPressureCache[cacheKey];
-    }
-
-    private void UpdateChipPressureData(string cacheKey, ChipUsage chipUsage)
-    {
-        chipPressureCache[cacheKey] = GetChipPressureData(chipUsage);
-    }
-
-    private IEnumerable<ChipPressure> GetChipPressureData(ChipUsage chipUsage)
-    {
-        if (string.IsNullOrEmpty(chipUsage.WaferInfo))
-        {
-            Snackbar.Add("WaferInfo 값이 비어 있습니다. 데이터를 확인하세요.", Severity.Warning);
-            return Enumerable.Empty<ChipPressure>();
-        }
-
-        using var context = DbFactory.CreateDbContext();
-        return context.ChipPressure
-            .Where(cp => cp.Lot == chipUsage.Lot)
-            .ToList();
-    }
-
-    private async Task AddPressureData(ChipUsage chipUsage)
-    {
-        if (string.IsNullOrEmpty(chipUsage.WaferInfo))
-        {
-            Snackbar.Add("WaferInfo 값이 비어 있습니다. 데이터를 확인하세요.", Severity.Warning);
-            return;
-        }
-
-        using var context = DbFactory.CreateDbContext();
-
-        ChipPressure temp = context.ChipPressure
-            .Where(cp => cp.Lot == chipUsage.Lot)
-            .OrderByDescending(cp => cp.Id)
-            .FirstOrDefault()!;
-
-        var newPressure = new ChipPressure();
-        if (temp == null)
-        {
-            newPressure = new ChipPressure
+            q = PresSearchField switch
             {
-                ProduceDate = chipUsage.UseDate,
-                TestDate = chipUsage.UseDate,
-                WaferInfo = chipUsage.WaferInfo,
-                Lot = chipUsage.Lot,
-                Number = 1,
-				passFail = "PASS"
-            };
-        }
-        else
-        {
-            newPressure = new ChipPressure
-            {
-                ProduceDate = temp.ProduceDate,
-                TestDate = temp.TestDate,
-                WaferInfo = temp.WaferInfo,
-                Lot = temp.Lot,
-                Number = temp.Number + 1,
-				passFail = "PASS"
+                "웨이퍼 Lot" => q.Where(x => x.Lot!.Contains(term)),
+                "테스트 날짜" => TryParseDateRange(term, out var from, out var to)
+                                    ? q.Where(x => x.TestDate >= from && x.TestDate < to)
+                                    : q.Where(x => false),
+                _ => q.Where(x => x.WaferInfo!.Contains(term)),
             };
         }
 
-        context.ChipPressure.Add(newPressure);
-        await context.SaveChangesAsync();
+        var total = await q.CountAsync(ct);
 
-        chipPressureCache[chipUsage.Id.ToString()] = GetChipPressureData(chipUsage);
-    }
-
-    private async Task AddPressureData()
-    {
-        using var context = DbFactory.CreateDbContext();
-        var newPressure = new ChipPressure
+        var sort = state.SortDefinitions.FirstOrDefault();
+        IOrderedQueryable<ChipPressure> ordered = sort?.SortBy switch
         {
-            ProduceDate = DateTime.Today,
-            TestDate = DateTime.Today,
-            WaferInfo = "-",
-            Number = 1,
-            passFail = "PASS"
+            nameof(ChipPressure.WaferInfo) => sort.Descending ? q.OrderByDescending(x => x.WaferInfo) : q.OrderBy(x => x.WaferInfo),
+            nameof(ChipPressure.Lot) => sort.Descending ? q.OrderByDescending(x => x.Lot) : q.OrderBy(x => x.Lot),
+            nameof(ChipPressure.Number) => sort.Descending ? q.OrderByDescending(x => x.Number) : q.OrderBy(x => x.Number),
+            nameof(ChipPressure.Pressure) => sort.Descending ? q.OrderByDescending(x => x.Pressure) : q.OrderBy(x => x.Pressure),
+            nameof(ChipPressure.passFail) => sort.Descending ? q.OrderByDescending(x => x.passFail) : q.OrderBy(x => x.passFail),
+            _ => q.OrderByDescending(x => x.TestDate),   // 기본: 테스트 날짜 최신순 (IX_ChipPressure_TestDate)
         };
-        context.ChipPressure.Add(newPressure);
-        await context.SaveChangesAsync();
 
-        FilteredPresData = context.ChipPressure.ToList();
+        var items = await ordered.ThenByDescending(x => x.Id)
+            .Skip(state.Page * state.PageSize)
+            .Take(state.PageSize)
+            .ToListAsync(ct);
+
+        return new GridData<ChipPressure> { Items = items, TotalItems = total };
+    }
+
+    private void SelectPresSearchField(string item) => PresSearchField = item;
+
+    private async Task OnPresSearchChanged(string value)
+    {
+        _presSearchFilter = value;
+        await pressureGrid.ReloadServerData();
+    }
+
+    private async Task<DataGridEditFormAction> CommittedItemChanges(ChipPressure item)
+    {
+        await using var context = await DbFactory.CreateDbContextAsync();
+        context.Attach(item!).State = EntityState.Modified;
+        await context.SaveChangesAsync();   // 예전: await 없이 using 이 끝나 저장 전에 context 가 해제될 수 있었음
+        return DataGridEditFormAction.Close;
     }
 
     private async Task DeletePressureData(ChipPressure data)
     {
-        using var context = DbFactory.CreateDbContext();
-        using var transaction = await context.Database.BeginTransactionAsync();
-        try
-        {
-            context.ChipPressure.Remove(data!);
-            await context.SaveChangesAsync();
-            await transaction.CommitAsync();
-
-            FilteredPresData = context.ChipPressure.ToList();
-        }
-        catch
-        {
-            await transaction.RollbackAsync();
-            throw;
-        }
+        await using var context = await DbFactory.CreateDbContextAsync();
+        context.ChipPressure.Remove(data!);
+        await context.SaveChangesAsync();
+        await pressureGrid.ReloadServerData();
     }
+
+    // ───────────────────────── 엑셀 Import / Export (현재 UI 는 주석 처리됨) ─────────────────────────
 
     private async Task UploadFile(IBrowserFile file)
     {
@@ -596,7 +488,7 @@
             List<ChipUsage> chipUsages = new();
             foreach (var row in rows)
             {
-                try 
+                try
                 {
                     ChipUsage chip = new ChipUsage
                     {
@@ -616,7 +508,7 @@
                     };
                     chipUsages.Add(chip);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     continue;
                 }
@@ -633,10 +525,7 @@
             var result = await dialog.Result;
 
             if (result != null && !result.Canceled)
-            {
-                await PerformSearchAsync();
-            }
-
+                await ReloadAfterChangeAsync();
         }
         catch (Exception ex)
         {
@@ -670,7 +559,7 @@
                 return result;
             }
 
-            string originalString = cell.GetString();         
+            string originalString = cell.GetString();
             throw new FormatException($"Cannot parse date: {originalString}");
         }
         catch (Exception ex)
@@ -691,7 +580,9 @@
         exporting = true; // Set exporting to true at the beginning of the method
         try
         {
-            var datas = _filteredResults;
+            // 화면에 보이는 한 페이지가 아니라, 현재 칩/검색 조건에 맞는 전체 행을 내보낸다
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var datas = await BuildChipUsageQuery(db).OrderByDescending(x => x.UseDate).ToListAsync();
 
             using (var workbook = new XLWorkbook())
             {
@@ -749,48 +640,7 @@
         }
     }
 
-    private void SelectSearchField(string item)
-    {
-        SearchField = item;
-    }
-    private void SelectPresSearchField(string item)
-    {
-        PresSearchField = item;
-    }
-
-    protected override void OnInitialized()
-    {
-        context = DbFactory.CreateDbContext();
-        _filteredResults = context.ChipUsage.ToList();
-        FilteredPresData = context.ChipPressure.ToList();
-
-        SearchField = "웨이퍼 정보";
-        PresSearchField = "웨이퍼 정보";
-        SelectedChip = "B01_Small";
-    }
-
-    private void OnTabChanged(int index)
-    {
-        if (index == 0) // 첫 번째 탭이 선택된 경우
-        {
-            _filteredResults = _filteredResults.OrderByDescending(chip => chip.UseDate).ToList();
-            StateHasChanged(); // UI 업데이트
-        }
-        if (index == 1) // 첫 번째 탭이 선택된 경우
-        {
-            context = DbFactory.CreateDbContext();
-            FilteredPresData = context.ChipPressure.OrderByDescending(chip => chip.TestDate).ToList();
-        }
-    }
-
-    private Task<DataGridEditFormAction> CommittedItemChanges(ChipPressure item)
-    {
-        using var context = DbFactory.CreateDbContext();
-        context.Attach(item!).State = EntityState.Modified;
-        context.SaveChangesAsync();
-
-        return Task.FromResult(DataGridEditFormAction.Close);
-    }
+    // ───────────────────────── 셀 스타일 ─────────────────────────
 
     private Func<ChipUsage, string> _cellStyleFunc => x =>
     {
@@ -814,47 +664,15 @@
         return style;
     };
 
+    // 같은 웨이퍼 중 가장 최근에 사용된 행의 '잔여' 칸을 강조.
+    // 예전: 셀을 그릴 때마다 전체 목록을 순회(O(N²)). 지금: 페이지 로드 시 계산해 둔 사전을 조회(O(1)).
     private Func<ChipUsage, string> _cellStyleFunc3 => x =>
     {
-        string style = "";
+        if (x is null || string.IsNullOrWhiteSpace(x.WaferInfo) || x.Division == "소진" || x.UseDate is null)
+            return "";
 
-        if (x is null) 
-            return style;
-
-        if (string.IsNullOrWhiteSpace(x.WaferInfo))
-            return style;
-
-        if (x.Division == "소진")
-            return style;
-
-        try
-        {
-            // _filteredResults 가 null 일 수 있으므로 안전하게 처리
-            var candidates = _filteredResults?
-                .Where(c => !string.IsNullOrWhiteSpace(c.WaferInfo)
-                            && c.WaferInfo.Equals(x.WaferInfo, StringComparison.OrdinalIgnoreCase)
-                            && c.UseDate != default) // UseDate가 기본값이 아닌 항목만
-                .Select(c => c.UseDate)
-                .Where(d => d != null)
-                .Select(d => d!.Value) // nullable DateTime -> DateTime
-                .ToList();
-
-            if (candidates == null || candidates.Count == 0)
-                return style;
-
-            var latest = candidates.Max();
-
-            if (x.UseDate != null && x.UseDate == latest)
-                style += "background-color:#D9EAD3";
-        }
-        catch
-        {
-            // 예외 발생 시 스타일 적용 안함 (안전하게 무시)
-            return style;
-        }
-
-        return style;
+        return _latestUseDateByWafer.TryGetValue(x.WaferInfo, out var latest) && x.UseDate == latest
+            ? "background-color:#D9EAD3"
+            : "";
     };
-
-    public async ValueTask DisposeAsync() => await context.DisposeAsync();
 }

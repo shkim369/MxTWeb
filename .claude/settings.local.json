@@ -15,7 +15,12 @@
       "PowerShell(Get-ChildItem *)",
       "PowerShell(dotnet ef database *)",
       "PowerShell(Get-Content *)",
-      "PowerShell(Select-String *)"
+      "PowerShell(Select-String *)",
+      "PowerShell(Set-Location *)",
+      "PowerShell(git *)",
+      "PowerShell(dotnet build MxTWeb *)",
+      "PowerShell(Wait-Process *)",
+      "PowerShell(Set-Content *)"
     ]
   }
 }

@@ -86,7 +86,8 @@ namespace MxTWeb.Migrations.MxTWeb
 
                     b.Property<string>("Lot")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("Note")
                         .HasColumnType("nvarchar(max)");
@@ -107,7 +108,8 @@ namespace MxTWeb.Migrations.MxTWeb
                         .HasColumnType("int");
 
                     b.Property<string>("WaferInfo")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<int?>("isUsed")
                         .HasColumnType("int");
@@ -119,6 +121,10 @@ namespace MxTWeb.Migrations.MxTWeb
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Lot");
+
+                    b.HasIndex("TestDate");
 
                     b.ToTable("ChipPressure");
                 });
@@ -136,17 +142,20 @@ namespace MxTWeb.Migrations.MxTWeb
 
                     b.Property<string>("Chip")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Division")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<int>("Left")
                         .HasColumnType("int");
 
                     b.Property<string>("Lot")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("Note")
                         .HasColumnType("nvarchar(max)");
@@ -170,9 +179,14 @@ namespace MxTWeb.Migrations.MxTWeb
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("WaferInfo")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Chip", "UseDate");
+
+                    b.HasIndex("Division", "UseDate");
 
                     b.ToTable("ChipUsage");
                 });
@@ -252,11 +266,16 @@ namespace MxTWeb.Migrations.MxTWeb
 
                     b.Property<string>("state")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.HasKey("CompHistoryId");
 
                     b.HasIndex("ComponentId");
+
+                    b.HasIndex("EntryDate");
+
+                    b.HasIndex("state", "Date");
 
                     b.ToTable("CompHistory");
                 });
