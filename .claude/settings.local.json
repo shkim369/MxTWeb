@@ -6,7 +6,16 @@
       "Bash(dotnet build:*)",
       "Bash(dotnet ef migrations add:*)",
       "Bash(dotnet ef database update:*)",
-      "Bash(xargs wc -l)"
+      "Bash(xargs wc -l)",
+      "PowerShell(Test-Path *)",
+      "PowerShell(sqllocaldb info *)",
+      "PowerShell($bytes = [System.Security.Cryptography.RandomNumberGenerator]::GetBytes\\(32\\); $key = [Convert]::ToBase64String\\($bytes\\).Replace\\('+','-'\\).Replace\\('/','_'\\).TrimEnd\\('='\\); dotnet user-secrets set \"ApiKey\" $key --project MxTWeb; \"ApiKey = $key\")",
+      "PowerShell(winget search *)",
+      "PowerShell(New-Item *)",
+      "PowerShell(Get-ChildItem *)",
+      "PowerShell(dotnet ef database *)",
+      "PowerShell(Get-Content *)",
+      "PowerShell(Select-String *)"
     ]
   }
 }

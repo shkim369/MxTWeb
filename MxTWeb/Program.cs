@@ -170,6 +170,12 @@ using (var scope = app.Services.CreateScope())
             }
         }
     }
+
+    // 로컬 데모용 더미 데이터: Development 환경 + DemoData:Seed = true 일 때만, 빈 테이블에만 채움
+    if (app.Environment.IsDevelopment() && builder.Configuration.GetValue<bool>("DemoData:Seed"))
+    {
+        await DemoDataSeeder.SeedAsync(scope.ServiceProvider, logger);
+    }
 }
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
